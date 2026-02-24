@@ -141,7 +141,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
-                        <span>載入中...</span>
+                        <span>加载中...</span>
                     </div>
                     <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +292,7 @@
                 <div class="bg-surface rounded-xl border border-border p-4">
                     <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-3">📊 價格區間概率</h3>
                     <div id="price-ranges" class="space-y-2">
-                        <div class="text-text-muted text-sm">載入中...</div>
+                        <div class="text-text-muted text-sm">加载中...</div>
                     </div>
                 </div>
 
@@ -300,7 +300,7 @@
                 <div class="bg-surface rounded-xl border border-border p-4 glow-purple">
                     <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-3">🎯 關鍵價位</h3>
                     <div id="key-levels" class="space-y-2">
-                        <div class="text-text-muted text-sm">載入中...</div>
+                        <div class="text-text-muted text-sm">加载中...</div>
                     </div>
                 </div>
 
@@ -518,7 +518,7 @@
         // ============== Weather ==============
         async function loadWeather(symbol) {
             try {
-                document.getElementById('current-price').textContent = '載入中...';
+                document.getElementById('current-price').textContent = '加载中...';
                 document.getElementById('price-ranges').innerHTML = '<div class="text-text-muted text-sm animate-pulse">分析中...</div>';
                 document.getElementById('key-levels').innerHTML = '<div class="text-text-muted text-sm animate-pulse">分析中...</div>';
 
@@ -760,7 +760,7 @@
                         modelStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Kronos 就緒</span>';
                     } else {
                         modelStatus.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-yellow/10 text-neon-yellow animate-pulse';
-                        modelStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>模型載入中...</span>';
+                        modelStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>模型加载中...</span>';
                         setTimeout(checkHealth, 3000);
                     }
                 } catch (e) {
