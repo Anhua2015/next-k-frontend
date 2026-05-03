@@ -87,6 +87,30 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
+            <div id="oi-radar-highlights-slot" class="min-h-0 flex flex-col">
+                <div class="highlights-hero rounded-xl p-4 md:p-5 flex-1 flex flex-col justify-center">
+                    <div class="text-text-muted text-sm animate-pulse">加载值得关注…</div>
+                </div>
+            </div>
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] lg:max-h-[min(520px,calc(100vh-220px))]">
+                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">⚡ 费率转负 + OI 涨（s2）</h2>
+                        <p class="text-text-muted text-xs mt-0.5">近 7 日 · 与 Telegram 同源</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-blue/50 hover:text-neon-blue transition-colors">刷新</button>
+                    </div>
+                </div>
+                <div id="s2-signals-body" class="p-4 overflow-x-auto overflow-y-auto flex-1 min-h-0">
+                    <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                </div>
+            </div>
+        </section>
+
         <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
             <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -99,22 +123,6 @@
                 </div>
             </div>
             <div id="oi-radar-body" class="p-4">
-                <div class="text-text-muted text-sm animate-pulse">加载中…</div>
-            </div>
-        </div>
-
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover mt-6">
-            <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
-                <div>
-                    <h2 class="text-text-primary font-semibold flex items-center gap-2">⚡ 费率转负 + OI 涨（s2）</h2>
-                    <p class="text-text-muted text-xs mt-0.5">近 7 日与 Telegram 同源；整点过 5 分由后端定时写入</p>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
-                    <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-blue/50 hover:text-neon-blue transition-colors">刷新</button>
-                </div>
-            </div>
-            <div id="s2-signals-body" class="p-4 overflow-x-auto">
                 <div class="text-text-muted text-sm animate-pulse">加载中…</div>
             </div>
         </div>
@@ -410,39 +418,54 @@
                     <div class="mt-2 text-neon-blue/90">点击标的可在新标签页打开币安合约</div>
                 </div>`;
 
-            body.innerHTML = `
-                <div class="highlights-hero rounded-xl p-4 md:p-6 mb-6 -mx-1 md:mx-0">
-                    <div class="flex flex-wrap items-end gap-3 mb-1">
+            const highlightsHtml = `
+                <div class="highlights-hero rounded-xl p-4 md:p-5 h-full min-h-[160px] flex flex-col">
+                    <div class="flex flex-wrap items-end gap-3 mb-1 shrink-0">
                         <div class="flex items-center gap-2">
-                            <span class="text-3xl leading-none" aria-hidden="true">💡</span>
-                            <h3 class="hl-title text-xl md:text-2xl font-extrabold tracking-tight">值得关注</h3>
+                            <span class="text-2xl md:text-3xl leading-none" aria-hidden="true">💡</span>
+                            <h3 class="hl-title text-lg md:text-2xl font-extrabold tracking-tight">值得关注</h3>
                         </div>
                         <span class="text-xs text-neon-yellow/90 font-medium uppercase tracking-wider">优先信号</span>
                     </div>
-                    <p class="text-text-muted text-xs mb-4">综合热度、费率、收筹池与 OI 的交叉提示</p>
-                    <div class="space-y-0">${highlights}</div>
-                </div>
+                    <p class="text-text-muted text-xs mb-3 shrink-0">综合热度、费率、收筹池与 OI 的交叉提示</p>
+                    <div class="space-y-0 flex-1 min-h-0 overflow-y-auto max-h-[min(320px,46vh)] lg:max-h-[min(400px,calc(100vh-260px))] pr-1">${highlights}</div>
+                </div>`;
+
+            const hlSlot = document.getElementById('oi-radar-highlights-slot');
+            if (hlSlot) {
+                hlSlot.innerHTML = highlightsHtml;
+            }
+
+            const gridBlock = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     ${oiRadarCard('热度榜', '🔥', hot)}
                     ${oiRadarCard('追多（按费率）', '🔥', chase)}
                     ${oiRadarCard('综合', '📊', combined)}
                     ${oiRadarCard('埋伏', '🎯', ambush)}
                 </div>
-                ${legend}
-            `;
+                ${legend}`;
+
+            body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
+            const hl = document.getElementById('oi-radar-highlights-slot');
             const j = await API.accumulationOiRadarRefresh();
             if (!j.accepted) {
                 if (j.busy) {
                     body.innerHTML = '<div class="text-neon-yellow text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
+                    if (hl) {
+                        hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">收筹快照扫描排队中，值得关注稍后更新。</div>';
+                    }
                 }
                 return;
             }
             for (let i = 0; i < 45; i++) {
                 body.innerHTML = `<div class="text-text-muted text-sm py-3">后台扫描中（约 1–2 分钟）… 已等待 ${i + 1}/45 轮</div>`;
+                if (hl) {
+                    hl.innerHTML = `<div class="rounded-xl border border-border bg-surface-light/30 p-4 text-text-muted text-sm">后台扫描中… 已等待 ${i + 1}/45 轮<br/><span class="text-xs text-text-muted/80">值得关注将在完成后显示在首屏左侧</span></div>`;
+                }
                 await new Promise((r) => setTimeout(r, 4000));
                 const data = await API.accumulationOiRadar();
                 if (data && data.ok) {
@@ -451,6 +474,9 @@
                 }
             }
             body.innerHTML = '<div class="text-neon-yellow text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
+            if (hl) {
+                hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">快照仍未就绪，值得关注暂无法更新。</div>';
+            }
         }
 
         async function loadAccumulationOiRadar(options = {}) {
@@ -458,18 +484,25 @@
             const body = document.getElementById('oi-radar-body');
             const tsEl = document.getElementById('oi-radar-ts');
             const btn = document.getElementById('oi-radar-refresh');
+            const hl = document.getElementById('oi-radar-highlights-slot');
             if (!body) return;
             if (btn) btn.disabled = true;
 
             try {
                 if (forceRefresh) {
                     tsEl.textContent = '…';
+                    if (hl) {
+                        hl.innerHTML = '<div class="rounded-xl border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在刷新收筹快照…</div>';
+                    }
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
                 tsEl.textContent = '…';
                 body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载快照…</div>';
+                if (hl) {
+                    hl.innerHTML = '<div class="rounded-xl border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">加载值得关注…</div>';
+                }
                 const data = await API.accumulationOiRadar();
 
                 if (data.ok) {
@@ -480,11 +513,17 @@
                 tsEl.textContent = '';
                 if (data.error === 'no_snapshot') {
                     body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
+                    if (hl) {
+                        hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
+                    }
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
                 body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                if (hl) {
+                    hl.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                }
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
@@ -493,6 +532,9 @@
                     ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连 Railway；本机可加 <code class="text-neon-blue">?api=http://127.0.0.1:8000</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
+                if (hl) {
+                    hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
+                }
             } finally {
                 if (btn) btn.disabled = false;
             }
