@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Next K - AI K線預測</title>
+    <title>收筹池 · OI 监控 - Next K</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart is now rendered as PNG from backend Matplotlib API -->
     <script>
         tailwind.config = {
             theme: {
@@ -34,30 +33,11 @@
             color: #FFFFFF;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-
-        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0b0e11; }
         ::-webkit-scrollbar-thumb { background: #2a3441; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #5A6B7D; }
-
-        /* Selection */
         ::selection { background: rgba(120, 80, 255, 0.3); }
-
-        /* Glow effects */
-        .glow-green { box-shadow: 0 0 20px rgba(0, 227, 150, 0.3); }
-        .glow-red { box-shadow: 0 0 20px rgba(255, 69, 96, 0.3); }
-        .glow-purple { box-shadow: 0 0 30px rgba(120, 80, 255, 0.4); }
-        .glow-blue { box-shadow: 0 0 20px rgba(0, 180, 216, 0.3); }
-
-        /* Gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #7850FF, #00B4D8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Card hover */
         .card-hover {
             transition: all 0.2s;
         }
@@ -65,321 +45,58 @@
             border-color: rgba(120, 80, 255, 0.5);
             box-shadow: 0 0 30px rgba(120, 80, 255, 0.2);
         }
-
-        /* Button primary */
-        .btn-primary {
-            background: #7850FF;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            filter: brightness(1.1);
-            box-shadow: 0 0 30px rgba(120, 80, 255, 0.4);
-        }
-
-        /* Pulse animation */
-        @keyframes pulse-slow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .animate-pulse-slow { animation: pulse-slow 3s ease-in-out infinite; }
-
-        /* Marquee */
-        .marquee-container { overflow: hidden; }
-        .marquee-content {
-            display: flex;
-            animation: marquee 30s linear infinite;
-        }
-        @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        /* Progress bar */
-        .prob-bar {
-            background: #1e2530;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .prob-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #7850FF, #00B4D8);
-            transition: width 0.5s ease;
-        }
-
-        /* Tab active */
-        .tab-active {
-            border-bottom: 2px solid #7850FF;
-            color: #FFFFFF;
-        }
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- Header -->
     <header class="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
-                <!-- Logo -->
                 <div class="flex items-center gap-2">
-                    <div class="relative">
-                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                        </div>
-                        <div class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-neon-green rounded-full animate-pulse-slow"></div>
+                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-text-primary tracking-tight">
                             Next <span class="text-neon-purple">K</span>
+                            <span class="text-text-muted font-normal text-sm ml-2">· 收筹池 · OI 监控</span>
                         </h1>
                     </div>
                 </div>
-
-                <!-- Status -->
-                <div class="flex items-center gap-3">
-                    <div id="model-status" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-yellow/10 text-neon-yellow">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                        <span>加载中...</span>
-                    </div>
-                    <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3"/>
-                        </svg>
-                        <span>連線中...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Radar Marquee -->
-        <div class="border-t border-border/50 bg-surface/30">
-            <div class="max-w-7xl mx-auto">
-                <div id="radar-marquee" class="marquee-container py-2 px-4">
-                    <div class="text-text-muted text-sm">掃描市場中...</div>
+                <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red">
+                    <span>连接中…</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 py-6">
-        <!-- Asset Type & Symbol Selector -->
-        <div class="mb-6">
-            <!-- Asset Types -->
-            <div class="flex gap-2 mb-4">
-                <button onclick="switchAssetType('crypto')" id="asset-crypto" class="asset-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-neon-purple/20 text-neon-purple border border-neon-purple/30 text-sm font-medium">
-                    <span>₿</span> 加密貨幣
-                </button>
-                <button onclick="switchAssetType('stock')" id="asset-stock" class="asset-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-light text-text-muted border border-border text-sm font-medium hover:bg-surface">
-                    <span>📈</span> 股票
-                </button>
-                <button onclick="switchAssetType('forex')" id="asset-forex" class="asset-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-light text-text-muted border border-border text-sm font-medium hover:bg-surface">
-                    <span>💱</span> 外匯
-                </button>
-            </div>
-
-            <!-- Symbols -->
-            <div id="symbol-buttons" class="flex gap-2 flex-wrap">
-                <!-- Rendered dynamically -->
-            </div>
-        </div>
-
-        <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <!-- Chart Area - 3 columns -->
-            <div class="lg:col-span-3">
-                <div class="bg-surface rounded-xl border border-border overflow-hidden">
-                    <!-- Chart Header -->
-                    <div class="px-4 py-3 border-b border-border flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div>
-                                <h2 id="chart-symbol" class="text-text-primary font-semibold">BTC/USDT</h2>
-                                <p id="chart-subtitle" class="text-text-muted text-xs mt-0.5">1H · 24根K線預測</p>
-                            </div>
-                            <!-- Timeframe Selector -->
-                            <div class="flex gap-1">
-                                <button onclick="selectTimeframe('1h')" class="tf-btn px-3 py-1.5 rounded-lg bg-neon-blue/20 text-neon-blue border border-neon-blue/30 text-xs font-medium" data-timeframe="1h">1H</button>
-                                <button onclick="selectTimeframe('4h')" class="tf-btn px-3 py-1.5 rounded-lg bg-surface-light text-text-muted border border-border hover:bg-surface text-xs font-medium" data-timeframe="4h">4H</button>
-                                <button onclick="selectTimeframe('1d')" class="tf-btn px-3 py-1.5 rounded-lg bg-surface-light text-text-muted border border-border hover:bg-surface text-xs font-medium" data-timeframe="1d">1D</button>
-                                <button onclick="selectTimeframe('1w')" class="tf-btn px-3 py-1.5 rounded-lg bg-surface-light text-text-muted border border-border hover:bg-surface text-xs font-medium" data-timeframe="1w">1W</button>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div id="current-price" class="text-text-primary font-mono text-lg font-semibold">--</div>
-                            <div id="price-change" class="text-text-muted text-xs">--</div>
-                        </div>
-                    </div>
-
-                    <!-- Chart (Matplotlib PNG from API) -->
-                    <div class="p-2">
-                        <div id="chart-container" class="w-full rounded-lg overflow-hidden bg-surface flex items-center justify-center min-h-[400px]">
-                            <img id="chart-img" class="w-full h-auto" style="display: none;" alt="Forecast Chart">
-                            <div id="chart-loading" class="text-text-muted animate-pulse">載入圖表中...</div>
-                        </div>
-                    </div>
+        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
+            <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-text-primary font-semibold flex items-center gap-2">📊 收筹池 · OI 监控</h2>
+                    <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏 · 值得关注（币安 U 本位 · 仅展示、不触发 Telegram）</p>
                 </div>
-
-                <!-- Info Cards -->
-                <div id="info-cards" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-                    <!-- Rendered dynamically -->
-                </div>
-
-                <!-- Buy Point Analysis -->
-                <div class="mt-6 bg-surface rounded-xl border border-border p-4">
-                    <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-3">🛒 買入點分析</h3>
-                    <div id="buy-point-analysis" class="space-y-3">
-                        <div class="text-text-muted text-sm">加载中...</div>
-                    </div>
-                </div>
-
-                <!-- 庄家雷达（OI 三策略 + 热度，與後端 /api/accumulation/oi-radar 同源） -->
-                <div class="mt-6 bg-surface rounded-xl border border-border overflow-hidden card-hover">
-                    <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                            <h3 class="text-text-primary font-semibold flex items-center gap-2">🏦 庄家雷达</h3>
-                            <p class="text-text-muted text-xs mt-0.5">熱度榜 · 追多 · 綜合 · 埋伏 · 值得關注（幣安 U 本位 · 僅展示、不觸發 Telegram）</p>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
-                            <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
-                        </div>
-                    </div>
-                    <div id="oi-radar-body" class="p-4">
-                        <div class="text-text-muted text-sm animate-pulse">載入莊家雷達...</div>
-                    </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
+                    <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
                 </div>
             </div>
-
-            <!-- Sidebar - 1 column -->
-            <div class="space-y-6">
-                <!-- Trade Simulator -->
-                <div class="bg-surface rounded-xl border border-border p-4">
-                    <h3 class="text-text-primary font-semibold mb-4 flex items-center gap-2">
-                        <span class="text-lg">🎮</span> 交易模擬器
-                    </h3>
-                    <p class="text-text-muted text-xs mb-4">下單前，先讓AI幫你跑1000次未來</p>
-
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-text-muted text-xs mb-1">交易對</label>
-                            <select id="sim-symbol" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                            </select>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">方向</label>
-                                <select id="sim-action" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                                    <option value="buy">做多</option>
-                                    <option value="sell">做空</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">槓桿</label>
-                                <select id="sim-leverage" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                                    <option value="1">1x</option>
-                                    <option value="5">5x</option>
-                                    <option value="10">10x</option>
-                                    <option value="20">20x</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-text-muted text-xs mb-1">倉位 (USDT)</label>
-                            <input type="number" id="sim-size" value="1000" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">止損</label>
-                                <input type="number" id="sim-sl" placeholder="可選" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">止盈</label>
-                                <input type="number" id="sim-tp" placeholder="可選" class="w-full px-3 py-2 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                            </div>
-                        </div>
-
-                        <button onclick="runSimulation()" class="w-full btn-primary py-2.5 rounded-lg text-white font-medium">
-                            🚀 開始模擬
-                        </button>
-                    </div>
-
-                    <!-- Simulation Result -->
-                    <div id="sim-result" class="mt-4 hidden">
-                    </div>
-                </div>
-
-                <!-- Price Ranges -->
-                <div class="bg-surface rounded-xl border border-border p-4">
-                    <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-3">📊 價格區間概率</h3>
-                    <div id="price-ranges" class="space-y-2">
-                        <div class="text-text-muted text-sm">加载中...</div>
-                    </div>
-                </div>
-
-                <!-- Key Levels -->
-                <div class="bg-surface rounded-xl border border-border p-4 glow-purple">
-                    <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-3">🎯 關鍵價位</h3>
-                    <div id="key-levels" class="space-y-2">
-                        <div class="text-text-muted text-sm">加载中...</div>
-                    </div>
-                </div>
-
-                <!-- Backtesting -->
-                <div class="bg-surface rounded-xl border border-border p-4">
-                    <h3 class="text-text-primary font-semibold mb-3 flex items-center gap-2">
-                        <span class="text-lg">📈</span> 回測驗證
-                    </h3>
-                    <p class="text-text-muted text-xs mb-3">驗證模型在歷史數據上的預測準確度</p>
-
-                    <div class="space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">測試週期</label>
-                                <select id="bt-periods" class="w-full px-2 py-1.5 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                                    <option value="3" selected>3次 (快)</option>
-                                    <option value="5">5次</option>
-                                    <option value="8">8次 (慢)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-text-muted text-xs mb-1">預測長度</label>
-                                <select id="bt-horizon" class="w-full px-2 py-1.5 rounded-lg bg-surface-light border border-border text-text-primary text-sm focus:border-neon-purple focus:outline-none">
-                                    <option value="6" selected>6根 (快)</option>
-                                    <option value="12">12根</option>
-                                    <option value="18">18根 (慢)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <button onclick="runBacktest()" id="bt-button" class="w-full bg-neon-blue/20 text-neon-blue border border-neon-blue/30 py-2 rounded-lg text-sm font-medium hover:bg-neon-blue/30 transition-colors">
-                            🧪 開始回測
-                        </button>
-                    </div>
-
-                    <!-- Backtest Result -->
-                    <div id="bt-result" class="mt-3 hidden">
-                    </div>
-                </div>
+            <div id="oi-radar-body" class="p-4">
+                <div class="text-text-muted text-sm animate-pulse">加载中…</div>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-border py-4 mt-8">
+    <footer class="border-t border-border py-6 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center text-text-muted text-xs">
-            <p>Next K v2.0.0 · Powered by Kronos Foundation Model</p>
-            <p class="mt-1 text-text-muted/60">本產品僅供研究參考，不構成投資建議</p>
+            <p>Next K · 收筹池 · OI 监控</p>
+            <p class="mt-1 text-text-muted/60">仅供研究参考，不构成投资建议</p>
         </div>
     </footer>
 
     <script>
-        // ============== Configuration ==============
-        // API Base: 静态页与 FastAPI 不同端口时，不能用同源 ''。优先级：URL ?api= > localStorage NEXT_K_API_BASE > 默认
         const API_BASE = (function resolveApiBase() {
             try {
                 const q = new URLSearchParams(window.location.search).get('api');
@@ -392,7 +109,7 @@
             const h = window.location.hostname;
             const proto = window.location.protocol;
             if (h === 'localhost' || h === '127.0.0.1') {
-                return 'http://127.0.0.1:8000';  // uvicorn 默认端口；若不同请 ?api=http://127.0.0.1:端口
+                return 'http://127.0.0.1:8000';
             }
             if (proto === 'file:' || !h) {
                 return 'http://127.0.0.1:8000';
@@ -400,63 +117,9 @@
             return 'https://next-k-api-production.up.railway.app';
         })();
 
-        // ============== State ==============
-        let currentSymbol = 'BTC/USDT';
-        let currentAssetType = 'crypto';
-        let currentTimeframe = '1h';
-        // Chart is now rendered as PNG from backend API (Matplotlib)
-
-        const SYMBOLS = {
-            crypto: [
-                { symbol: 'BTC/USDT', name: 'Bitcoin' },
-                { symbol: 'ETH/USDT', name: 'Ethereum' },
-                { symbol: 'SOL/USDT', name: 'Solana' },
-                { symbol: 'BNB/USDT', name: 'BNB' },
-                { symbol: 'PEPE/USDT', name: 'Pepe' }
-            ],
-            stock: [
-                { symbol: 'AAPL', name: 'Apple' },
-                { symbol: 'MSFT', name: 'Microsoft' },
-                { symbol: 'GOOGL', name: 'Google' },
-                { symbol: 'NVDA', name: 'Nvidia' },
-                { symbol: 'TSLA', name: 'Tesla' }
-            ],
-            forex: [
-                { symbol: 'EUR/USD', name: '歐元/美元' },
-                { symbol: 'GBP/USD', name: '英鎊/美元' },
-                { symbol: 'USD/JPY', name: '美元/日圓' },
-                { symbol: 'AUD/USD', name: '澳元/美元' },
-                { symbol: 'USD/CAD', name: '美元/加元' }
-            ]
-        };
-
-        // ============== API ==============
         const API = {
             async health() {
                 const res = await fetch(`${API_BASE}/api/health`);
-                return res.json();
-            },
-            async weather(symbol, assetType = 'crypto', timeframe = '1h') {
-                const res = await fetch(`${API_BASE}/api/weather/${encodeURIComponent(symbol)}?asset_type=${assetType}&timeframe=${timeframe}`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async radar(assetType = 'crypto') {
-                const res = await fetch(`${API_BASE}/api/radar?asset_type=${assetType}`);
-                return res.json();
-            },
-            async simulate(params) {
-                const res = await fetch(`${API_BASE}/api/simulate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(params)
-                });
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async backtest(symbol, assetType = 'crypto', timeframe = '1h', testPeriods = 5, horizon = 12) {
-                const res = await fetch(`${API_BASE}/api/backtest/${encodeURIComponent(symbol)}?asset_type=${assetType}&timeframe=${timeframe}&test_periods=${testPeriods}&horizon=${horizon}`);
-                if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
             async accumulationOiRadar() {
@@ -471,251 +134,6 @@
             }
         };
 
-        // ============== UI Functions ==============
-        function switchAssetType(assetType) {
-            currentAssetType = assetType;
-            ['crypto', 'stock', 'forex'].forEach(t => {
-                const btn = document.getElementById(`asset-${t}`);
-                if (t === assetType) {
-                    btn.className = 'asset-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-neon-purple/20 text-neon-purple border border-neon-purple/30 text-sm font-medium';
-                } else {
-                    btn.className = 'asset-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-light text-text-muted border border-border text-sm font-medium hover:bg-surface';
-                }
-            });
-            renderSymbolButtons(assetType);
-            updateSimSymbols(assetType);
-            const symbols = SYMBOLS[assetType];
-            if (symbols && symbols.length > 0) {
-                selectSymbol(symbols[0].symbol);
-            }
-            loadRadar();
-        }
-
-        function renderSymbolButtons(assetType) {
-            const container = document.getElementById('symbol-buttons');
-            const symbols = SYMBOLS[assetType] || [];
-            container.innerHTML = symbols.map((s, i) => `
-                <button onclick="selectSymbol('${s.symbol}')" class="symbol-btn px-4 py-2 rounded-lg ${i === 0 ? 'bg-neon-purple/20 text-neon-purple border-neon-purple/30' : 'bg-surface-light text-text-muted border-border hover:bg-surface'} border text-sm font-medium" data-symbol="${s.symbol}">
-                    ${s.symbol}
-                </button>
-            `).join('');
-        }
-
-        function updateSimSymbols(assetType) {
-            const select = document.getElementById('sim-symbol');
-            const symbols = SYMBOLS[assetType] || [];
-            select.innerHTML = symbols.map(s => `<option value="${s.symbol}">${s.symbol}</option>`).join('');
-        }
-
-        function selectSymbol(symbol) {
-            currentSymbol = symbol;
-            document.querySelectorAll('.symbol-btn').forEach(btn => {
-                const isActive = btn.dataset.symbol === symbol;
-                if (isActive) {
-                    btn.className = 'symbol-btn px-4 py-2 rounded-lg bg-neon-purple/20 text-neon-purple border border-neon-purple/30 text-sm font-medium';
-                } else {
-                    btn.className = 'symbol-btn px-4 py-2 rounded-lg bg-surface-light text-text-muted border border-border hover:bg-surface text-sm font-medium';
-                }
-            });
-            document.getElementById('chart-symbol').textContent = symbol;
-            loadWeather(symbol);
-        }
-
-        function selectTimeframe(timeframe) {
-            currentTimeframe = timeframe;
-            document.querySelectorAll('.tf-btn').forEach(btn => {
-                const isActive = btn.dataset.timeframe === timeframe;
-                if (isActive) {
-                    btn.className = 'tf-btn px-3 py-1.5 rounded-lg bg-neon-blue/20 text-neon-blue border border-neon-blue/30 text-xs font-medium';
-                } else {
-                    btn.className = 'tf-btn px-3 py-1.5 rounded-lg bg-surface-light text-text-muted border border-border hover:bg-surface text-xs font-medium';
-                }
-            });
-            loadWeather(currentSymbol);
-        }
-
-        function formatPrice(price) {
-            if (price < 0.01) return price.toFixed(8);
-            if (price < 1) return price.toFixed(6);
-            if (price < 100) return price.toFixed(4);
-            return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-
-        // ============== Chart ==============
-        // Chart is now rendered as PNG image from backend Matplotlib API
-        function loadChartImage(symbol, assetType, timeframe) {
-            const chartImg = document.getElementById('chart-img');
-            const chartLoading = document.getElementById('chart-loading');
-
-            // Show loading
-            chartImg.style.display = 'none';
-            chartLoading.style.display = 'block';
-            chartLoading.textContent = '生成圖表中...';
-
-            // Build chart URL with timeframe
-            const chartUrl = `${API_BASE}/api/chart/${encodeURIComponent(symbol)}?asset_type=${assetType}&timeframe=${timeframe}&sample_count=5&t=${Date.now()}`;
-
-            // Load image
-            chartImg.onload = () => {
-                chartImg.style.display = 'block';
-                chartLoading.style.display = 'none';
-            };
-            chartImg.onerror = () => {
-                chartLoading.textContent = '圖表載入失敗';
-            };
-            chartImg.src = chartUrl;
-        }
-
-        // ============== Weather ==============
-        async function loadWeather(symbol) {
-            try {
-                document.getElementById('current-price').textContent = '加载中...';
-                document.getElementById('price-ranges').innerHTML = '<div class="text-text-muted text-sm animate-pulse">分析中...</div>';
-                document.getElementById('key-levels').innerHTML = '<div class="text-text-muted text-sm animate-pulse">分析中...</div>';
-                document.getElementById('buy-point-analysis').innerHTML = '<div class="text-text-muted text-sm animate-pulse">分析中...</div>';
-
-                const data = await API.weather(symbol, currentAssetType, currentTimeframe);
-
-                // Update price and timeframe indicator
-                document.getElementById('current-price').textContent = '$' + formatPrice(data.current_price);
-                const changeClass = data.upside_prob > 50 ? 'text-neon-green' : 'text-neon-red';
-                document.getElementById('price-change').innerHTML = `上漲概率: <span class="${changeClass}">${data.upside_prob}%</span>`;
-                document.getElementById('chart-subtitle').textContent = `${currentTimeframe.toUpperCase()} · ${data.horizon}根K線預測`;
-
-                // Load chart image from backend API (Matplotlib)
-                loadChartImage(symbol, currentAssetType, currentTimeframe);
-
-                // Update info cards
-                document.getElementById('info-cards').innerHTML = `
-                    <div class="bg-surface rounded-lg border border-border p-3">
-                        <div class="text-text-muted text-xs mb-1">上漲概率</div>
-                        <div class="font-mono text-sm font-semibold ${data.upside_prob > 50 ? 'text-neon-green' : 'text-neon-red'}">${data.upside_prob.toFixed(1)}%</div>
-                    </div>
-                    <div class="bg-surface rounded-lg border border-border p-3">
-                        <div class="text-text-muted text-xs mb-1">波動率</div>
-                        <div class="font-mono text-sm font-semibold text-text-primary">${data.volatility.toFixed(2)}%</div>
-                    </div>
-                    <div class="bg-surface rounded-lg border border-border p-3">
-                        <div class="text-text-muted text-xs mb-1">模型信心</div>
-                        <div class="font-mono text-sm font-semibold ${data.confidence > 0.7 ? 'text-neon-purple' : 'text-text-primary'}">${(data.confidence * 100).toFixed(1)}%</div>
-                    </div>
-                    <div class="bg-surface rounded-lg border border-border p-3">
-                        <div class="text-text-muted text-xs mb-1">盈虧比</div>
-                        <div class="font-mono text-sm font-semibold text-neon-blue">${data.risk_reward_ratio || '--'}:1</div>
-                    </div>
-                `;
-
-                // Update price ranges
-                document.getElementById('price-ranges').innerHTML = data.price_ranges.slice(0, 5).map(r => `
-                    <div class="flex items-center gap-2">
-                        <div class="flex-1">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="${r.is_current ? 'text-neon-purple' : 'text-text-muted'}">$${formatPrice(r.low)} - $${formatPrice(r.high)}</span>
-                                <span class="text-text-primary font-medium">${r.probability}%</span>
-                            </div>
-                            <div class="prob-bar h-1.5">
-                                <div class="prob-fill" style="width: ${r.probability}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-
-                // Update key levels
-                document.getElementById('key-levels').innerHTML = `
-                    <div class="space-y-2">
-                        <div class="text-xs text-text-muted mb-2">📈 阻力位</div>
-                        ${data.resistance_levels.map(l => `
-                            <div class="flex justify-between text-sm">
-                                <span class="text-neon-red font-mono">$${formatPrice(l.price)}</span>
-                                <span class="text-text-muted">突破 ${(100 - l.probability).toFixed(0)}%</span>
-                            </div>
-                        `).join('')}
-                        <div class="text-xs text-text-muted mt-3 mb-2">📉 支撐位</div>
-                        ${data.support_levels.map(l => `
-                            <div class="flex justify-between text-sm">
-                                <span class="text-neon-green font-mono">$${formatPrice(l.price)}</span>
-                                <span class="text-text-muted">守住 ${l.probability.toFixed(0)}%</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-
-                // Update buy point analysis
-                if (data.buy_point_score !== undefined && data.buy_point_label !== undefined && data.buy_point_reasons !== undefined) {
-                    const scoreColor = data.buy_point_score >= 70 ? 'text-neon-green' : data.buy_point_score >= 50 ? 'text-neon-yellow' : 'text-neon-red';
-                    const labelColor = data.buy_point_label.includes('建议') || data.buy_point_label.includes('推荐') ? 'text-neon-green' : 
-                                      data.buy_point_label.includes('不建议') || data.buy_point_label.includes('不推荐') ? 'text-neon-red' : 'text-neon-yellow';
-                    
-                    document.getElementById('buy-point-analysis').innerHTML = `
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="text-text-muted text-xs mb-1">買入點評分</div>
-                                    <div class="font-mono text-lg font-semibold ${scoreColor}">${data.buy_point_score.toFixed(0)}</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-text-muted text-xs mb-1">建議</div>
-                                    <div class="text-sm font-medium ${labelColor}">${data.buy_point_label}</div>
-                                </div>
-                            </div>
-                            ${data.buy_point_reasons && data.buy_point_reasons.length > 0 ? `
-                                <div class="pt-2 border-t border-border">
-                                    <div class="text-text-muted text-xs mb-2">分析原因</div>
-                                    <div class="space-y-1.5">
-                                        ${data.buy_point_reasons.map(reason => `
-                                            <div class="flex items-start gap-2 text-xs text-text-secondary">
-                                                <span class="text-neon-purple mt-0.5">•</span>
-                                                <span>${reason}</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('buy-point-analysis').innerHTML = '<div class="text-text-muted text-sm">暫無數據</div>';
-                }
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('current-price').textContent = '錯誤';
-                document.getElementById('price-ranges').innerHTML = `<div class="text-neon-red text-sm">${e.message}</div>`;
-            }
-        }
-
-        // ============== Radar ==============
-        async function loadRadar() {
-            try {
-                const items = await API.radar(currentAssetType);
-                const marquee = document.getElementById('radar-marquee');
-
-                if (!items || items.length === 0) {
-                    marquee.innerHTML = '<div class="text-text-muted text-sm py-1">暫無異動信號</div>';
-                    return;
-                }
-
-                const content = items.map(item => {
-                    const signalColor = item.signal === 'bullish' ? 'text-neon-green' : item.signal === 'bearish' ? 'text-neon-red' : 'text-text-muted';
-                    const signalText = item.signal === 'bullish' ? '🟢 看多' : item.signal === 'bearish' ? '🔴 看空' : '⚪ 震盪';
-                    const changeColor = item.price_change > 0 ? 'text-neon-green' : 'text-neon-red';
-                    return `
-                        <div class="flex items-center gap-4 px-4 cursor-pointer hover:bg-surface-light/50 rounded-lg py-1 transition-colors" onclick="selectSymbol('${item.symbol}')">
-                            <span class="font-medium text-text-primary">${item.symbol}</span>
-                            <span class="font-mono text-sm ${changeColor}">${item.price_change > 0 ? '+' : ''}${item.price_change.toFixed(2)}%</span>
-                            <span class="text-xs ${signalColor}">${signalText}</span>
-                            <span class="text-xs text-neon-yellow">異動 ${item.anomaly_score.toFixed(0)}</span>
-                        </div>
-                    `;
-                }).join('');
-
-                marquee.innerHTML = `<div class="marquee-content">${content}${content}</div>`;
-            } catch (e) {
-                console.error('Radar error:', e);
-            }
-        }
-
-        // ============== 庄家雷达 OI（accumulation /api/accumulation/oi-radar） ==============
         function escHtml(s) {
             if (s == null || s === '') return '';
             const d = document.createElement('div');
@@ -776,11 +194,9 @@
 
         function onOiRadarPickSymbol(chartSymbol) {
             if (!chartSymbol) return;
-            switchAssetType('crypto');
-            selectSymbol(chartSymbol);
-            try {
-                document.getElementById('chart-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } catch (e) { /* ignore */ }
+            const perp = chartSymbol.replace('/', '').toUpperCase();
+            const url = 'https://www.binance.com/zh-CN/futures/' + encodeURIComponent(perp);
+            window.open(url, '_blank', 'noopener,noreferrer');
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -805,13 +221,13 @@
                 const px = Number(d.px_chg);
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> ${oiRadarHotTags(d)}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暫無熱度標的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无热度标的</div>';
 
             const chase = (data.chase || []).slice(0, 8).map(d => {
                 const px = Number(d.px_chg);
                 const line = `<span class="font-semibold text-text-primary w-16 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-blue font-mono">${Number(d.fr_pct).toFixed(3)}%</span> <span class="text-text-muted">${escHtml(d.trend || '')}</span> <span class="text-text-muted">|</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span>`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暫無追多標的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无追多标的</div>';
 
             const combined = (data.combined || []).slice(0, 8).map(d => {
                 const dims = [];
@@ -821,7 +237,7 @@
                 if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">⚡OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${dims.join(' ')}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暫無綜合上榜</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无综合上榜</div>';
 
             const ambush = (data.ambush || []).slice(0, 8).map(d => {
                 const dark = Number(d.d6h) > 2 && Math.abs(Number(d.px_chg)) < 5;
@@ -831,32 +247,33 @@
                 ];
                 if (dark) parts.push('<span class="text-neon-yellow">🎯暗流</span>');
                 if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">横盘' + Number(d.sw_days).toFixed(0) + '天</span>');
-                if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">費率' + Number(d.fr_pct).toFixed(2) + '%</span>');
+                if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">费率' + Number(d.fr_pct).toFixed(2) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${parts.join(' ')}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暫無埋伏標的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无埋伏标的</div>';
 
             const highlights = (data.highlights || []).map(h =>
                 `<div class="flex items-start gap-2 text-xs text-text-secondary"><span class="text-neon-purple shrink-0">💡</span><span>${escHtml(h)}</span></div>`
-            ).join('') || '<div class="text-text-muted text-xs">暫無提醒</div>';
+            ).join('') || '<div class="text-text-muted text-xs">暂无提醒</div>';
 
             const legend = `
                 <div class="mt-4 pt-3 border-t border-border text-text-muted text-[11px] leading-relaxed space-y-0.5">
-                    <div class="font-medium text-text-secondary mb-1">📖 圖例</div>
-                    <div>熱度 = CG 熱搜 + 成交量暴增（OI 領先指標）</div>
-                    <div>費率負 = 空頭燃料 · 💎 市值 · 💤 橫盤（收籌）</div>
-                    <div>🔥💤 熱度+收籌 = 最強預判 · 🔥⚡ 熱度+OI = 正在發生</div>
+                    <div class="font-medium text-text-secondary mb-1">📖 图例</div>
+                    <div>热度 = CG 热搜 + 成交量暴增（OI 领先指标）</div>
+                    <div>费率负 = 空头燃料 · 💎 市值 · 💤 横盘（吸筹）</div>
+                    <div>🔥💤 热度+吸筹 = 最强预判 · 🔥⚡ 热度+OI = 正在发生</div>
+                    <div class="mt-2 text-neon-blue/90">点击标的可在新标签页打开币安合约</div>
                 </div>`;
 
             body.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${oiRadarCard('熱度榜', '🔥', hot)}
-                    ${oiRadarCard('追多（按費率）', '🔥', chase)}
-                    ${oiRadarCard('綜合', '📊', combined)}
+                    ${oiRadarCard('热度榜', '🔥', hot)}
+                    ${oiRadarCard('追多（按费率）', '🔥', chase)}
+                    ${oiRadarCard('综合', '📊', combined)}
                     ${oiRadarCard('埋伏', '🎯', ambush)}
                 </div>
                 <div class="mt-3 bg-surface-light/40 rounded-lg border border-border p-3">
-                    <div class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">💡 值得關注</div>
+                    <div class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">💡 值得关注</div>
                     <div class="space-y-1.5">${highlights}</div>
                 </div>
                 ${legend}
@@ -868,12 +285,12 @@
             const j = await API.accumulationOiRadarRefresh();
             if (!j.accepted) {
                 if (j.busy) {
-                    body.innerHTML = '<div class="text-neon-yellow text-sm">已有掃描在執行，請約 1–2 分鐘後再按刷新。</div>';
+                    body.innerHTML = '<div class="text-neon-yellow text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
                 }
                 return;
             }
             for (let i = 0; i < 45; i++) {
-                body.innerHTML = `<div class="text-text-muted text-sm py-3">後台掃描中（約 1–2 分鐘）… 已等待 ${i + 1}/45 輪</div>`;
+                body.innerHTML = `<div class="text-text-muted text-sm py-3">后台扫描中（约 1–2 分钟）… 已等待 ${i + 1}/45 轮</div>`;
                 await new Promise((r) => setTimeout(r, 4000));
                 const data = await API.accumulationOiRadar();
                 if (data && data.ok) {
@@ -881,7 +298,7 @@
                     return;
                 }
             }
-            body.innerHTML = '<div class="text-neon-yellow text-sm">掃描較久仍未寫入快照，請稍後再試或確認 Railway 日誌。</div>';
+            body.innerHTML = '<div class="text-neon-yellow text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
         }
 
         async function loadAccumulationOiRadar(options = {}) {
@@ -900,7 +317,7 @@
                 }
 
                 tsEl.textContent = '…';
-                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">載入快照…</div>';
+                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载快照…</div>';
                 const data = await API.accumulationOiRadar();
 
                 if (data.ok) {
@@ -910,18 +327,18 @@
 
                 tsEl.textContent = '';
                 if (data.error === 'no_snapshot') {
-                    body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在啟動後台掃描並自動輪詢（約 1–2 分鐘）…</p>`;
+                    body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
-                body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暫無數據')}</div>`;
+                body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暂无数据')}</div>`;
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
-                const msg = e && e.message ? String(e.message) : '載入失敗';
+                const msg = e && e.message ? String(e.message) : '加载失败';
                 const hint = /fail(ed)? to fetch|networkerror|load failed/i.test(msg)
-                    ? '<p class="text-text-muted text-xs mt-2">常見原因：先前版本在瀏覽器端等待完整掃描逾時。請重新部署後端與本頁；GET 現改為<strong>秒開快照檔</strong>。若仍失敗請檢查 API 位址與 CORS。</p>'
+                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连 Railway；本机可加 <code class="text-neon-blue">?api=http://127.0.0.1:8000</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
             } finally {
@@ -929,155 +346,16 @@
             }
         }
 
-        // ============== Simulation ==============
-        async function runSimulation() {
-            const resultDiv = document.getElementById('sim-result');
-            resultDiv.classList.remove('hidden');
-            resultDiv.innerHTML = '<div class="text-text-muted text-sm animate-pulse text-center py-4">模擬中... (1000次)</div>';
-
-            try {
-                const params = {
-                    symbol: document.getElementById('sim-symbol').value,
-                    asset_type: currentAssetType,
-                    action: document.getElementById('sim-action').value,
-                    position_size: parseFloat(document.getElementById('sim-size').value),
-                    leverage: parseInt(document.getElementById('sim-leverage').value),
-                    stop_loss: parseFloat(document.getElementById('sim-sl').value) || null,
-                    take_profit: parseFloat(document.getElementById('sim-tp').value) || null,
-                    horizon: 24,
-                };
-
-                const data = await API.simulate(params);
-
-                const recClass = data.recommendation.includes('RECOMMENDED') && !data.recommendation.includes('NOT')
-                    ? 'bg-neon-green/10 text-neon-green border-neon-green/30'
-                    : data.recommendation.includes('CAUTION')
-                    ? 'bg-neon-yellow/10 text-neon-yellow border-neon-yellow/30'
-                    : 'bg-neon-red/10 text-neon-red border-neon-red/30';
-
-                resultDiv.innerHTML = `
-                    <div class="space-y-3">
-                        <div class="p-2 rounded-lg border ${recClass} text-xs font-medium">${data.recommendation}</div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted text-xs">勝率</div>
-                                <div class="font-mono text-sm ${data.win_rate > 50 ? 'text-neon-green' : 'text-neon-red'}">${data.win_rate.toFixed(1)}%</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted text-xs">期望收益</div>
-                                <div class="font-mono text-sm ${data.expected_pnl > 0 ? 'text-neon-green' : 'text-neon-red'}">${data.expected_pnl > 0 ? '+' : ''}$${data.expected_pnl.toFixed(2)}</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted text-xs">最大盈利</div>
-                                <div class="font-mono text-sm text-neon-green">+$${data.max_profit.toFixed(2)}</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted text-xs">最大虧損</div>
-                                <div class="font-mono text-sm text-neon-red">$${data.max_loss.toFixed(2)}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } catch (e) {
-                resultDiv.innerHTML = `<div class="text-neon-red text-sm text-center py-4">${e.message}</div>`;
-            }
-        }
-
-        // ============== Backtesting ==============
-        async function runBacktest() {
-            const resultDiv = document.getElementById('bt-result');
-            const button = document.getElementById('bt-button');
-
-            // Disable button during backtest
-            button.disabled = true;
-            button.innerHTML = '⏳ 回測中...';
-            button.className = 'w-full bg-surface-light text-text-muted border border-border py-2 rounded-lg text-sm font-medium cursor-not-allowed';
-
-            resultDiv.classList.remove('hidden');
-            resultDiv.innerHTML = '<div class="text-text-muted text-sm animate-pulse text-center py-4">🔄 AI模型計算中，請稍候...</div>';
-
-            try {
-                const testPeriods = parseInt(document.getElementById('bt-periods').value);
-                const horizon = parseInt(document.getElementById('bt-horizon').value);
-
-                const data = await API.backtest(currentSymbol, currentAssetType, currentTimeframe, testPeriods, horizon);
-
-                // Determine overall assessment
-                const isGood = data.direction_accuracy >= 60 && data.profitable_trades_pct >= 55;
-                const isModerate = data.direction_accuracy >= 50 && data.profitable_trades_pct >= 45;
-                const assessmentClass = isGood ? 'text-neon-green' : isModerate ? 'text-neon-yellow' : 'text-neon-red';
-                const assessmentText = isGood ? '✅ 表現優異' : isModerate ? '⚠️ 表現尚可' : '❌ 需謹慎';
-
-                resultDiv.innerHTML = `
-                    <div class="space-y-2">
-                        <div class="text-center p-2 rounded-lg bg-surface-light">
-                            <div class="text-xs text-text-muted mb-1">整體評估</div>
-                            <div class="text-sm font-semibold ${assessmentClass}">${assessmentText}</div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted">方向準確率</div>
-                                <div class="font-mono font-semibold ${data.direction_accuracy >= 55 ? 'text-neon-green' : 'text-neon-red'}">${data.direction_accuracy.toFixed(1)}%</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted">盈利交易比</div>
-                                <div class="font-mono font-semibold ${data.profitable_trades_pct >= 50 ? 'text-neon-green' : 'text-neon-red'}">${data.profitable_trades_pct.toFixed(1)}%</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted">平均誤差</div>
-                                <div class="font-mono font-semibold text-text-primary">${data.mean_absolute_error.toFixed(2)}%</div>
-                            </div>
-                            <div class="bg-surface-light rounded-lg p-2">
-                                <div class="text-text-muted">10%內準確</div>
-                                <div class="font-mono font-semibold ${data.within_10pct_accuracy >= 70 ? 'text-neon-green' : 'text-text-primary'}">${data.within_10pct_accuracy.toFixed(1)}%</div>
-                            </div>
-                        </div>
-                        <div class="text-text-muted text-xs text-center mt-2">
-                            測試: ${data.test_periods}次 · 時間框架: ${currentTimeframe.toUpperCase()}
-                        </div>
-                    </div>
-                `;
-            } catch (e) {
-                resultDiv.innerHTML = `<div class="text-neon-red text-sm text-center py-4">${e.message}</div>`;
-            } finally {
-                // Re-enable button
-                button.disabled = false;
-                button.innerHTML = '🧪 開始回測';
-                button.className = 'w-full bg-neon-blue/20 text-neon-blue border border-neon-blue/30 py-2 rounded-lg text-sm font-medium hover:bg-neon-blue/30 transition-colors';
-            }
-        }
-
-        // ============== Init ==============
         async function init() {
-            const checkHealth = async () => {
-                try {
-                    const health = await API.health();
-                    const connStatus = document.getElementById('connection-status');
-                    const modelStatus = document.getElementById('model-status');
-
-                    if (health.model_ready) {
-                        connStatus.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-green/10 text-neon-green';
-                        connStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg><span>已連線</span>';
-
-                        modelStatus.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-purple/10 text-neon-purple';
-                        modelStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>Kronos 就緒</span>';
-                    } else {
-                        modelStatus.className = 'hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-yellow/10 text-neon-yellow animate-pulse';
-                        modelStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span>模型加载中...</span>';
-                        setTimeout(checkHealth, 3000);
-                    }
-                } catch (e) {
-                    const connStatus = document.getElementById('connection-status');
-                    connStatus.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red';
-                    connStatus.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3"/></svg><span>連線失敗</span>';
-                }
-            };
-
-            checkHealth();
-            renderSymbolButtons(currentAssetType);
-            updateSimSymbols(currentAssetType);
-            loadWeather(currentSymbol);
-            loadRadar();
+            const conn = document.getElementById('connection-status');
+            try {
+                await API.health();
+                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-green/10 text-neon-green';
+                conn.innerHTML = '<span>API 已连接</span>';
+            } catch (e) {
+                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red';
+                conn.innerHTML = '<span>API 连接失败</span>';
+            }
             loadAccumulationOiRadar();
         }
 
