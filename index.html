@@ -377,7 +377,9 @@
 
         function s6ActionLabel(code) {
             const m = {
-                b_skipped: 'B级跳过',
+                a_skipped: 'A级跳过(仅S)',
+                b_skipped: 'B级跳过(仅S)',
+                non_s_skipped: '非S跳过',
                 opened: '已开仓',
                 env_rejected: '环境未通过',
                 swap_opened: '换仓开仓',
@@ -389,7 +391,11 @@
 
         function fillS6AutonomousAlpha(data, sigBody, posBody, tsEl) {
             if (!sigBody || !posBody) return;
-            const list = (data && data.signals) || [];
+            const rawSig = (data && data.signals) || [];
+            const list = rawSig.map((r) => {
+                const c = Array.isArray(r.candidates) ? r.candidates.filter((x) => x && x.strength === 'S') : [];
+                return { ...r, candidates: c, candidate_count: c.length };
+            });
             const bal = data && data.balance_usd != null ? Number(data.balance_usd) : null;
             const initB = data && data.initial_balance != null ? Number(data.initial_balance) : null;
             const open = (data && data.open_positions) || [];
