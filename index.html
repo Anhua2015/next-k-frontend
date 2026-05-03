@@ -233,6 +233,23 @@
                         <div class="text-text-muted text-sm">加载中...</div>
                     </div>
                 </div>
+
+                <!-- 庄家雷达（OI 三策略 + 热度，與後端 /api/accumulation/oi-radar 同源） -->
+                <div class="mt-6 bg-surface rounded-xl border border-border overflow-hidden card-hover">
+                    <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-text-primary font-semibold flex items-center gap-2">🏦 庄家雷达</h3>
+                            <p class="text-text-muted text-xs mt-0.5">熱度榜 · 追多 · 綜合 · 埋伏 · 值得關注（幣安 U 本位 · 僅展示、不觸發 Telegram）</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
+                            <button type="button" onclick="loadAccumulationOiRadar()" id="oi-radar-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
+                        </div>
+                    </div>
+                    <div id="oi-radar-body" class="p-4">
+                        <div class="text-text-muted text-sm animate-pulse">載入莊家雷達...</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sidebar - 1 column -->
@@ -423,6 +440,11 @@
             },
             async backtest(symbol, assetType = 'crypto', timeframe = '1h', testPeriods = 5, horizon = 12) {
                 const res = await fetch(`${API_BASE}/api/backtest/${encodeURIComponent(symbol)}?asset_type=${assetType}&timeframe=${timeframe}&test_periods=${testPeriods}&horizon=${horizon}`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async accumulationOiRadar() {
+                const res = await fetch(`${API_BASE}/api/accumulation/oi-radar`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             }
@@ -672,6 +694,177 @@
             }
         }
 
+        // ============== 庄家雷达 OI（accumulation /api/accumulation/oi-radar） ==============
+        function escHtml(s) {
+            if (s == null || s === '') return '';
+            const d = document.createElement('div');
+            d.textContent = String(s);
+            return d.innerHTML;
+        }
+
+        function perpSymToChartSymbol(sym) {
+            if (!sym || typeof sym !== 'string') return null;
+            if (!sym.endsWith('USDT')) return null;
+            const base = sym.slice(0, -4);
+            return base + '/USDT';
+        }
+
+        function formatMcapUsd(v) {
+            if (v == null || v === 0 || Number.isNaN(v)) return '--';
+            const n = Number(v);
+            if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+            if (n >= 1e6) return '$' + (n / 1e6).toFixed(0) + 'M';
+            if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+            return '$' + n.toFixed(0);
+        }
+
+        function pxClass(px) {
+            const n = Number(px);
+            if (n > 0) return 'text-neon-green';
+            if (n < 0) return 'text-neon-red';
+            return 'text-text-muted';
+        }
+
+        function oiRadarHotTags(d) {
+            const t = [];
+            if (d.in_cg) t.push('<span class="text-neon-blue">🌐CG</span>');
+            if (d.vol_surge) t.push('<span class="text-neon-yellow">📈放量</span>');
+            if (Math.abs(Number(d.d6h) || 0) >= 3) {
+                const v = Number(d.d6h);
+                t.push('<span class="text-neon-purple">⚡OI' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</span>');
+            }
+            if (d.in_pool) t.push('<span class="text-text-secondary">💤池' + (Number(d.sw_days) || 0) + '天</span>');
+            if (Number(d.fr_pct) < -0.03) t.push('<span class="text-neon-blue">🧊' + Number(d.fr_pct).toFixed(2) + '%</span>');
+            return t.join(' ');
+        }
+
+        function oiRadarCard(title, emoji, innerHtml) {
+            return `
+                <div class="bg-surface-light/40 rounded-lg border border-border p-3 min-h-[120px]">
+                    <div class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2 flex items-center gap-1.5">${emoji} ${escHtml(title)}</div>
+                    <div class="space-y-1.5 text-sm">${innerHtml}</div>
+                </div>`;
+        }
+
+        function oiRadarRowClickable(sym, innerLineHtml) {
+            const chartSym = perpSymToChartSymbol(sym);
+            if (!chartSym) return `<div class="text-xs text-text-secondary leading-relaxed py-0.5">${innerLineHtml}</div>`;
+            const safe = chartSym.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded hover:bg-surface-light/80 transition-colors cursor-pointer border border-transparent hover:border-border" data-chart-symbol="${safe}">${innerLineHtml}</div>`;
+        }
+
+        function onOiRadarPickSymbol(chartSymbol) {
+            if (!chartSymbol) return;
+            switchAssetType('crypto');
+            selectSymbol(chartSymbol);
+            try {
+                document.getElementById('chart-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (e) { /* ignore */ }
+        }
+
+        function bindOiRadarPickHandlers(root) {
+            if (!root) return;
+            root.querySelectorAll('.oi-radar-pick[data-chart-symbol]').forEach((el) => {
+                const go = () => onOiRadarPickSymbol(el.getAttribute('data-chart-symbol'));
+                el.addEventListener('click', go);
+                el.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        go();
+                    }
+                });
+            });
+        }
+
+        async function loadAccumulationOiRadar() {
+            const body = document.getElementById('oi-radar-body');
+            const tsEl = document.getElementById('oi-radar-ts');
+            const btn = document.getElementById('oi-radar-refresh');
+            if (!body) return;
+            if (btn) btn.disabled = true;
+            body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">掃描中（可能需 30–90 秒）...</div>';
+            tsEl.textContent = '…';
+
+            try {
+                const data = await API.accumulationOiRadar();
+                if (!data.ok) {
+                    tsEl.textContent = '';
+                    body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暫無數據')}</div>`;
+                    return;
+                }
+
+                tsEl.textContent = data.generated_at_cst || '';
+
+                const hot = (data.hot_coins || []).slice(0, 8).map(d => {
+                    const px = Number(d.px_chg);
+                    const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> ${oiRadarHotTags(d)}`;
+                    return oiRadarRowClickable(d.sym, line);
+                }).join('') || '<div class="text-text-muted text-xs">暫無熱度標的</div>';
+
+                const chase = (data.chase || []).slice(0, 8).map(d => {
+                    const px = Number(d.px_chg);
+                    const line = `<span class="font-semibold text-text-primary w-16 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-blue font-mono">${Number(d.fr_pct).toFixed(3)}%</span> <span class="text-text-muted">${escHtml(d.trend || '')}</span> <span class="text-text-muted">|</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span>`;
+                    return oiRadarRowClickable(d.sym, line);
+                }).join('') || '<div class="text-text-muted text-xs">暫無追多標的</div>';
+
+                const combined = (data.combined || []).slice(0, 8).map(d => {
+                    const dims = [];
+                    if (d.f_sc >= 10) dims.push('<span class="text-neon-blue">🧊' + Number(d.fr_pct).toFixed(2) + '%</span>');
+                    if (d.m_sc >= 12) dims.push('<span class="text-neon-yellow">💎' + formatMcapUsd(d.est_mcap) + '</span>');
+                    if (d.s_sc >= 10) dims.push('<span class="text-text-secondary">💤' + (Number(d.sw_days) || 0) + '天</span>');
+                    if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">⚡OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
+                    const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${dims.join(' ')}`;
+                    return oiRadarRowClickable(d.sym, line);
+                }).join('') || '<div class="text-text-muted text-xs">暫無綜合上榜</div>';
+
+                const ambush = (data.ambush || []).slice(0, 8).map(d => {
+                    const dark = Number(d.d6h) > 2 && Math.abs(Number(d.px_chg)) < 5;
+                    const parts = [
+                        '<span class="text-text-muted">' + formatMcapUsd(d.est_mcap) + '</span>',
+                        '<span class="text-neon-purple">OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>'
+                    ];
+                    if (dark) parts.push('<span class="text-neon-yellow">🎯暗流</span>');
+                    if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">横盘' + Number(d.sw_days).toFixed(0) + '天</span>');
+                    if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">費率' + Number(d.fr_pct).toFixed(2) + '%</span>');
+                    const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${parts.join(' ')}`;
+                    return oiRadarRowClickable(d.sym, line);
+                }).join('') || '<div class="text-text-muted text-xs">暫無埋伏標的</div>';
+
+                const highlights = (data.highlights || []).map(h =>
+                    `<div class="flex items-start gap-2 text-xs text-text-secondary"><span class="text-neon-purple shrink-0">💡</span><span>${escHtml(h)}</span></div>`
+                ).join('') || '<div class="text-text-muted text-xs">暫無提醒</div>';
+
+                const legend = `
+                    <div class="mt-4 pt-3 border-t border-border text-text-muted text-[11px] leading-relaxed space-y-0.5">
+                        <div class="font-medium text-text-secondary mb-1">📖 圖例</div>
+                        <div>熱度 = CG 熱搜 + 成交量暴增（OI 領先指標）</div>
+                        <div>費率負 = 空頭燃料 · 💎 市值 · 💤 橫盤（收籌）</div>
+                        <div>🔥💤 熱度+收籌 = 最強預判 · 🔥⚡ 熱度+OI = 正在發生</div>
+                    </div>`;
+
+                body.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        ${oiRadarCard('熱度榜', '🔥', hot)}
+                        ${oiRadarCard('追多（按費率）', '🔥', chase)}
+                        ${oiRadarCard('綜合', '📊', combined)}
+                        ${oiRadarCard('埋伏', '🎯', ambush)}
+                    </div>
+                    <div class="mt-3 bg-surface-light/40 rounded-lg border border-border p-3">
+                        <div class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">💡 值得關注</div>
+                        <div class="space-y-1.5">${highlights}</div>
+                    </div>
+                    ${legend}
+                `;
+                bindOiRadarPickHandlers(body);
+            } catch (e) {
+                console.error('OI radar:', e);
+                tsEl.textContent = '';
+                body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(e.message || '載入失敗')}</div>`;
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         // ============== Simulation ==============
         async function runSimulation() {
             const resultDiv = document.getElementById('sim-result');
@@ -821,6 +1014,7 @@
             updateSimSymbols(currentAssetType);
             loadWeather(currentSymbol);
             loadRadar();
+            loadAccumulationOiRadar();
         }
 
         document.addEventListener('DOMContentLoaded', init);
