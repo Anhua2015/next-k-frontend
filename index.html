@@ -111,6 +111,35 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="S6 期货 Alpha">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
+                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 Alpha 模拟盘（s6）</h2>
+                        <p class="text-text-muted text-xs mt-0.5">近 7 日每小时扫描归档 · 当前虚拟持仓与权益</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="s6-alpha-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadS6AutonomousAlpha()" id="s6-alpha-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
+                    </div>
+                </div>
+                <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">扫描记录</h3>
+                        <div id="s6-signals-body" class="overflow-x-auto overflow-y-auto max-h-[min(360px,50vh)] rounded-lg border border-border/60 bg-surface-light/20 p-2">
+                            <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">模拟持仓</h3>
+                        <div id="s6-positions-body" class="overflow-x-auto overflow-y-auto max-h-[min(360px,50vh)] rounded-lg border border-border/60 bg-surface-light/20 p-2">
+                            <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
             <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -173,6 +202,11 @@
             },
             async s2FundingSignals() {
                 const res = await fetch(`${API_BASE}/api/s2/funding-signals`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async s6AutonomousAlpha() {
+                const res = await fetch(`${API_BASE}/api/s6/autonomous-alpha`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             }
@@ -339,6 +373,147 @@
             body.querySelectorAll('.s2-sym-pick[data-chart-symbol]').forEach((btn) => {
                 btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
             });
+        }
+
+        function s6ActionLabel(code) {
+            const m = {
+                b_skipped: 'B级跳过',
+                opened: '已开仓',
+                env_rejected: '环境未通过',
+                swap_opened: '换仓开仓',
+                swap_skipped: '换仓未执行',
+                full_no_s_swap: '满仓(非S)',
+            };
+            return m[code] || String(code || '--');
+        }
+
+        function fillS6AutonomousAlpha(data, sigBody, posBody, tsEl) {
+            if (!sigBody || !posBody) return;
+            const list = (data && data.signals) || [];
+            const bal = data && data.balance_usd != null ? Number(data.balance_usd) : null;
+            const initB = data && data.initial_balance != null ? Number(data.initial_balance) : null;
+            const open = (data && data.open_positions) || [];
+            if (tsEl) {
+                const parts = [];
+                if (data && data.count != null) parts.push(`归档 ${data.count} 条`);
+                if (bal != null && !Number.isNaN(bal)) parts.push(`权益 ${bal.toFixed(2)} U`);
+                tsEl.textContent = parts.join(' · ') || '--';
+            }
+            if (!list.length) {
+                sigBody.innerHTML = '<div class="text-text-muted text-sm py-2">近 7 日尚无扫描归档。后端 main 每小时 xx:25 会运行 s6 脚本写入。</div>';
+            } else {
+                const head = `
+                    <table class="w-full text-left text-xs border-collapse min-w-[560px]">
+                        <thead>
+                            <tr class="text-text-muted border-b border-border">
+                                <th class="py-2 pr-2 font-medium">时间</th>
+                                <th class="py-2 pr-2 font-medium">标的</th>
+                                <th class="py-2 pr-2 font-medium">级</th>
+                                <th class="py-2 pr-2 font-medium">方向</th>
+                                <th class="py-2 pr-2 font-medium">结果</th>
+                                <th class="py-2 pr-2 font-medium">摘要</th>
+                            </tr>
+                        </thead><tbody>`;
+                const rows = list.map((r) => {
+                    const coin = r.best_coin || (r.best_symbol || '').replace('USDT', '') || '--';
+                    const sym = r.best_symbol || '';
+                    const chartSym = perpSymToChartSymbol(sym);
+                    const coinCell = chartSym
+                        ? `<button type="button" class="s6-sym-pick font-semibold text-neon-blue hover:underline" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                        : escHtml(coin);
+                    const dir = r.best_direction === 'short' ? '空' : r.best_direction === 'long' ? '多' : '--';
+                    const reason = (r.best_reason || '').slice(0, 72) + ((r.best_reason || '').length > 72 ? '…' : '');
+                    const tid = r.trade_id ? escHtml(String(r.trade_id)) : '';
+                    const act = s6ActionLabel(r.action);
+                    const actHtml = tid ? `${escHtml(act)} <span class="text-text-muted font-mono">#${tid}</span>` : escHtml(act);
+                    return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
+                        <td class="py-2 pr-2 text-text-secondary whitespace-nowrap">${escHtml(fmtS2RecordedAt(r.recorded_at))}</td>
+                        <td class="py-2 pr-2">${coinCell}</td>
+                        <td class="py-2 pr-2 font-mono">${escHtml(r.best_strength || '--')}</td>
+                        <td class="py-2 pr-2">${escHtml(dir)}</td>
+                        <td class="py-2 pr-2 whitespace-nowrap">${actHtml}</td>
+                        <td class="py-2 pr-2 text-text-secondary">${escHtml(reason)}</td>
+                    </tr>`;
+                }).join('');
+                sigBody.innerHTML = head + rows + '</tbody></table>';
+                sigBody.querySelectorAll('.s6-sym-pick[data-chart-symbol]').forEach((btn) => {
+                    btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
+                });
+            }
+            let posHead = '';
+            if (initB != null && bal != null && !Number.isNaN(bal)) {
+                posHead = `<div class="text-text-secondary text-xs mb-3">初始 ${initB.toFixed(0)} U → 当前权益 <span class="text-neon-green font-mono font-semibold">${bal.toFixed(2)} U</span> · 未平 <span class="text-text-primary">${open.length}</span> 笔</div>`;
+            }
+            if (!open.length) {
+                posBody.innerHTML = posHead + '<div class="text-text-muted text-sm py-2">当前无未平仓虚拟单。</div>';
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[480px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-2 font-medium">#</th>
+                            <th class="py-2 pr-2 font-medium">币</th>
+                            <th class="py-2 pr-2 font-medium">方向</th>
+                            <th class="py-2 pr-2 font-medium">杠杆</th>
+                            <th class="py-2 pr-2 font-medium">仓位U</th>
+                            <th class="py-2 pr-2 font-medium">入场</th>
+                            <th class="py-2 pr-2 font-medium">止损</th>
+                            <th class="py-2 pr-2 font-medium">止盈</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rowsP = open.map((p) => {
+                const sym = p.symbol || '';
+                const chartSym = perpSymToChartSymbol(sym);
+                const coin = sym.replace('USDT', '') || '--';
+                const coinCell = chartSym
+                    ? `<button type="button" class="s6-pos-pick font-semibold text-neon-purple hover:underline" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                    : escHtml(coin);
+                const dir = p.direction === 'short' ? '空' : p.direction === 'long' ? '多' : '--';
+                return `<tr class="border-b border-border/60">
+                    <td class="py-2 pr-2 font-mono">${escHtml(p.id || '')}</td>
+                    <td class="py-2 pr-2">${coinCell}</td>
+                    <td class="py-2 pr-2">${escHtml(dir)}</td>
+                    <td class="py-2 pr-2 font-mono">${escHtml(String(p.leverage || ''))}</td>
+                    <td class="py-2 pr-2 text-text-secondary">${p.position_usd != null ? escHtml(Number(p.position_usd).toFixed(2)) : '--'}</td>
+                    <td class="py-2 pr-2 font-mono text-text-secondary">${p.entry_price != null ? escHtml(String(p.entry_price)) : '--'}</td>
+                    <td class="py-2 pr-2 font-mono text-neon-red/90">${p.stop_loss != null ? escHtml(String(p.stop_loss)) : '--'}</td>
+                    <td class="py-2 pr-2 font-mono text-neon-green/90">${p.take_profit != null ? escHtml(String(p.take_profit)) : '--'}</td>
+                </tr>`;
+            }).join('');
+            posBody.innerHTML = posHead + thead + rowsP + '</tbody></table>';
+            posBody.querySelectorAll('.s6-pos-pick[data-chart-symbol]').forEach((btn) => {
+                btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
+            });
+        }
+
+        async function loadS6AutonomousAlpha() {
+            const sigBody = document.getElementById('s6-signals-body');
+            const posBody = document.getElementById('s6-positions-body');
+            const tsEl = document.getElementById('s6-alpha-ts');
+            const btn = document.getElementById('s6-alpha-refresh');
+            if (!sigBody || !posBody) return;
+            if (btn) btn.disabled = true;
+            try {
+                sigBody.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载中…</div>';
+                posBody.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载中…</div>';
+                const data = await API.s6AutonomousAlpha();
+                if (data && data.ok) {
+                    fillS6AutonomousAlpha(data, sigBody, posBody, tsEl);
+                } else {
+                    if (tsEl) tsEl.textContent = '';
+                    sigBody.innerHTML = '<div class="text-neon-yellow text-sm">接口返回异常</div>';
+                    posBody.innerHTML = '';
+                }
+            } catch (e) {
+                console.error('s6 alpha:', e);
+                if (tsEl) tsEl.textContent = '';
+                const msg = e && e.message ? String(e.message) : '加载失败';
+                sigBody.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>`;
+                posBody.innerHTML = '';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         async function loadS2FundingSignals() {
@@ -552,6 +727,7 @@
             }
             loadAccumulationOiRadar();
             loadS2FundingSignals();
+            loadS6AutonomousAlpha();
         }
 
         document.addEventListener('DOMContentLoaded', init);
