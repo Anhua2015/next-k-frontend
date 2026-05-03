@@ -97,8 +97,8 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] lg:max-h-[min(520px,calc(100vh-220px))]">
                 <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">⚡ 费率转负 + OI 涨（s2）</h2>
-                        <p class="text-text-muted text-xs mt-0.5">近 7 日 · 与 Telegram 同源</p>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">⚡ 费率转负 + OI 涨 </h2>
+                        <p class="text-text-muted text-xs mt-0.5">近 7 日 </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
@@ -115,7 +115,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
                 <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 Alpha 模拟盘（s6）</h2>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 Alpha 模拟盘 </h2>
                         <p class="text-text-muted text-xs mt-0.5">近 7 日每小时扫描归档 · 当前虚拟持仓与权益</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -144,7 +144,7 @@
             <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h2 class="text-text-primary font-semibold flex items-center gap-2">📊 收筹池 · OI 监控</h2>
-                    <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏（币安 U 本位 · 仅展示、不触发 Telegram）</p>
+                    <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏 </p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
@@ -400,7 +400,7 @@
                 tsEl.textContent = parts.join(' · ') || '--';
             }
             if (!list.length) {
-                sigBody.innerHTML = '<div class="text-text-muted text-sm py-2">近 7 日尚无扫描归档。后端 main 每小时 xx:25 会运行 s6 脚本写入。</div>';
+                sigBody.innerHTML = '<div class="text-text-muted text-sm py-2">近 7 日尚无扫描归档。</div>';
             } else {
                 const head = `
                     <table class="w-full text-left text-xs border-collapse min-w-[560px]">
