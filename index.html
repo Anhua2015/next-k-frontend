@@ -10,76 +10,101 @@
             theme: {
                 extend: {
                     colors: {
-                        background: '#0b0e11',
-                        surface: '#141922',
-                        'surface-light': '#1e2530',
-                        border: '#2a3441',
-                        'neon-green': '#00E396',
-                        'neon-red': '#FF4560',
-                        'neon-purple': '#7850FF',
-                        'neon-blue': '#00B4D8',
-                        'neon-yellow': '#FFE066',
-                        'text-primary': '#FFFFFF',
-                        'text-secondary': '#8A9AAD',
-                        'text-muted': '#5A6B7D',
-                    }
+                        /* 基底：偏冷灰蓝，对比略柔化，长时间看不刺眼 */
+                        background: '#0d1219',
+                        surface: '#141b24',
+                        'surface-light': '#1c2530',
+                        border: '#2a3544',
+                        /* 主交互色：软件蓝，替代高亮紫边 */
+                        accent: '#8ab4f8',
+                        /* 沿用原名，数值改为低饱和，表格里大量引用无需改类名 */
+                        'neon-green': '#52c49a',
+                        'neon-red': '#e07884',
+                        'neon-purple': '#9b93ea',
+                        'neon-blue': '#73b5ee',
+                        'neon-yellow': '#d4b878',
+                        /* 提示 / 等待 / 警告区块（替代刺眼纯黄） */
+                        warn: '#c9a66b',
+                        'text-primary': '#e8edf4',
+                        'text-secondary': '#94a3b8',
+                        'text-muted': '#647891',
+                    },
                 }
             }
         }
     </script>
     <style>
         body {
-            background: #0b0e11;
-            color: #FFFFFF;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e8edf4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #0d1219;
+            background-image:
+                radial-gradient(ellipse 90% 55% at 50% -15%, rgba(138, 180, 248, 0.07), transparent 52%),
+                radial-gradient(ellipse 70% 45% at 100% 40%, rgba(82, 196, 154, 0.04), transparent 48%),
+                linear-gradient(180deg, #0e141c 0%, #0d1219 28%);
+            background-attachment: fixed;
         }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0b0e11; }
-        ::-webkit-scrollbar-thumb { background: #2a3441; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #5A6B7D; }
-        ::selection { background: rgba(120, 80, 255, 0.3); }
+        ::-webkit-scrollbar-track { background: #0d1219; }
+        ::-webkit-scrollbar-thumb { background: #3d4a5c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #647891; }
+        ::selection { background: rgba(138, 180, 248, 0.28); }
         .card-hover {
-            transition: all 0.2s;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.035);
         }
         .card-hover:hover {
-            border-color: rgba(120, 80, 255, 0.5);
-            box-shadow: 0 0 30px rgba(120, 80, 255, 0.2);
+            border-color: rgba(138, 180, 248, 0.28);
+            box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(138, 180, 248, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
-        /* 值得关注：置顶 + 强视觉 */
+        /* 值得关注：柔和渐变 + 弱光晕 */
         .highlights-hero {
-            background: linear-gradient(135deg, rgba(120, 80, 255, 0.18) 0%, rgba(30, 37, 48, 0.98) 42%, rgba(0, 180, 216, 0.08) 100%);
-            border: 1px solid rgba(120, 80, 255, 0.55);
+            background: linear-gradient(
+                145deg,
+                rgba(65, 95, 140, 0.14) 0%,
+                rgba(20, 27, 36, 0.97) 48%,
+                rgba(55, 105, 125, 0.1) 100%
+            );
+            border: 1px solid rgba(138, 180, 248, 0.22);
             box-shadow:
-                0 0 0 1px rgba(255, 224, 102, 0.12),
-                0 0 48px rgba(120, 80, 255, 0.28),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 12px 40px -16px rgba(0, 0, 0, 0.55);
         }
         .highlights-hero .hl-title {
-            background: linear-gradient(90deg, #fff 0%, #FFE066 45%, #00B4D8 100%);
+            background: linear-gradient(90deg, #f1f5f9 0%, #c9d8f0 38%, #8ab4f8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+        .section-accent-heat {
+            border-top: 1px solid rgba(82, 196, 154, 0.22);
+        }
+        .section-accent-ambush {
+            border-top: 1px solid rgba(212, 184, 120, 0.22);
+        }
+        .btn-secondary {
+            transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    <header class="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+    <header class="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/90 to-neon-blue/75 shadow-[0_4px_14px_-4px_rgba(138,180,248,0.35)] flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-text-primary tracking-tight">
-                            Next <span class="text-neon-purple">K</span>
+                            Next <span class="text-accent">K</span>
                             <span class="text-text-muted font-normal text-sm ml-2">· 收筹池 · OI 监控</span>
                         </h1>
                     </div>
                 </div>
-                <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red">
+                <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15">
                     <span>连接中…</span>
                 </div>
             </div>
@@ -95,14 +120,14 @@
                 </div>
             </div>
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] lg:max-h-[min(520px,calc(100vh-220px))]">
-                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">⚡ 费率转负 + OI 涨 </h2>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
                         <p class="text-text-muted text-xs mt-0.5">近 7 日 </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
-                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-blue/50 hover:text-neon-blue transition-colors">刷新</button>
+                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                     </div>
                 </div>
                 <div id="s2-signals-body" class="p-4 overflow-x-auto overflow-y-auto flex-1 min-h-0">
@@ -112,8 +137,8 @@
         </section>
 
         <section class="mb-6" aria-label="热度收筹看盘">
-            <div class="bg-surface rounded-xl border border-neon-green/30 overflow-hidden card-hover">
-                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-heat">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
                         <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。SMC / 方案 C 区间仅在摘要列展示（「值得关注」不含 SMC）。</p>
@@ -121,6 +146,21 @@
                     <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
                 <div id="heat-accum-watch-body" class="p-4">
+                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="暗流低市值看盘">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-ambush">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🎯💎 暗流 · 低市值埋伏</h2>
+                        <p class="text-text-muted text-xs mt-0.5">来自埋伏榜前 10 内：🎯 OI 涨、价格近乎横盘；💎 流通市值 &lt;$100M 且 OI 6h 变动 ≥3%。与「值得关注」中同类文案同源，保留最近 7 日。</p>
+                    </div>
+                    <span id="ambush-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                </div>
+                <div id="ambush-watch-body" class="p-4">
                     <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
                 </div>
             </div>
@@ -136,7 +176,7 @@
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="s6-alpha-ts" class="text-text-muted text-xs font-mono">--</span>
-                        <button type="button" onclick="loadS6AutonomousAlpha()" id="s6-alpha-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
+                        <button type="button" onclick="loadS6AutonomousAlpha()" id="s6-alpha-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                     </div>
                 </div>
                 <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -156,15 +196,15 @@
             </div>
         </section>
 
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
-            <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
-                <div>
-                    <h2 class="text-text-primary font-semibold flex items-center gap-2">📊 收筹池 · OI 监控</h2>
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2>
                     <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏 </p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
-                    <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="px-3 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-xs font-medium hover:border-neon-purple/50 hover:text-neon-purple transition-colors">刷新</button>
+                    <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                 </div>
             </div>
             <div id="oi-radar-body" class="p-4">
@@ -221,6 +261,11 @@
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
+            async ambushWatch() {
+                const res = await fetch(`${API_BASE}/api/accumulation/ambush-watch`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
             async s2FundingSignals() {
                 const res = await fetch(`${API_BASE}/api/s2/funding-signals`);
                 if (!res.ok) throw new Error(await res.text());
@@ -266,7 +311,7 @@
         function oiRadarHotTags(d) {
             const t = [];
             if (d.in_cg) t.push('<span class="text-neon-blue">🌐CG</span>');
-            if (d.vol_surge) t.push('<span class="text-neon-yellow">📈放量</span>');
+            if (d.vol_surge) t.push('<span class="text-warn/95">📈放量</span>');
             if (Math.abs(Number(d.d6h) || 0) >= 3) {
                 const v = Number(d.d6h);
                 t.push('<span class="text-neon-purple">⚡OI' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</span>');
@@ -278,8 +323,8 @@
 
         function oiRadarCard(title, emoji, innerHtml) {
             return `
-                <div class="bg-surface-light/40 rounded-lg border border-border p-3 min-h-[120px]">
-                    <div class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2 flex items-center gap-1.5">${emoji} ${escHtml(title)}</div>
+                <div class="bg-surface-light/25 rounded-xl border border-border/80 p-3 min-h-[120px] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div class="text-text-secondary text-xs font-medium tracking-wide mb-2 flex items-center gap-1.5">${emoji} ${escHtml(title)}</div>
                     <div class="space-y-1.5 text-sm">${innerHtml}</div>
                 </div>`;
         }
@@ -288,7 +333,7 @@
             const chartSym = perpSymToChartSymbol(sym);
             if (!chartSym) return `<div class="text-xs text-text-secondary leading-relaxed py-0.5">${innerLineHtml}</div>`;
             const safe = chartSym.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded hover:bg-surface-light/80 transition-colors cursor-pointer border border-transparent hover:border-border" data-chart-symbol="${safe}">${innerLineHtml}</div>`;
+            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded-lg hover:bg-surface-light/55 transition-colors cursor-pointer border border-transparent hover:border-border/60" data-chart-symbol="${safe}">${innerLineHtml}</div>`;
         }
 
         function onOiRadarPickSymbol(chartSymbol) {
@@ -328,7 +373,7 @@
                 const gd = escHtml(row.generated_date || '--');
                 const sym = row.symbol || '';
                 const sum = escHtml(row.summary_line || '');
-                const coinLine = '<span class="font-semibold text-neon-green">' + escHtml(row.coin || '') + '</span>';
+                const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
                 const summaryCell = oiRadarRowClickable(sym, sum);
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
@@ -351,6 +396,83 @@
                 }
             }
             renderHeatAccumWatchPanel(wl || { items: [] });
+        }
+
+        function ambushSignalTypeLabel(t) {
+            if (t === 'dark_flow') return '🎯 暗流';
+            if (t === 'low_mcap_oi') return '💎 低市值+OI';
+            return escHtml(t || '--');
+        }
+
+        function renderAmbushWatchPanel(wl) {
+            const body = document.getElementById('ambush-watch-body');
+            const tsEl = document.getElementById('ambush-watch-ts');
+            if (!body) return;
+            const items = (wl && Array.isArray(wl.items)) ? wl.items : [];
+            if (tsEl) {
+                const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
+                const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
+                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+            }
+            if (!items.length) {
+                body.innerHTML = '<div class="text-text-muted text-sm">' +
+                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。与「值得关注」中 🎯💎 条目同源；整点扫描或点击下方「刷新」后会写入。') +
+                    '</div>';
+                bindOiRadarPickHandlers(body);
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">类型</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">OI 6h</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">涨跌</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">市值</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items.map((row) => {
+                const typ = ambushSignalTypeLabel(row.signal_type);
+                const gd = escHtml(row.generated_date || '--');
+                const sym = row.symbol || '';
+                const oi6 = row.d6h != null && !Number.isNaN(Number(row.d6h))
+                    ? (Number(row.d6h) >= 0 ? '+' : '') + Number(row.d6h).toFixed(0) + '%'
+                    : '--';
+                const px = row.px_chg != null && !Number.isNaN(Number(row.px_chg))
+                    ? (Number(row.px_chg) >= 0 ? '+' : '') + Number(row.px_chg).toFixed(1) + '%'
+                    : '--';
+                const mc = formatMcapUsd(row.est_mcap);
+                const sum = escHtml(row.summary_line || '');
+                const coinLine = '<span class="font-semibold text-warn">' + escHtml(row.coin || '') + '</span>';
+                const summaryCell = oiRadarRowClickable(sym, sum);
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${typ}</td>
+                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                    <td class="py-2 pr-3 font-mono text-neon-purple/95">${escHtml(oi6)}</td>
+                    <td class="py-2 pr-3 font-mono ${pxClass(row.px_chg)}">${escHtml(px)}</td>
+                    <td class="py-2 pr-3 text-text-muted">${escHtml(mc)}</td>
+                    <td class="py-2 pr-3">${summaryCell}</td>
+                </tr>`;
+            }).join('');
+            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。同一标的可同时满足两类条件（两行）。</p>';
+            bindOiRadarPickHandlers(body);
+        }
+
+        async function hydrateAmbushWatch(data) {
+            let wl = data && data.ambush_watchlist;
+            if (!wl || !Array.isArray(wl.items)) {
+                try {
+                    wl = await API.ambushWatch();
+                } catch (e) {
+                    console.error('ambush watch:', e);
+                    wl = { items: [], message: '看盘接口暂不可用' };
+                }
+            }
+            renderAmbushWatchPanel(wl || { items: [] });
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -431,7 +553,7 @@
                     sq = escHtml(String(s.square_posts)) + '帖 / ' + escHtml(vStr);
                 }
                 const coinCell = chartSym
-                    ? `<button type="button" class="s2-sym-pick font-semibold text-neon-purple hover:underline" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(s.coin || '')}</button>`
+                    ? `<button type="button" class="s2-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(s.coin || '')}</button>`
                     : escHtml(s.coin || '');
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${escHtml(fmtS2RecordedAt(s.recorded_at))}</td>
@@ -501,7 +623,7 @@
                     const sym = r.best_symbol || '';
                     const chartSym = perpSymToChartSymbol(sym);
                     const coinCell = chartSym
-                        ? `<button type="button" class="s6-sym-pick font-semibold text-neon-blue hover:underline" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                        ? `<button type="button" class="s6-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
                         : escHtml(coin);
                     const dir = r.best_direction === 'short' ? '空' : r.best_direction === 'long' ? '多' : '--';
                     const reason = (r.best_reason || '').slice(0, 72) + ((r.best_reason || '').length > 72 ? '…' : '');
@@ -549,7 +671,7 @@
                 const chartSym = perpSymToChartSymbol(sym);
                 const coin = sym.replace('USDT', '') || '--';
                 const coinCell = chartSym
-                    ? `<button type="button" class="s6-pos-pick font-semibold text-neon-purple hover:underline" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                    ? `<button type="button" class="s6-pos-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
                     : escHtml(coin);
                 const dir = p.direction === 'short' ? '空' : p.direction === 'long' ? '多' : '--';
                 return `<tr class="border-b border-border/60">
@@ -584,7 +706,7 @@
                     fillS6AutonomousAlpha(data, sigBody, posBody, tsEl);
                 } else {
                     if (tsEl) tsEl.textContent = '';
-                    sigBody.innerHTML = '<div class="text-neon-yellow text-sm">接口返回异常</div>';
+                    sigBody.innerHTML = '<div class="text-warn text-sm">接口返回异常</div>';
                     posBody.innerHTML = '';
                 }
             } catch (e) {
@@ -611,7 +733,7 @@
                     fillS2FundingSignals(data, body, tsEl);
                 } else {
                     tsEl.textContent = '';
-                    body.innerHTML = '<div class="text-neon-yellow text-sm">接口返回异常</div>';
+                    body.innerHTML = '<div class="text-warn text-sm">接口返回异常</div>';
                 }
             } catch (e) {
                 console.error('s2 signals:', e);
@@ -642,7 +764,7 @@
             const combined = (data.combined || []).slice(0, 8).map(d => {
                 const dims = [];
                 if (d.f_sc >= 10) dims.push('<span class="text-neon-blue">🧊' + Number(d.fr_pct).toFixed(2) + '%</span>');
-                if (d.m_sc >= 12) dims.push('<span class="text-neon-yellow">💎' + formatMcapUsd(d.est_mcap) + '</span>');
+                if (d.m_sc >= 12) dims.push('<span class="text-warn/95">💎' + formatMcapUsd(d.est_mcap) + '</span>');
                 if (d.s_sc >= 10) dims.push('<span class="text-text-secondary">💤' + (Number(d.sw_days) || 0) + '天</span>');
                 if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">⚡OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${dims.join(' ')}`;
@@ -655,7 +777,7 @@
                     '<span class="text-text-muted">' + formatMcapUsd(d.est_mcap) + '</span>',
                     '<span class="text-neon-purple">OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>'
                 ];
-                if (dark) parts.push('<span class="text-neon-yellow">🎯暗流</span>');
+                if (dark) parts.push('<span class="text-warn/95">🎯暗流</span>');
                 if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">横盘' + Number(d.sw_days).toFixed(0) + '天</span>');
                 if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">费率' + Number(d.fr_pct).toFixed(2) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${parts.join(' ')}`;
@@ -663,7 +785,7 @@
             }).join('') || '<div class="text-text-muted text-xs">暂无埋伏标的</div>';
 
             const highlights = (data.highlights || []).map(h =>
-                `<div class="flex items-start gap-3 text-sm md:text-base text-text-primary leading-snug py-1 border-b border-border/40 last:border-0"><span class="text-neon-yellow text-lg shrink-0 leading-none mt-0.5">▸</span><span class="font-medium">${escHtml(h)}</span></div>`
+                `<div class="flex items-start gap-3 text-sm md:text-base text-text-primary leading-snug py-1 border-b border-border/35 last:border-0"><span class="text-accent text-lg shrink-0 leading-none mt-0.5 opacity-90">▸</span><span class="font-medium">${escHtml(h)}</span></div>`
             ).join('') || '<div class="text-text-muted text-sm py-2">暂无提醒</div>';
 
 
@@ -673,7 +795,7 @@
                     <div>热度 = CG 热搜 + 成交量暴增（OI 领先指标）</div>
                     <div>费率负 = 空头燃料 · 💎 市值 · 💤 横盘（吸筹）</div>
                     <div>🔥💤 热度+吸筹 = 最强预判 · 🔥⚡ 热度+OI = 正在发生</div>
-                    <div class="mt-2 text-neon-blue/90">点击标的可在新标签页打开币安合约</div>
+                    <div class="mt-2 text-accent/85">点击标的可在新标签页打开币安合约</div>
                 </div>`;
 
             const highlightsHtml = `
@@ -683,7 +805,7 @@
                             <span class="text-2xl md:text-3xl leading-none" aria-hidden="true">💡</span>
                             <h3 class="hl-title text-lg md:text-2xl font-extrabold tracking-tight">值得关注</h3>
                         </div>
-                        <span class="text-xs text-neon-yellow/90 font-medium uppercase tracking-wider">优先信号</span>
+                        <span class="text-xs text-accent/70 font-medium uppercase tracking-wider">优先信号</span>
                     </div>
                     <p class="text-text-muted text-xs mb-3 shrink-0">综合热度、费率、收筹池与 OI 的交叉提示</p>
                     <div class="space-y-0 flex-1 min-h-0 overflow-y-auto max-h-[min(320px,46vh)] lg:max-h-[min(400px,calc(100vh-260px))] pr-1">${highlights}</div>
@@ -706,6 +828,7 @@
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
             hydrateHeatAccumWatch(data);
+            hydrateAmbushWatch(data);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
@@ -713,9 +836,9 @@
             const j = await API.accumulationOiRadarRefresh();
             if (!j.accepted) {
                 if (j.busy) {
-                    body.innerHTML = '<div class="text-neon-yellow text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
+                    body.innerHTML = '<div class="text-warn text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">收筹快照扫描排队中，值得关注稍后更新。</div>';
+                        hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">收筹快照扫描排队中，值得关注稍后更新。</div>';
                     }
                 }
                 return;
@@ -732,9 +855,9 @@
                     return;
                 }
             }
-            body.innerHTML = '<div class="text-neon-yellow text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
+            body.innerHTML = '<div class="text-warn text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
             if (hl) {
-                hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">快照仍未就绪，值得关注暂无法更新。</div>';
+                hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
             }
         }
 
@@ -771,30 +894,31 @@
 
                 tsEl.textContent = '';
                 if (data.error === 'no_snapshot') {
-                    body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
+                    body.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
+                        hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
                     }
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
-                body.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-3 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                body.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 if (hl) {
-                    hl.innerHTML = `<div class="rounded-lg border border-neon-yellow/30 bg-neon-yellow/5 p-4 text-sm text-neon-yellow">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                    hl.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 }
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
                 const msg = e && e.message ? String(e.message) : '加载失败';
                 const hint = /fail(ed)? to fetch|networkerror|load failed/i.test(msg)
-                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连 Railway；本机可加 <code class="text-neon-blue">?api=http://127.0.0.1:8000</code>）。</p>'
+                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连 Railway；本机可加 <code class="text-accent font-mono text-[11px]">?api=http://127.0.0.1:8000</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
                 hydrateHeatAccumWatch({});
+                hydrateAmbushWatch({});
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -804,12 +928,14 @@
             const conn = document.getElementById('connection-status');
             try {
                 await API.health();
-                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-green/10 text-neon-green';
+                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-green/[0.09] text-neon-green border border-neon-green/15';
                 conn.innerHTML = '<span>API 已连接</span>';
             } catch (e) {
-                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/10 text-neon-red';
+                conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15';
                 conn.innerHTML = '<span>API 连接失败</span>';
             }
+            hydrateHeatAccumWatch({});
+            hydrateAmbushWatch({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
