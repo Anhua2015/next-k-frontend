@@ -141,7 +141,7 @@
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。方案 C（30m FVG·VWAP）区间仅在摘要列展示（「值得关注」不含区间）。</p>
+                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。</p>
                     </div>
                     <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -156,7 +156,7 @@
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🎯💎 暗流 · 低市值埋伏</h2>
-                        <p class="text-text-muted text-xs mt-0.5">在整张埋伏榜（按埋伏总分从高到低）里筛选：每类仅入库 / 展示分数最高的前 2 名——🎯 OI 涨且价格近乎横盘；💎 流通市值 &lt;$100M 且 |OI 6h| ≥3%。表中「埋伏总分」为同一套埋伏加权分（满分 100）。与「值得关注」同源；库表保留策略仍为最近 7 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">库表保留策略仍为最近 7 日。</p>
                     </div>
                     <span id="ambush-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -238,9 +238,11 @@
             </div>
             <div class="border-t border-border/60 mt-4 pt-4">
                 <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
-                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat zones 每日 12:00 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
+                    <button type="button" data-maint-cron="heat_zones" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">热度区间重算</button>
+                    <button type="button" id="maint-refresh-heat-zones" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度区间（后台）</button>
                     <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
@@ -333,6 +335,24 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ task }),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            async refreshHeatZones() {
+                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/refresh-heat-zones`, {
+                    method: 'POST',
                 });
                 const text = await res.text();
                 let data;
@@ -1075,6 +1095,20 @@
                         msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
                     }
                 });
+            });
+
+            document.getElementById('maint-refresh-heat-zones')?.addEventListener('click', async () => {
+                if (!msg) return;
+                msg.textContent = '提交热度区间重算…';
+                try {
+                    const data = await API.refreshHeatZones();
+                    msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
+                    setTimeout(() => hydrateHeatAccumWatch({}), 2500);
+                    setTimeout(() => hydrateHeatAccumWatch({}), 8000);
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                }
             });
         }
 
