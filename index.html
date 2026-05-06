@@ -437,11 +437,22 @@
             window.open(url, '_blank', 'noopener,noreferrer');
         }
 
+        /** 看盘表：生成日期倒序；同日同分时按最近刷新时间（last_seen_cst）倒序 */
+        function sortWatchItemsByGeneratedDesc(items) {
+            return [...items].sort((a, b) => {
+                const g = String(b.generated_date || '').localeCompare(String(a.generated_date || ''));
+                if (g !== 0) return g;
+                const ls = String(b.last_seen_cst || '').localeCompare(String(a.last_seen_cst || ''));
+                if (ls !== 0) return ls;
+                return String(a.symbol || '').localeCompare(String(b.symbol || ''));
+            });
+        }
+
         function renderHeatAccumWatchPanel(wl) {
             const body = document.getElementById('heat-accum-watch-body');
             const tsEl = document.getElementById('heat-accum-watch-ts');
             if (!body) return;
-            const items = (wl && Array.isArray(wl.items)) ? wl.items : [];
+            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
                 const bp = wl && wl.bpc_snapshot_cst ? String(wl.bpc_snapshot_cst) : '';
@@ -519,7 +530,7 @@
             const body = document.getElementById('ambush-watch-body');
             const tsEl = document.getElementById('ambush-watch-ts');
             if (!body) return;
-            const items = (wl && Array.isArray(wl.items)) ? wl.items : [];
+            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
                 const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
