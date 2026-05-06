@@ -508,7 +508,7 @@
         }
 
         /**
-         * @param heatWl 可选；来自 heat-accum-watch，用于 heat_accum 行的 1H 结构（bpc）
+         * @param heatWl 可选；热度看盘兜底：仅当 worth 行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
          */
         function renderWorthSevenBoards(wl, heatWl) {
             const root = document.getElementById('worth-watch-boards-root');
@@ -519,31 +519,32 @@
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
                 const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                const bip = heatWl && heatWl.bpc_interval ? String(heatWl.bpc_interval) : '1h';
+                const bipSrc = wl && wl.bpc_interval ? wl : heatWl || {};
+                const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
                 const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
-                const bp = heatWl && heatWl.bpc_snapshot_cst ? `${bipDisp}结构 ${heatWl.bpc_snapshot_cst}` : '';
+                const snap = (wl && wl.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
+                const bp = snap ? `${bipDisp}结构 ${snap}` : '';
                 tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[960px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                            <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
+                        </tr>
+                    </thead><tbody>`;
             const blocks = WORTH_WATCH_META.map(([key, label]) => {
                 const sec = cats[key] || { items: [] };
                 const items = sortWorthHighlightItemsDesc(sec.items || []);
-                const isHeat = key === 'heat_accum';
                 let inner;
                 if (!items.length) {
                     inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
-                } else if (isHeat) {
-                    const thead = `
-                        <table class="w-full text-left text-xs border-collapse min-w-[960px]">
-                            <thead>
-                                <tr class="text-text-muted border-b border-border">
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI）">1H 结构</th>
-                                    <th class="py-2 pr-3 font-medium">摘要</th>
-                                    <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
-                                </tr>
-                            </thead><tbody>`;
+                } else {
                     const rows = items.map((row) => {
                         const gd = escHtml(row.generated_date || '--');
                         const rk = row.rank_in_category != null ? String(row.rank_in_category) : '--';
@@ -552,41 +553,12 @@
                         const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
                         const summaryCell = oiRadarRowClickable(sym, sum);
                         const snip = escHtml(worthDetailSnippet(row.detail));
-                        const bpcCell = formatHeatAccumBpcCell(bpcBySym.get(sym));
+                        const bpcCell = formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym));
                         return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                             <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
                             <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
                             <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
                             <td class="py-2 pr-3 align-top">${bpcCell}</td>
-                            <td class="py-2 pr-3">${summaryCell}</td>
-                            <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[240px]">${snip || '--'}</td>
-                        </tr>`;
-                    }).join('');
-                    inner = thead + rows + '</tbody></table>';
-                } else {
-                    const thead = `
-                        <table class="w-full text-left text-xs border-collapse min-w-[720px]">
-                            <thead>
-                                <tr class="text-text-muted border-b border-border">
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
-                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                                    <th class="py-2 pr-3 font-medium">摘要</th>
-                                    <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
-                                </tr>
-                            </thead><tbody>`;
-                    const rows = items.map((row) => {
-                        const gd = escHtml(row.generated_date || '--');
-                        const rk = row.rank_in_category != null ? String(row.rank_in_category) : '--';
-                        const sym = row.symbol || '';
-                        const sum = escHtml(row.summary_line || '');
-                        const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
-                        const summaryCell = oiRadarRowClickable(sym, sum);
-                        const snip = escHtml(worthDetailSnippet(row.detail));
-                        return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                            <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
-                            <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
-                            <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
                             <td class="py-2 pr-3">${summaryCell}</td>
                             <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[240px]">${snip || '--'}</td>
                         </tr>`;
@@ -598,7 +570,7 @@
                     <div class="p-3 overflow-x-auto">${inner}</div>
                 </div>`;
             }).join('');
-            root.innerHTML = blocks + '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。<strong class="text-text-secondary">🔥💤 的「1H 结构」</strong>来自 <code class="text-[10px] text-accent/90">heat_accum_watch</code>（服务端定时按 1h K 线重算），与 worth 归档按 symbol 对齐。</p>';
+            root.innerHTML = blocks + '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>';
             bindOiRadarPickHandlers(root);
         }
 
