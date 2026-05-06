@@ -213,12 +213,31 @@
         </div>
     </main>
 
-    <footer class="border-t border-border py-6 mt-auto">
+    <footer class="border-t border-border py-6 mt-auto select-none">
         <div class="max-w-7xl mx-auto px-4 text-center text-text-muted text-xs">
-            <p>Next K · 收筹池 · OI 监控</p>
+            <p id="footer-brand-line" class="cursor-default">Next K · 收筹池 · OI 监控</p>
             <p class="mt-1 text-text-muted/60">仅供研究参考，不构成投资建议</p>
         </div>
     </footer>
+
+    <!-- 隐藏维护：地址栏 ?maint=1 或快速三连击页脚第一行标题显示 -->
+    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-warn/25 bg-background/95 backdrop-blur-md shadow-[0_-12px_40px_rgba(0,0,0,0.45)] max-h-[min(52vh,420px)] overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div>
+                    <div class="text-warn text-xs font-semibold tracking-wide">清理看盘表</div>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">清库后建议在上方区块点「刷新」重拉 OI 快照。</p>
+                </div>
+                <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+                <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 ambush_watch</button>
+                <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 heat_accum_watch</button>
+                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">两项都清空</button>
+            </div>
+            <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
+        </div>
+    </div>
 
     <script>
         const API_BASE = (function resolveApiBase() {
@@ -275,7 +294,29 @@
                 const res = await fetch(`${API_BASE}/api/s6/autonomous-alpha`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
-            }
+            },
+            async clearWatchTables(tables) {
+                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/clear-watch-tables`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tables }),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
         };
 
         function escHtml(s) {
@@ -924,6 +965,69 @@
             }
         }
 
+        function openMaintPanel() {
+            const panel = document.getElementById('maint-panel');
+            if (!panel) return;
+            panel.classList.remove('hidden');
+        }
+
+        function closeMaintPanel() {
+            const panel = document.getElementById('maint-panel');
+            if (panel) panel.classList.add('hidden');
+            try {
+                const u = new URL(window.location.href);
+                if (u.searchParams.get('maint') === '1') {
+                    u.searchParams.delete('maint');
+                    window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function setupMaintPanel() {
+            const msg = document.getElementById('maint-msg');
+
+            try {
+                const q = new URLSearchParams(window.location.search).get('maint');
+                if (q === '1') openMaintPanel();
+            } catch (e) { /* ignore */ }
+
+            let trip = 0;
+            let tripT = 0;
+            const brand = document.getElementById('footer-brand-line');
+            if (brand) {
+                brand.addEventListener('click', () => {
+                    const now = Date.now();
+                    if (now - tripT > 600) trip = 0;
+                    tripT = now;
+                    trip += 1;
+                    if (trip >= 3) {
+                        trip = 0;
+                        openMaintPanel();
+                    }
+                });
+            }
+
+            document.getElementById('maint-close')?.addEventListener('click', closeMaintPanel);
+
+            async function runClear(tables) {
+                if (!msg) return;
+                msg.textContent = '请求中…';
+                try {
+                    const data = await API.clearWatchTables(tables);
+                    msg.innerHTML = '<span class="text-neon-green">ok · ' + escHtml(JSON.stringify(data.cleared_rows || data)) + '</span>';
+                    hydrateHeatAccumWatch({});
+                    hydrateAmbushWatch({});
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                }
+            }
+
+            document.getElementById('maint-clear-ambush')?.addEventListener('click', () => runClear(['ambush_watch']));
+            document.getElementById('maint-clear-heat')?.addEventListener('click', () => runClear(['heat_accum_watch']));
+            document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch']));
+        }
+
         async function init() {
             const conn = document.getElementById('connection-status');
             try {
@@ -934,6 +1038,7 @@
                 conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15';
                 conn.innerHTML = '<span>API 连接失败</span>';
             }
+            setupMaintPanel();
             hydrateHeatAccumWatch({});
             hydrateAmbushWatch({});
             loadAccumulationOiRadar();
