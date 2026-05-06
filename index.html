@@ -156,7 +156,7 @@
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🎯💎 暗流 · 低市值埋伏</h2>
-                        <p class="text-text-muted text-xs mt-0.5">在整张埋伏榜（按埋伏总分从高到低）里筛选：每类仅入库 / 展示分数最高的前 2 名——🎯 OI 涨且价格近乎横盘；💎 流通市值 &lt;$100M 且 |OI 6h| ≥3%。与「值得关注」同源；库表保留策略仍为最近 7 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">在整张埋伏榜（按埋伏总分从高到低）里筛选：每类仅入库 / 展示分数最高的前 2 名——🎯 OI 涨且价格近乎横盘；💎 流通市值 &lt;$100M 且 |OI 6h| ≥3%。表中「埋伏总分」为同一套埋伏加权分（满分 100）。与「值得关注」同源；库表保留策略仍为最近 7 日。</p>
                     </div>
                     <span id="ambush-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -462,12 +462,13 @@
                 return;
             }
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[800px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">类型</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="埋伏榜总分（市值+OI+横盘+费率）">埋伏总分</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">OI 6h</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">涨跌</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">市值</th>
@@ -478,6 +479,10 @@
                 const typ = ambushSignalTypeLabel(row.signal_type);
                 const gd = escHtml(row.generated_date || '--');
                 const sym = row.symbol || '';
+                const at = row.ambush_total;
+                const scoreCell = (at != null && !Number.isNaN(Number(at)))
+                    ? '<span class="text-neon-green font-mono font-semibold">' + Number(at).toFixed(0) + '</span>'
+                    : '<span class="text-text-muted">--</span>';
                 const oi6 = row.d6h != null && !Number.isNaN(Number(row.d6h))
                     ? (Number(row.d6h) >= 0 ? '+' : '') + Number(row.d6h).toFixed(0) + '%'
                     : '--';
@@ -492,6 +497,7 @@
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${typ}</td>
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
                     <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${scoreCell}</td>
                     <td class="py-2 pr-3 font-mono text-neon-purple/95">${escHtml(oi6)}</td>
                     <td class="py-2 pr-3 font-mono ${pxClass(row.px_chg)}">${escHtml(px)}</td>
                     <td class="py-2 pr-3 text-text-muted">${escHtml(mc)}</td>
