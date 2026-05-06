@@ -426,15 +426,14 @@
             bindOiRadarPickHandlers(body);
         }
 
-        async function hydrateHeatAccumWatch(data) {
-            let wl = data && data.heat_accum_watchlist;
-            if (!wl || !Array.isArray(wl.items)) {
-                try {
-                    wl = await API.heatAccumWatch();
-                } catch (e) {
-                    console.error('heat accum watch:', e);
-                    wl = { items: [], message: '看盘接口暂不可用' };
-                }
+        async function hydrateHeatAccumWatch(_data) {
+            /** 始终请求 DB 看盘接口，避免 GET 快照里嵌套的 heat_accum_watchlist 与库不一致（清库后仍显示旧数据）。 */
+            let wl;
+            try {
+                wl = await API.heatAccumWatch();
+            } catch (e) {
+                console.error('heat accum watch:', e);
+                wl = { items: [], message: '看盘接口暂不可用' };
             }
             renderHeatAccumWatchPanel(wl || { items: [] });
         }
@@ -503,15 +502,14 @@
             bindOiRadarPickHandlers(body);
         }
 
-        async function hydrateAmbushWatch(data) {
-            let wl = data && data.ambush_watchlist;
-            if (!wl || !Array.isArray(wl.items)) {
-                try {
-                    wl = await API.ambushWatch();
-                } catch (e) {
-                    console.error('ambush watch:', e);
-                    wl = { items: [], message: '看盘接口暂不可用' };
-                }
+        async function hydrateAmbushWatch(_data) {
+            /** 始终请求 DB，不用 OI 快照内嵌 ambush_watchlist（清库后快照曾长期陈旧）。 */
+            let wl;
+            try {
+                wl = await API.ambushWatch();
+            } catch (e) {
+                console.error('ambush watch:', e);
+                wl = { items: [], message: '看盘接口暂不可用' };
             }
             renderAmbushWatchPanel(wl || { items: [] });
         }
