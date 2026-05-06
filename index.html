@@ -141,7 +141,7 @@
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。4h K 线「突破→回踩→延续」状态由服务端每 4 小时入库。</p>
                     </div>
                     <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -238,11 +238,13 @@
             </div>
             <div class="border-t border-border/60 mt-4 pt-4">
                 <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
-                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat zones 每日 12:00 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_zones 每日 12:00（同步现价/摘要）· heat_bpc 每 4h（4h K 线状态）· oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
-                    <button type="button" data-maint-cron="heat_zones" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">热度区间重算</button>
-                    <button type="button" id="maint-refresh-heat-zones" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度区间（后台）</button>
+                    <button type="button" data-maint-cron="heat_zones" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_zones 看盘刷新</button>
+                    <button type="button" data-maint-cron="heat_bpc" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_bpc 4h 状态</button>
+                    <button type="button" id="maint-refresh-heat-zones" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度看盘现价（后台）</button>
+                    <button type="button" id="maint-refresh-heat-bpc" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/[0.08] border border-neon-purple/25 text-neon-purple text-xs hover:bg-neon-purple/[0.12]">刷新 4h 突破回踩（后台）</button>
                     <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
@@ -350,6 +352,24 @@
                 }
                 return data;
             },
+            async refreshHeatBpc() {
+                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/refresh-heat-bpc`, {
+                    method: 'POST',
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
             async refreshHeatZones() {
                 const res = await fetch(`${API_BASE}/api/accumulation/maintenance/refresh-heat-zones`, {
                     method: 'POST',
@@ -442,8 +462,10 @@
             const items = (wl && Array.isArray(wl.items)) ? wl.items : [];
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
+                const bp = wl && wl.bpc_snapshot_cst ? String(wl.bpc_snapshot_cst) : '';
+                const bip = wl && wl.bpc_interval ? String(wl.bpc_interval) : '4h';
                 const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+                tsEl.textContent = [u, bp ? `${bip}结构 ${bp}` : '', n].filter(Boolean).join(' · ') || '--';
             }
             if (!items.length) {
                 body.innerHTML = '<div class="text-text-muted text-sm">' +
@@ -453,11 +475,12 @@
                 return;
             }
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[640px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[880px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="4h K 线状态机：突破→回踩→延续">4h 结构</th>
                             <th class="py-2 pr-3 font-medium">摘要</th>
                         </tr>
                     </thead><tbody>`;
@@ -467,13 +490,27 @@
                 const sum = escHtml(row.summary_line || '');
                 const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
                 const summaryCell = oiRadarRowClickable(sym, sum);
+                const bpc = row.bpc;
+                let bpcCell = '<span class="text-text-muted">--</span>';
+                if (bpc && typeof bpc === 'object') {
+                    const zh = escHtml(bpc.phase_zh || bpc.phase || '--');
+                    const bits = [];
+                    if (bpc.continuation_reason) bits.push(String(bpc.continuation_reason));
+                    if (bpc.pullback_vol_contracted) bits.push('缩量回踩');
+                    if (bpc.ok === false && bpc.last_invalid_reason) bits.push(String(bpc.last_invalid_reason));
+                    const sub = bits.length
+                        ? `<span class="block text-[10px] text-text-muted mt-0.5">${escHtml(bits.join(' · '))}</span>`
+                        : '';
+                    bpcCell = `<div class="text-xs">${zh}${sub}</div>`;
+                }
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
                     <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                    <td class="py-2 pr-3 align-top">${bpcCell}</td>
                     <td class="py-2 pr-3">${summaryCell}</td>
                 </tr>`;
             }).join('');
-            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成时间为该标的首次进入本看盘的时刻（CST，精确到分）。历史条目可能仍为仅日期。</p>';
+            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成时间为该标的首次进入本看盘的时刻（CST，精确到分）。「4h 结构」为突破—回踩—延续状态机快照，按计价成交额与收盘价计算，不含 OI。</p>';
             bindOiRadarPickHandlers(body);
         }
 
@@ -1099,9 +1136,23 @@
 
             document.getElementById('maint-refresh-heat-zones')?.addEventListener('click', async () => {
                 if (!msg) return;
-                msg.textContent = '提交热度区间重算…';
+                msg.textContent = '提交热度看盘刷新…';
                 try {
                     const data = await API.refreshHeatZones();
+                    msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
+                    setTimeout(() => hydrateHeatAccumWatch({}), 2500);
+                    setTimeout(() => hydrateHeatAccumWatch({}), 8000);
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                }
+            });
+
+            document.getElementById('maint-refresh-heat-bpc')?.addEventListener('click', async () => {
+                if (!msg) return;
+                msg.textContent = '提交 4h 突破回踩状态重算…';
+                try {
+                    const data = await API.refreshHeatBpc();
                     msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
                     setTimeout(() => hydrateHeatAccumWatch({}), 2500);
                     setTimeout(() => hydrateHeatAccumWatch({}), 8000);
