@@ -82,6 +82,9 @@
         .section-accent-ambush {
             border-top: 1px solid rgba(212, 184, 120, 0.22);
         }
+        .section-accent-patrick {
+            border-top: 1px solid rgba(138, 180, 248, 0.22);
+        }
         .btn-secondary {
             transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
         }
@@ -146,6 +149,21 @@
                     <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
                 <div id="heat-accum-watch-body" class="p-4 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="Patrick核心看盘">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-patrick min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">📍 Patrick 核心看盘</h2>
+                        <p class="text-text-muted text-xs mt-0.5">收筹池 + |6h OI| ≥ 阈值（与「值得关注」📍 同源）；按生成日归档，保留最近 7 日。</p>
+                    </div>
+                    <span id="patrick-core-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                </div>
+                <div id="patrick-core-watch-body" class="p-4 overflow-x-auto">
                     <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
                 </div>
             </div>
@@ -236,7 +254,8 @@
             <div class="flex flex-wrap gap-2">
                 <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 ambush_watch</button>
                 <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 heat_accum_watch</button>
-                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">两项都清空</button>
+                <button type="button" id="maint-clear-patrick" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 patrick_core_watch</button>
+                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">三项都清空</button>
             </div>
             <div class="border-t border-border/60 mt-4 pt-4">
                 <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
@@ -297,6 +316,11 @@
             },
             async ambushWatch() {
                 const res = await fetch(`${API_BASE}/api/accumulation/ambush-watch`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async patrickCoreWatch() {
+                const res = await fetch(`${API_BASE}/api/accumulation/patrick-core-watch`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -600,6 +624,77 @@
                 wl = { items: [], message: '看盘接口暂不可用' };
             }
             renderAmbushWatchPanel(wl || { items: [] });
+        }
+
+        function renderPatrickCoreWatchPanel(wl) {
+            const body = document.getElementById('patrick-core-watch-body');
+            const tsEl = document.getElementById('patrick-core-watch-ts');
+            if (!body) return;
+            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
+            if (tsEl) {
+                const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
+                const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
+                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+            }
+            if (!items.length) {
+                body.innerHTML = '<div class="text-text-muted text-sm">' +
+                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。与「值得关注」中 📍 条目同源；整点扫描或点击下方「刷新」后会写入。') +
+                    '</div>';
+                bindOiRadarPickHandlers(body);
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[820px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">横盘</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">OI 6h</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">涨跌</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">市值</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items.map((row) => {
+                const gd = escHtml(row.generated_date || '--');
+                const sym = row.symbol || '';
+                const sw = row.sideways_days != null && !Number.isNaN(Number(row.sideways_days))
+                    ? `${Number(row.sideways_days)}天`
+                    : '--';
+                const oi6 = row.d6h != null && !Number.isNaN(Number(row.d6h))
+                    ? (Number(row.d6h) >= 0 ? '+' : '') + Number(row.d6h).toFixed(0) + '%'
+                    : '--';
+                const px = row.px_chg != null && !Number.isNaN(Number(row.px_chg))
+                    ? (Number(row.px_chg) >= 0 ? '+' : '') + Number(row.px_chg).toFixed(1) + '%'
+                    : '--';
+                const mc = formatMcapUsd(row.est_mcap);
+                const sum = escHtml(row.summary_line || '');
+                const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
+                const summaryCell = oiRadarRowClickable(sym, sum);
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                    <td class="py-2 pr-3 text-text-muted whitespace-nowrap">${escHtml(sw)}</td>
+                    <td class="py-2 pr-3 font-mono text-neon-purple/95">${escHtml(oi6)}</td>
+                    <td class="py-2 pr-3 font-mono ${pxClass(row.px_chg)}">${escHtml(px)}</td>
+                    <td class="py-2 pr-3 text-text-muted">${escHtml(mc)}</td>
+                    <td class="py-2 pr-3">${summaryCell}</td>
+                </tr>`;
+            }).join('');
+            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。筛选规则与 accumulation_radar 中 PATRICK_CORE_* 参数一致。</p>';
+            bindOiRadarPickHandlers(body);
+        }
+
+        async function hydratePatrickCoreWatch(_data) {
+            let wl;
+            try {
+                wl = await API.patrickCoreWatch();
+            } catch (e) {
+                console.error('patrick core watch:', e);
+                wl = { items: [], message: '看盘接口暂不可用' };
+            }
+            renderPatrickCoreWatchPanel(wl || { items: [] });
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -955,6 +1050,7 @@
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
             hydrateHeatAccumWatch(data);
+            hydratePatrickCoreWatch(data);
             hydrateAmbushWatch(data);
         }
 
@@ -1045,6 +1141,7 @@
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
                 hydrateHeatAccumWatch({});
+                hydratePatrickCoreWatch({});
                 hydrateAmbushWatch({});
             } finally {
                 if (btn) btn.disabled = false;
@@ -1102,6 +1199,7 @@
                     const data = await API.clearWatchTables(tables);
                     msg.innerHTML = '<span class="text-neon-green">ok · ' + escHtml(JSON.stringify(data.cleared_rows || data)) + '</span>';
                     hydrateHeatAccumWatch({});
+                    hydratePatrickCoreWatch({});
                     hydrateAmbushWatch({});
                 } catch (e) {
                     console.error(e);
@@ -1111,7 +1209,8 @@
 
             document.getElementById('maint-clear-ambush')?.addEventListener('click', () => runClear(['ambush_watch']));
             document.getElementById('maint-clear-heat')?.addEventListener('click', () => runClear(['heat_accum_watch']));
-            document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch']));
+            document.getElementById('maint-clear-patrick')?.addEventListener('click', () => runClear(['patrick_core_watch']));
+            document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch', 'patrick_core_watch']));
 
             document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
                 btn.addEventListener('click', async () => {
@@ -1155,6 +1254,7 @@
             }
             setupMaintPanel();
             hydrateHeatAccumWatch({});
+            hydratePatrickCoreWatch({});
             hydrateAmbushWatch({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
