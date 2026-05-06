@@ -453,7 +453,7 @@
                     <td class="py-2 pr-3">${summaryCell}</td>
                 </tr>`;
             }).join('');
-            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成日为该标的首次进入本看盘当日（CST）。</p>';
+            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成时间为该标的首次进入本看盘的时刻（CST，精确到分）。历史条目可能仍为仅日期。</p>';
             bindOiRadarPickHandlers(body);
         }
 
