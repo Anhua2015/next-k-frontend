@@ -111,6 +111,21 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="热度收筹看盘">
+            <div class="bg-surface rounded-xl border border-neon-green/30 overflow-hidden card-hover">
+                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
+                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日（与原「值得关注」并列数据源，不改变其展示）</p>
+                    </div>
+                    <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                </div>
+                <div id="heat-accum-watch-body" class="p-4">
+                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
+                </div>
+            </div>
+        </section>
+
         <!-- 临时隐藏：期货 Alpha 模拟盘（与 main.py S6_FUTURES_ALPHA_SCHEDULER_ENABLED 一并恢复） -->
         <section class="mb-6 hidden" aria-label="S6 期货 Alpha" data-s6-panel="1">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
@@ -201,6 +216,11 @@
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
+            async heatAccumWatch() {
+                const res = await fetch(`${API_BASE}/api/accumulation/heat-accum-watch`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
             async s2FundingSignals() {
                 const res = await fetch(`${API_BASE}/api/s2/funding-signals`);
                 if (!res.ok) throw new Error(await res.text());
@@ -276,6 +296,61 @@
             const perp = chartSymbol.replace('/', '').toUpperCase();
             const url = 'https://www.binance.com/zh-CN/futures/' + encodeURIComponent(perp);
             window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        function renderHeatAccumWatchPanel(wl) {
+            const body = document.getElementById('heat-accum-watch-body');
+            const tsEl = document.getElementById('heat-accum-watch-ts');
+            if (!body) return;
+            const items = (wl && Array.isArray(wl.items)) ? wl.items : [];
+            if (tsEl) {
+                const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
+                const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
+                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+            }
+            if (!items.length) {
+                body.innerHTML = '<div class="text-text-muted text-sm">' +
+                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。热度+收筹与「值得关注」中 🔥💤 条目同源；整点扫描或点击下方「刷新」后会写入。') +
+                    '</div>';
+                bindOiRadarPickHandlers(body);
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[640px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items.map((row) => {
+                const gd = escHtml(row.generated_date || '--');
+                const sym = row.symbol || '';
+                const sum = escHtml(row.summary_line || '');
+                const coinLine = '<span class="font-semibold text-neon-green">' + escHtml(row.coin || '') + '</span>';
+                const summaryCell = oiRadarRowClickable(sym, sum);
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                    <td class="py-2 pr-3">${summaryCell}</td>
+                </tr>`;
+            }).join('');
+            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成日为该标的首次进入本看盘当日（CST）。</p>';
+            bindOiRadarPickHandlers(body);
+        }
+
+        async function hydrateHeatAccumWatch(data) {
+            let wl = data && data.heat_accum_watchlist;
+            if (!wl || !Array.isArray(wl.items)) {
+                try {
+                    wl = await API.heatAccumWatch();
+                } catch (e) {
+                    console.error('heat accum watch:', e);
+                    wl = { items: [], message: '看盘接口暂不可用' };
+                }
+            }
+            renderHeatAccumWatchPanel(wl || { items: [] });
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -649,6 +724,7 @@
 
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
+            hydrateHeatAccumWatch(data);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
@@ -737,6 +813,7 @@
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
+                hydrateHeatAccumWatch({});
             } finally {
                 if (btn) btn.disabled = false;
             }
