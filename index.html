@@ -114,12 +114,12 @@
     <main class="max-w-7xl mx-auto px-4 py-6">
         <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
-            <div id="oi-radar-highlights-slot" class="min-h-0 flex flex-col">
+            <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
                 <div class="highlights-hero rounded-xl p-4 md:p-5 flex-1 flex flex-col justify-center">
                     <div class="text-text-muted text-sm animate-pulse">加载值得关注…</div>
                 </div>
             </div>
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] lg:max-h-[min(520px,calc(100vh-220px))]">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
@@ -137,7 +137,7 @@
         </section>
 
         <section class="mb-6" aria-label="热度收筹看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-heat">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-heat min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
@@ -145,14 +145,14 @@
                     </div>
                     <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
-                <div id="heat-accum-watch-body" class="p-4">
+                <div id="heat-accum-watch-body" class="p-4 overflow-x-auto">
                     <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
                 </div>
             </div>
         </section>
 
         <section class="mb-6" aria-label="暗流低市值看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-ambush">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-ambush min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🎯💎 暗流 · 低市值埋伏</h2>
@@ -160,7 +160,7 @@
                     </div>
                     <span id="ambush-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
-                <div id="ambush-watch-body" class="p-4">
+                <div id="ambush-watch-body" class="p-4 overflow-x-auto">
                     <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
                 </div>
             </div>
@@ -196,21 +196,23 @@
             </div>
         </section>
 
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
+        <section class="mb-6" aria-label="收筹池 OI 监控">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2>
-                    <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏 </p>
+                        <p class="text-text-muted text-xs mt-0.5">热度榜 · 追多 · 综合 · 埋伏 </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
-                    <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                </div>
-            </div>
-            <div id="oi-radar-body" class="p-4">
+                <div id="oi-radar-body" class="p-4 overflow-x-auto">
                 <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <footer class="border-t border-border py-6 mt-auto select-none">
@@ -913,7 +915,7 @@
                 </div>`;
 
             const highlightsHtml = `
-                <div class="highlights-hero rounded-xl p-4 md:p-5 h-full min-h-[160px] flex flex-col">
+                <div class="highlights-hero rounded-xl p-4 md:p-5 h-full min-h-[160px] min-w-0 flex flex-col">
                     <div class="flex flex-wrap items-end gap-3 mb-1 shrink-0">
                         <div class="flex items-center gap-2">
                             <span class="text-2xl md:text-3xl leading-none" aria-hidden="true">💡</span>
@@ -922,7 +924,7 @@
                         <span class="text-xs text-accent/70 font-medium uppercase tracking-wider">优先信号</span>
                     </div>
                     <p class="text-text-muted text-xs mb-3 shrink-0">综合热度、费率、收筹池与 OI 的交叉提示</p>
-                    <div class="space-y-0 flex-1 min-h-0 overflow-y-auto max-h-[min(320px,46vh)] lg:max-h-[min(400px,calc(100vh-260px))] pr-1">${highlights}</div>
+                    <div class="space-y-0 flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto max-h-[min(320px,46vh)] lg:max-h-[min(400px,calc(100vh-260px))] pr-1">${highlights}</div>
                 </div>`;
 
             const hlSlot = document.getElementById('oi-radar-highlights-slot');
