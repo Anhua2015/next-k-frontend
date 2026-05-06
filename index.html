@@ -139,47 +139,17 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="热度收筹看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-heat min-w-0">
+        <section class="mb-6" aria-label="值得关注七类看盘">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🔥💤 热度 · 收筹看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">仅 🔥💤 热度+收筹；每条含生成日期，保留最近 7 日。服务端每小时重算：现价/摘要 + 1h「突破→回踩→延续」结构。</p>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 七类看盘</h2>
+                        <p class="text-text-muted text-xs mt-0.5">与电报「值得关注」七类一一对应；每类每轮至多 2 条入库，按生成时间归档，保留最近 7 日。</p>
                     </div>
-                    <span id="heat-accum-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                    <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
-                <div id="heat-accum-watch-body" class="p-4 overflow-x-auto">
-                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-6" aria-label="Patrick核心看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-patrick min-w-0">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">📍 Patrick 核心看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">收筹池 + |6h OI| ≥ 阈值（与「值得关注」📍 同源）；按生成日归档，保留最近 7 日。</p>
-                    </div>
-                    <span id="patrick-core-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                </div>
-                <div id="patrick-core-watch-body" class="p-4 overflow-x-auto">
-                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-6" aria-label="暗流低市值看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover section-accent-ambush min-w-0">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🎯💎 暗流 · 低市值埋伏</h2>
-                        <p class="text-text-muted text-xs mt-0.5">库表保留策略仍为最近 7 日。</p>
-                    </div>
-                    <span id="ambush-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                </div>
-                <div id="ambush-watch-body" class="p-4 overflow-x-auto">
-                    <div class="text-text-muted text-sm animate-pulse">加载看盘…</div>
+                <div id="worth-watch-boards-root" class="p-4 space-y-4">
+                    <div class="text-text-muted text-sm animate-pulse">加载七类看盘…</div>
                 </div>
             </div>
         </section>
@@ -255,7 +225,8 @@
                 <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 ambush_watch</button>
                 <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 heat_accum_watch</button>
                 <button type="button" id="maint-clear-patrick" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 patrick_core_watch</button>
-                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">三项都清空</button>
+                <button type="button" id="maint-clear-worth" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 worth_highlight_watch</button>
+                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">全部看盘表</button>
             </div>
             <div class="border-t border-border/60 mt-4 pt-4">
                 <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
@@ -309,18 +280,8 @@
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
-            async heatAccumWatch() {
-                const res = await fetch(`${API_BASE}/api/accumulation/heat-accum-watch`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async ambushWatch() {
-                const res = await fetch(`${API_BASE}/api/accumulation/ambush-watch`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async patrickCoreWatch() {
-                const res = await fetch(`${API_BASE}/api/accumulation/patrick-core-watch`);
+            async worthWatch() {
+                const res = await fetch(`${API_BASE}/api/accumulation/worth-watch`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -472,229 +433,91 @@
             });
         }
 
-        function renderHeatAccumWatchPanel(wl) {
-            const body = document.getElementById('heat-accum-watch-body');
-            const tsEl = document.getElementById('heat-accum-watch-ts');
-            if (!body) return;
-            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
+        /** 与后端 WORTH_HIGHLIGHT_CATEGORY_ORDER 顺序一致 */
+        const WORTH_WATCH_META = [
+            ['heat_accum', '🔥💤 热度+收筹'],
+            ['patrick_core', '📍 Patrick核心'],
+            ['hot_oi', '🔥⚡ 热度+OI'],
+            ['chase_fire', '🔥 追多·费率加速'],
+            ['dual_list', '⭐ 追多+综合双榜'],
+            ['ambush_dark', '🎯 埋伏·暗流'],
+            ['ambush_gem', '💎 埋伏·低市值+OI'],
+        ];
+
+        function worthDetailSnippet(detail) {
+            if (!detail || typeof detail !== 'object') return '';
+            try {
+                const j = JSON.stringify(detail);
+                return j.length > 120 ? j.slice(0, 117) + '…' : j;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function renderWorthSevenBoards(wl) {
+            const root = document.getElementById('worth-watch-boards-root');
+            const tsEl = document.getElementById('worth-watch-ts');
+            if (!root) return;
+            const cats = (wl && wl.categories) || {};
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
-                const bp = wl && wl.bpc_snapshot_cst ? String(wl.bpc_snapshot_cst) : '';
-                const bip = wl && wl.bpc_interval ? String(wl.bpc_interval) : '1h';
-                const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
                 const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                tsEl.textContent = [u, bp ? `${bipDisp}结构 ${bp}` : '', n].filter(Boolean).join(' · ') || '--';
+                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
             }
-            if (!items.length) {
-                body.innerHTML = '<div class="text-text-muted text-sm">' +
-                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。热度+收筹与「值得关注」中 🔥💤 条目同源；整点扫描或点击下方「刷新」后会写入。') +
-                    '</div>';
-                bindOiRadarPickHandlers(body);
-                return;
-            }
-            const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[880px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线状态机：突破→回踩→延续">1H 结构</th>
-                            <th class="py-2 pr-3 font-medium">摘要</th>
-                        </tr>
-                    </thead><tbody>`;
-            const rows = items.map((row) => {
-                const gd = escHtml(row.generated_date || '--');
-                const sym = row.symbol || '';
-                const sum = escHtml(row.summary_line || '');
-                const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
-                const summaryCell = oiRadarRowClickable(sym, sum);
-                const bpc = row.bpc;
-                let bpcCell = '<span class="text-text-muted">--</span>';
-                if (bpc && typeof bpc === 'object') {
-                    const zh = escHtml(bpc.phase_zh || bpc.phase || '--');
-                    const bits = [];
-                    if (bpc.continuation_reason) bits.push(String(bpc.continuation_reason));
-                    if (bpc.pullback_vol_contracted) bits.push('缩量回踩');
-                    if (bpc.ok === false && bpc.last_invalid_reason) bits.push(String(bpc.last_invalid_reason));
-                    const sub = bits.length
-                        ? `<span class="block text-[10px] text-text-muted mt-0.5">${escHtml(bits.join(' · '))}</span>`
-                        : '';
-                    bpcCell = `<div class="text-xs">${zh}${sub}</div>`;
+            const blocks = WORTH_WATCH_META.map(([key, label]) => {
+                const sec = cats[key] || { items: [] };
+                const items = sortWatchItemsByGeneratedDesc(sec.items || []);
+                let inner;
+                if (!items.length) {
+                    inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
+                } else {
+                    const thead = `
+                        <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                            <thead>
+                                <tr class="text-text-muted border-b border-border">
+                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
+                                    <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                                    <th class="py-2 pr-3 font-medium">摘要</th>
+                                    <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
+                                </tr>
+                            </thead><tbody>`;
+                    const rows = items.map((row) => {
+                        const gd = escHtml(row.generated_date || '--');
+                        const rk = row.rank_in_category != null ? String(row.rank_in_category) : '--';
+                        const sym = row.symbol || '';
+                        const sum = escHtml(row.summary_line || '');
+                        const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
+                        const summaryCell = oiRadarRowClickable(sym, sum);
+                        const snip = escHtml(worthDetailSnippet(row.detail));
+                        return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                            <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
+                            <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
+                            <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                            <td class="py-2 pr-3">${summaryCell}</td>
+                            <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[240px]">${snip || '--'}</td>
+                        </tr>`;
+                    }).join('');
+                    inner = thead + rows + '</tbody></table>';
                 }
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
-                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                    <td class="py-2 pr-3 align-top">${bpcCell}</td>
-                    <td class="py-2 pr-3">${summaryCell}</td>
-                </tr>`;
+                return `<div class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
+                    <div class="px-3 py-2 border-b border-border/60 bg-surface-light/25 text-sm font-semibold text-text-primary tracking-tight">${escHtml(label)}</div>
+                    <div class="p-3 overflow-x-auto">${inner}</div>
+                </div>`;
             }).join('');
-            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。生成时间为该标的首次进入本看盘的时刻（CST，精确到分）。「1H 结构」为突破—回踩—延续状态机快照（1h K 线），按计价成交额与收盘价计算，不含 OI。</p>';
-            bindOiRadarPickHandlers(body);
+            root.innerHTML = blocks + '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。热度+收筹标的仍由服务端写入 heat_accum_watch 并参与每小时 1H 结构重算（本表为值得关注同源归档）。</p>';
+            bindOiRadarPickHandlers(root);
         }
 
-        async function hydrateHeatAccumWatch(_data) {
-            /** 始终请求 DB 看盘接口，避免 GET 快照里嵌套的 heat_accum_watchlist 与库不一致（清库后仍显示旧数据）。 */
+        async function hydrateWorthHighlightBoards(_data) {
             let wl;
             try {
-                wl = await API.heatAccumWatch();
+                wl = await API.worthWatch();
             } catch (e) {
-                console.error('heat accum watch:', e);
-                wl = { items: [], message: '看盘接口暂不可用' };
+                console.error('worth watch:', e);
+                wl = { categories: {}, message: '看盘接口暂不可用' };
             }
-            renderHeatAccumWatchPanel(wl || { items: [] });
-        }
-
-        function ambushSignalTypeLabel(t) {
-            if (t === 'dark_flow') return '🎯 暗流';
-            if (t === 'low_mcap_oi') return '💎 低市值+OI';
-            return escHtml(t || '--');
-        }
-
-        function renderAmbushWatchPanel(wl) {
-            const body = document.getElementById('ambush-watch-body');
-            const tsEl = document.getElementById('ambush-watch-ts');
-            if (!body) return;
-            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
-            if (tsEl) {
-                const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
-                const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
-            }
-            if (!items.length) {
-                body.innerHTML = '<div class="text-text-muted text-sm">' +
-                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。与「值得关注」中 🎯💎 条目同源；整点扫描或点击下方「刷新」后会写入。') +
-                    '</div>';
-                bindOiRadarPickHandlers(body);
-                return;
-            }
-            const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[800px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">类型</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="埋伏榜总分（市值+OI+横盘+费率）">埋伏总分</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">OI 6h</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">涨跌</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">市值</th>
-                            <th class="py-2 pr-3 font-medium">摘要</th>
-                        </tr>
-                    </thead><tbody>`;
-            const rows = items.map((row) => {
-                const typ = ambushSignalTypeLabel(row.signal_type);
-                const gd = escHtml(row.generated_date || '--');
-                const sym = row.symbol || '';
-                const at = row.ambush_total;
-                const scoreCell = (at != null && !Number.isNaN(Number(at)))
-                    ? '<span class="text-neon-green font-mono font-semibold">' + Number(at).toFixed(0) + '</span>'
-                    : '<span class="text-text-muted">--</span>';
-                const oi6 = row.d6h != null && !Number.isNaN(Number(row.d6h))
-                    ? (Number(row.d6h) >= 0 ? '+' : '') + Number(row.d6h).toFixed(0) + '%'
-                    : '--';
-                const px = row.px_chg != null && !Number.isNaN(Number(row.px_chg))
-                    ? (Number(row.px_chg) >= 0 ? '+' : '') + Number(row.px_chg).toFixed(1) + '%'
-                    : '--';
-                const mc = formatMcapUsd(row.est_mcap);
-                const sum = escHtml(row.summary_line || '');
-                const coinLine = '<span class="font-semibold text-warn">' + escHtml(row.coin || '') + '</span>';
-                const summaryCell = oiRadarRowClickable(sym, sum);
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${typ}</td>
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
-                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                    <td class="py-2 pr-3 whitespace-nowrap">${scoreCell}</td>
-                    <td class="py-2 pr-3 font-mono text-neon-purple/95">${escHtml(oi6)}</td>
-                    <td class="py-2 pr-3 font-mono ${pxClass(row.px_chg)}">${escHtml(px)}</td>
-                    <td class="py-2 pr-3 text-text-muted">${escHtml(mc)}</td>
-                    <td class="py-2 pr-3">${summaryCell}</td>
-                </tr>`;
-            }).join('');
-            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。同一标的可同时满足两类条件（两行）。</p>';
-            bindOiRadarPickHandlers(body);
-        }
-
-        async function hydrateAmbushWatch(_data) {
-            /** 始终请求 DB，不用 OI 快照内嵌 ambush_watchlist（清库后快照曾长期陈旧）。 */
-            let wl;
-            try {
-                wl = await API.ambushWatch();
-            } catch (e) {
-                console.error('ambush watch:', e);
-                wl = { items: [], message: '看盘接口暂不可用' };
-            }
-            renderAmbushWatchPanel(wl || { items: [] });
-        }
-
-        function renderPatrickCoreWatchPanel(wl) {
-            const body = document.getElementById('patrick-core-watch-body');
-            const tsEl = document.getElementById('patrick-core-watch-ts');
-            if (!body) return;
-            const items = sortWatchItemsByGeneratedDesc((wl && Array.isArray(wl.items)) ? wl.items : []);
-            if (tsEl) {
-                const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
-                const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
-            }
-            if (!items.length) {
-                body.innerHTML = '<div class="text-text-muted text-sm">' +
-                    escHtml(wl && wl.message ? wl.message : '近 7 日内尚无归档。与「值得关注」中 📍 条目同源；整点扫描或点击下方「刷新」后会写入。') +
-                    '</div>';
-                bindOiRadarPickHandlers(body);
-                return;
-            }
-            const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[820px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">横盘</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">OI 6h</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">涨跌</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">市值</th>
-                            <th class="py-2 pr-3 font-medium">摘要</th>
-                        </tr>
-                    </thead><tbody>`;
-            const rows = items.map((row) => {
-                const gd = escHtml(row.generated_date || '--');
-                const sym = row.symbol || '';
-                const sw = row.sideways_days != null && !Number.isNaN(Number(row.sideways_days))
-                    ? `${Number(row.sideways_days)}天`
-                    : '--';
-                const oi6 = row.d6h != null && !Number.isNaN(Number(row.d6h))
-                    ? (Number(row.d6h) >= 0 ? '+' : '') + Number(row.d6h).toFixed(0) + '%'
-                    : '--';
-                const px = row.px_chg != null && !Number.isNaN(Number(row.px_chg))
-                    ? (Number(row.px_chg) >= 0 ? '+' : '') + Number(row.px_chg).toFixed(1) + '%'
-                    : '--';
-                const mc = formatMcapUsd(row.est_mcap);
-                const sum = escHtml(row.summary_line || '');
-                const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
-                const summaryCell = oiRadarRowClickable(sym, sum);
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
-                    <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                    <td class="py-2 pr-3 text-text-muted whitespace-nowrap">${escHtml(sw)}</td>
-                    <td class="py-2 pr-3 font-mono text-neon-purple/95">${escHtml(oi6)}</td>
-                    <td class="py-2 pr-3 font-mono ${pxClass(row.px_chg)}">${escHtml(px)}</td>
-                    <td class="py-2 pr-3 text-text-muted">${escHtml(mc)}</td>
-                    <td class="py-2 pr-3">${summaryCell}</td>
-                </tr>`;
-            }).join('');
-            body.innerHTML = thead + rows + '</tbody></table><p class="text-text-muted text-[11px] mt-3">点击摘要或币种可打开币安 U 本位合约。筛选规则与 accumulation_radar 中 PATRICK_CORE_* 参数一致。</p>';
-            bindOiRadarPickHandlers(body);
-        }
-
-        async function hydratePatrickCoreWatch(_data) {
-            let wl;
-            try {
-                wl = await API.patrickCoreWatch();
-            } catch (e) {
-                console.error('patrick core watch:', e);
-                wl = { items: [], message: '看盘接口暂不可用' };
-            }
-            renderPatrickCoreWatchPanel(wl || { items: [] });
+            renderWorthSevenBoards(wl || { categories: {} });
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -1049,9 +872,7 @@
 
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
-            hydrateHeatAccumWatch(data);
-            hydratePatrickCoreWatch(data);
-            hydrateAmbushWatch(data);
+            hydrateWorthHighlightBoards(data);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
@@ -1140,9 +961,7 @@
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
-                hydrateHeatAccumWatch({});
-                hydratePatrickCoreWatch({});
-                hydrateAmbushWatch({});
+                hydrateWorthHighlightBoards({});
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -1198,9 +1017,7 @@
                 try {
                     const data = await API.clearWatchTables(tables);
                     msg.innerHTML = '<span class="text-neon-green">ok · ' + escHtml(JSON.stringify(data.cleared_rows || data)) + '</span>';
-                    hydrateHeatAccumWatch({});
-                    hydratePatrickCoreWatch({});
-                    hydrateAmbushWatch({});
+                    hydrateWorthHighlightBoards({});
                 } catch (e) {
                     console.error(e);
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
@@ -1210,7 +1027,8 @@
             document.getElementById('maint-clear-ambush')?.addEventListener('click', () => runClear(['ambush_watch']));
             document.getElementById('maint-clear-heat')?.addEventListener('click', () => runClear(['heat_accum_watch']));
             document.getElementById('maint-clear-patrick')?.addEventListener('click', () => runClear(['patrick_core_watch']));
-            document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch', 'patrick_core_watch']));
+            document.getElementById('maint-clear-worth')?.addEventListener('click', () => runClear(['worth_highlight_watch']));
+            document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch', 'patrick_core_watch', 'worth_highlight_watch']));
 
             document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
                 btn.addEventListener('click', async () => {
@@ -1233,8 +1051,8 @@
                 try {
                     const data = await API.refreshHeatWatch();
                     msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
-                    setTimeout(() => hydrateHeatAccumWatch({}), 2500);
-                    setTimeout(() => hydrateHeatAccumWatch({}), 8000);
+                    setTimeout(() => hydrateWorthHighlightBoards({}), 2500);
+                    setTimeout(() => hydrateWorthHighlightBoards({}), 8000);
                 } catch (e) {
                     console.error(e);
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
@@ -1253,9 +1071,7 @@
                 conn.innerHTML = '<span>API 连接失败</span>';
             }
             setupMaintPanel();
-            hydrateHeatAccumWatch({});
-            hydratePatrickCoreWatch({});
-            hydrateAmbushWatch({});
+            hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
