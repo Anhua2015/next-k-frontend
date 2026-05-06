@@ -221,19 +221,30 @@
     </footer>
 
     <!-- 隐藏维护：地址栏 ?maint=1 或快速三连击页脚第一行标题显示 -->
-    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-warn/25 bg-background/95 backdrop-blur-md shadow-[0_-12px_40px_rgba(0,0,0,0.45)] max-h-[min(52vh,420px)] overflow-y-auto">
-        <div class="max-w-7xl mx-auto px-4 py-3">
+    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-warn/25 bg-background/95 backdrop-blur-md shadow-[0_-12px_40px_rgba(0,0,0,0.45)] max-h-[min(70vh,620px)] overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-4 py-3 pb-6">
             <div class="flex items-start justify-between gap-3 mb-2">
                 <div>
-                    <div class="text-warn text-xs font-semibold tracking-wide">清理看盘表</div>
-                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">清库后建议在上方区块点「刷新」重拉 OI 快照。</p>
+                    <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">清库后可点上方「刷新」拉快照；定时任务在服务端后台线程执行，耗时可达数分钟。</p>
                 </div>
                 <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
             </div>
-            <div class="flex flex-wrap gap-2 mt-2">
+            <div class="text-text-secondary text-[11px] font-medium uppercase tracking-wide mb-1.5">清理看盘 SQLite</div>
+            <div class="flex flex-wrap gap-2">
                 <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 ambush_watch</button>
                 <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清空 heat_accum_watch</button>
                 <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15">两项都清空</button>
+            </div>
+            <div class="border-t border-border/60 mt-4 pt-4">
+                <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
+                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
+                    <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                    <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                    <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
+                </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
         </div>
@@ -302,6 +313,26 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ tables }),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            async triggerCron(task) {
+                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/trigger-cron`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task }),
                 });
                 const text = await res.text();
                 let data;
@@ -1030,6 +1061,21 @@
             document.getElementById('maint-clear-ambush')?.addEventListener('click', () => runClear(['ambush_watch']));
             document.getElementById('maint-clear-heat')?.addEventListener('click', () => runClear(['heat_accum_watch']));
             document.getElementById('maint-clear-both')?.addEventListener('click', () => runClear(['ambush_watch', 'heat_accum_watch']));
+
+            document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const task = btn.getAttribute('data-maint-cron');
+                    if (!task || !msg) return;
+                    msg.textContent = `已提交 ${task}，服务端后台执行中（可能需数分钟）…`;
+                    try {
+                        const data = await API.triggerCron(task);
+                        msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
+                    } catch (e) {
+                        console.error(e);
+                        msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                    }
+                });
+            });
         }
 
         async function init() {
