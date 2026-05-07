@@ -510,16 +510,6 @@
             ['ambush_gem', '💎 埋伏·低市值+OI'],
         ];
 
-        function worthDetailSnippet(detail) {
-            if (!detail || typeof detail !== 'object') return '';
-            try {
-                const j = JSON.stringify(detail);
-                return j.length > 120 ? j.slice(0, 117) + '…' : j;
-            } catch (e) {
-                return '';
-            }
-        }
-
         /** 与旧「热度·收筹看盘」一致：1h K 线状态机展示 */
         function formatHeatAccumBpcCell(bpc) {
             if (!bpc || typeof bpc !== 'object') {
@@ -566,7 +556,7 @@
                 tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[960px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
@@ -574,7 +564,6 @@
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>
                             <th class="py-2 pr-3 font-medium">摘要</th>
-                            <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
                         </tr>
                     </thead><tbody>`;
             const blocks = WORTH_WATCH_META.map(([key, label]) => {
@@ -591,7 +580,6 @@
                         const sum = escHtml(row.summary_line || '');
                         const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
                         const summaryCell = oiRadarRowClickable(sym, sum);
-                        const snip = escHtml(worthDetailSnippet(row.detail));
                         const bpcCell = formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym));
                         return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                             <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
@@ -599,7 +587,6 @@
                             <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
                             <td class="py-2 pr-3 align-top">${bpcCell}</td>
                             <td class="py-2 pr-3">${summaryCell}</td>
-                            <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[240px]">${snip || '--'}</td>
                         </tr>`;
                     }).join('');
                     inner = thead + rows + '</tbody></table>';
@@ -904,15 +891,24 @@
             }
         }
 
-        function renderFocusWatchBoard(fw) {
+        /**
+         * @param heatWl 可选；热度看盘兜底：行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
+         */
+        function renderFocusWatchBoard(fw, heatWl) {
             const root = document.getElementById('focus-watch-board-root');
             const tsEl = document.getElementById('focus-watch-ts');
             if (!root) return;
             const items = fw && Array.isArray(fw.items) ? fw.items : [];
+            const bpcBySym = buildBpcBySymbolFromHeatAccum(heatWl || {});
             if (tsEl) {
                 const u = fw && fw.updated_at_cst ? String(fw.updated_at_cst) : '';
                 const n = fw && fw.retention_days != null ? `保留 ${fw.retention_days} 日` : '';
-                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+                const bipSrc = fw && fw.bpc_interval ? fw : heatWl || {};
+                const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
+                const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
+                const snap = (fw && fw.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
+                const bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
             if (!items.length) {
                 const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入收筹池，且满足逼空/天量/暗流条件；整点 :30 OI 扫描或点下方「刷新」后入库。';
@@ -925,10 +921,10 @@
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与热度看盘按 symbol 对齐">1H 结构</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
                             <th class="py-2 pr-3 font-medium">摘要</th>
                             <th class="py-2 pr-3 font-medium">策略提示</th>
-                            <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
                         </tr>
                     </thead><tbody>`;
             const rows = items.map((row, idx) => {
@@ -937,35 +933,53 @@
                 const ch = escHtml(row.channel_label_zh || row.channel || '--');
                 const sum = row.summary_line ? oiRadarRowClickable(sym, escHtml(row.summary_line)) : oiRadarRowClickable(sym, escHtml(row.coin || sym));
                 const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
-                const snip = escHtml(worthDetailSnippet(row.detail));
                 const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
                 const coinCell = oiRadarRowClickable(sym, coinLine);
+                const bpcCell = formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym));
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
                     <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
+                    <td class="py-2 pr-3 align-top">${bpcCell}</td>
                     <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
                     <td class="py-2 pr-3">${sum}</td>
                     <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
-                    <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[200px]">${snip || '--'}</td>
                 </tr>`;
             }).join('');
-            root.innerHTML = thead + rows + '</tbody></table>';
+            root.innerHTML =
+                thead +
+                rows +
+                '</tbody></table><p class="text-text-muted text-[11px] mt-2">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>';
             bindOiRadarPickHandlers(root);
         }
 
         async function hydrateFocusWatchBoard(snapshotPayload) {
             let fw = snapshotPayload && snapshotPayload.focus_watchlist;
             const hasItems = fw && Array.isArray(fw.items) && fw.items.length > 0;
-            if (!hasItems) {
+            let heatWl = { items: [] };
+            try {
+                if (!hasItems) {
+                    [fw, heatWl] = await Promise.all([API.focusWatch(), API.heatAccumWatch()]);
+                } else {
+                    heatWl = await API.heatAccumWatch();
+                }
+            } catch (e) {
+                console.error('focus-watch / heat accum:', e);
+                if (!hasItems) {
+                    try {
+                        fw = await API.focusWatch();
+                    } catch (e2) {
+                        console.error('focus-watch:', e2);
+                        renderFocusWatchBoard({ items: [], message: 'focus_watch 接口暂不可用' }, {});
+                        return;
+                    }
+                }
                 try {
-                    fw = await API.focusWatch();
-                } catch (e) {
-                    console.error('focus-watch:', e);
-                    renderFocusWatchBoard({ items: [], message: 'focus_watch 接口暂不可用' });
-                    return;
+                    heatWl = await API.heatAccumWatch();
+                } catch (_) {
+                    heatWl = { items: [] };
                 }
             }
-            renderFocusWatchBoard(fw || { items: [] });
+            renderFocusWatchBoard(fw || { items: [] }, heatWl);
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
