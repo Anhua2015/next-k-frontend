@@ -457,6 +457,9 @@
             },
         };
 
+        /** 1H 结构（BPC）表格列：false 为暂时隐藏（恢复时改 true，并与后端 BPC_FEATURE_ENABLED=1 对齐） */
+        const SHOW_BPC_UI = false;
+
         function escHtml(s) {
             if (s == null || s === '') return '';
             const d = document.createElement('div');
@@ -717,25 +720,32 @@
             const tsEl = document.getElementById('worth-watch-ts');
             if (!root) return;
             const cats = (wl && wl.categories) || {};
-            const bpcBySym = buildBpcBySymbolFromHeatAccum(heatWl || {});
+            const showBpc = SHOW_BPC_UI;
+            const bpcBySym = showBpc ? buildBpcBySymbolFromHeatAccum(heatWl || {}) : new Map();
             if (tsEl) {
                 const u = wl && wl.updated_at_cst ? String(wl.updated_at_cst) : '';
                 const n = wl && wl.retention_days != null ? `保留 ${wl.retention_days} 日` : '';
-                const bipSrc = wl && wl.bpc_interval ? wl : heatWl || {};
-                const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
-                const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
-                const snap = (wl && wl.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
-                const bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                let bp = '';
+                if (showBpc) {
+                    const bipSrc = wl && wl.bpc_interval ? wl : heatWl || {};
+                    const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
+                    const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
+                    const snap = (wl && wl.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
+                    bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                }
                 tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
+            const thBpc = showBpc
+                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>'
+                : '';
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[560px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>
+                            ${thBpc}
                             <th class="py-2 pr-3 font-medium">摘要</th>
                         </tr>
                     </thead><tbody>`;
@@ -753,12 +763,14 @@
                         const sum = escHtml(row.summary_line || '');
                         const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
                         const summaryCell = oiRadarRowClickable(sym, sum);
-                        const bpcCell = formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym));
+                        const bpcCell = showBpc
+                            ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
+                            : '';
                         return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                             <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
                             <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
                             <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                            <td class="py-2 pr-3 align-top">${bpcCell}</td>
+                            ${bpcCell}
                             <td class="py-2 pr-3">${summaryCell}</td>
                         </tr>`;
                     }).join('');
@@ -769,7 +781,10 @@
                     <div class="p-3 overflow-x-auto">${inner}</div>
                 </div>`;
             }).join('');
-            root.innerHTML = blocks + '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>';
+            const footNote = showBpc
+                ? '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
+                : '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
+            root.innerHTML = blocks + footNote;
             bindOiRadarPickHandlers(root);
         }
 
@@ -777,7 +792,11 @@
             let wl;
             let heatWl = { items: [] };
             try {
-                [wl, heatWl] = await Promise.all([API.worthWatch(), API.heatAccumWatch()]);
+                if (SHOW_BPC_UI) {
+                    [wl, heatWl] = await Promise.all([API.worthWatch(), API.heatAccumWatch()]);
+                } else {
+                    wl = await API.worthWatch();
+                }
             } catch (e) {
                 console.error('worth / heat accum watch:', e);
                 try {
@@ -785,10 +804,12 @@
                 } catch (e2) {
                     wl = { categories: {}, message: '看盘接口暂不可用' };
                 }
-                try {
-                    heatWl = await API.heatAccumWatch();
-                } catch (e3) {
-                    heatWl = { items: [] };
+                if (SHOW_BPC_UI) {
+                    try {
+                        heatWl = await API.heatAccumWatch();
+                    } catch (e3) {
+                        heatWl = { items: [] };
+                    }
                 }
             }
             renderWorthSevenBoards(wl || { categories: {} }, heatWl || { items: [] });
@@ -1072,15 +1093,19 @@
             const tsEl = document.getElementById('focus-watch-ts');
             if (!root) return;
             const items = fw && Array.isArray(fw.items) ? fw.items : [];
-            const bpcBySym = buildBpcBySymbolFromHeatAccum(heatWl || {});
+            const showBpc = SHOW_BPC_UI;
+            const bpcBySym = showBpc ? buildBpcBySymbolFromHeatAccum(heatWl || {}) : new Map();
             if (tsEl) {
                 const u = fw && fw.updated_at_cst ? String(fw.updated_at_cst) : '';
                 const n = fw && fw.retention_days != null ? `保留 ${fw.retention_days} 日` : '';
-                const bipSrc = fw && fw.bpc_interval ? fw : heatWl || {};
-                const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
-                const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
-                const snap = (fw && fw.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
-                const bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                let bp = '';
+                if (showBpc) {
+                    const bipSrc = fw && fw.bpc_interval ? fw : heatWl || {};
+                    const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
+                    const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
+                    const snap = (fw && fw.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
+                    bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                }
                 tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
             if (!items.length) {
@@ -1088,13 +1113,16 @@
                 root.innerHTML = `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>`;
                 return;
             }
+            const thBpc = showBpc
+                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与热度看盘按 symbol 对齐">1H 结构</th>'
+                : '';
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[560px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与热度看盘按 symbol 对齐">1H 结构</th>
+                            ${thBpc}
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
                             <th class="py-2 pr-3 font-medium">摘要</th>
                             <th class="py-2 pr-3 font-medium">策略提示</th>
@@ -1108,20 +1136,22 @@
                 const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
                 const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
                 const coinCell = oiRadarRowClickable(sym, coinLine);
-                const bpcCell = formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym));
+                const bpcCell = showBpc
+                    ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
+                    : '';
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
                     <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
-                    <td class="py-2 pr-3 align-top">${bpcCell}</td>
+                    ${bpcCell}
                     <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
                     <td class="py-2 pr-3">${sum}</td>
                     <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
                 </tr>`;
             }).join('');
-            root.innerHTML =
-                thead +
-                rows +
-                '</tbody></table><p class="text-text-muted text-[11px] mt-2">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>';
+            const focusFoot = showBpc
+                ? '<p class="text-text-muted text-[11px] mt-2">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
+                : '<p class="text-text-muted text-[11px] mt-2"><span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
+            root.innerHTML = thead + rows + '</tbody></table>' + focusFoot;
             bindOiRadarPickHandlers(root);
         }
 
@@ -1131,8 +1161,12 @@
             let heatWl = { items: [] };
             try {
                 if (!hasItems) {
-                    [fw, heatWl] = await Promise.all([API.focusWatch(), API.heatAccumWatch()]);
-                } else {
+                    if (SHOW_BPC_UI) {
+                        [fw, heatWl] = await Promise.all([API.focusWatch(), API.heatAccumWatch()]);
+                    } else {
+                        fw = await API.focusWatch();
+                    }
+                } else if (SHOW_BPC_UI) {
                     heatWl = await API.heatAccumWatch();
                 }
             } catch (e) {
@@ -1146,10 +1180,12 @@
                         return;
                     }
                 }
-                try {
-                    heatWl = await API.heatAccumWatch();
-                } catch (_) {
-                    heatWl = { items: [] };
+                if (SHOW_BPC_UI) {
+                    try {
+                        heatWl = await API.heatAccumWatch();
+                    } catch (_) {
+                        heatWl = { items: [] };
+                    }
                 }
             }
             renderFocusWatchBoard(fw || { items: [] }, heatWl);
@@ -1465,7 +1501,9 @@
 
             document.getElementById('maint-refresh-heat-watch')?.addEventListener('click', async () => {
                 if (!msg) return;
-                msg.textContent = '提交热度看盘整表刷新（现价 + 1H 结构）…';
+                msg.textContent = SHOW_BPC_UI
+                    ? '提交热度看盘整表刷新（现价 + 1H 结构）…'
+                    : '提交热度看盘整表刷新（现价/摘要；BPC 已关闭）…';
                 try {
                     const data = await API.refreshHeatWatch();
                     msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
