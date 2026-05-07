@@ -635,7 +635,7 @@
                 <table class="w-full text-left text-xs border-collapse min-w-[900px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pl-3 pr-3 font-medium whitespace-nowrap">标的</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">现价</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">买入区间</th>
                             <th class="py-2 pr-3 font-medium whitespace-nowrap">止损</th>
@@ -668,22 +668,18 @@
                             : '';
                     const sumCell = ok ? `<span class="text-text-secondary">${reason}</span>` : errCell || '--';
                     const zoneBand = classifyAiBuyZoneHighlight(row);
-                    let rowCls = 'border-b border-border/60 hover:bg-surface-light/30 align-top';
+                    const rowCls = 'border-b border-border/60 hover:bg-surface-light/30 align-top';
                     let pxZoneCls = 'py-2 pr-3 font-mono';
                     let rowTitle = '';
                     if (zoneBand === 'in') {
-                        rowCls =
-                            'border-b border-border/60 hover:bg-surface-light/30 align-top shadow-[inset_3px_0_0_0_rgba(82,196,154,0.55)]';
                         pxZoneCls = 'py-2 pr-3 font-mono font-semibold text-neon-green';
                         rowTitle = '现价在买入区间内（深度）';
                     } else if (zoneBand === 'near') {
-                        rowCls =
-                            'border-b border-border/60 hover:bg-surface-light/30 align-top shadow-[inset_3px_0_0_0_rgba(201,166,107,0.42)]';
                         pxZoneCls = 'py-2 pr-3 font-mono font-medium text-warn';
                         rowTitle = '现价贴近买入区间边界（可关注）';
                     }
                     return `<tr class="${rowCls}" title="${rowTitle}">
-                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
+                    <td class="py-2 pl-3 pr-3 whitespace-nowrap">${coinCell}</td>
                     <td class="${pxZoneCls}">${escHtml(px)}</td>
                     <td class="${pxZoneCls}">${escHtml(zone)}</td>
                     <td class="py-2 pr-3 font-mono">${escHtml(sl)}</td>
