@@ -143,8 +143,8 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">👑 重点关注 · 看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 否决（涨且 6h OI&lt;-5%）+ 三通道；含今天共保留 7 日。由每小时 OI 扫描写入，亦可下方「刷新」后读库。</p>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">👑 重点关注</h2>
+                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 由每小时 OI 扫描写入，亦可下方「刷新」后读库。</p>
                     </div>
                     <span id="focus-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -158,8 +158,8 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">🧠 Groq AI · 交易计划</h2>
-                        <p class="text-text-muted text-xs mt-0.5">SQLite <code class="text-[10px] text-accent/90">ai_groq_trade_plan</code> · 标的范围：重点关注 ∪ 热度+收筹；服务端每小时 :15 批量写入（每批≤10，批次间隔 2 分钟）。非投资建议。</p>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">🧠交易计划</h2>
+                        <p class="text-text-muted text-xs mt-0.5">SQLite <code class="text-[10px] text-accent/90">ai_groq_trade_plan</code> · 标的范围：重点关注 ∪ 热度+收筹 </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="ai-trade-plan-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
@@ -177,13 +177,13 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 七类看盘</h2>
-                        <p class="text-text-muted text-xs mt-0.5">与电报「值得关注」七类一一对应；每类每轮至多 2 条入库，按生成时间归档，保留最近 7 日。</p>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
+                        <p class="text-text-muted text-xs mt-0.5">保留最近 7 日。</p>
                     </div>
                     <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
                 <div id="worth-watch-boards-root" class="p-4 space-y-4">
-                    <div class="text-text-muted text-sm animate-pulse">加载七类看盘…</div>
+                    <div class="text-text-muted text-sm animate-pulse">加载历史记录…</div>
                 </div>
             </div>
         </section>
@@ -193,7 +193,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
                 <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 Alpha 模拟盘 </h2>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 </h2>
                         <p class="text-text-muted text-xs mt-0.5">近 7 日每小时扫描归档 · 当前虚拟持仓与权益</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
