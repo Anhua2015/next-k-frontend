@@ -510,6 +510,13 @@
             ['ambush_gem', '💎 埋伏·低市值+OI'],
         ];
 
+        /** 与后端 BPC_CONTINUATION_REASON_ZH 对齐；旧快照仅有英文 reason 时兜底 */
+        const BPC_CONTINUATION_REASON_ZH = {
+            pin_bar: '长下影·Pin',
+            bullish_engulfing: '看涨吞没',
+            reclaim_micro_high: '收复回踩段前高',
+        };
+
         /** 与旧「热度·收筹看盘」一致：1h K 线状态机展示 */
         function formatHeatAccumBpcCell(bpc) {
             if (!bpc || typeof bpc !== 'object') {
@@ -517,7 +524,13 @@
             }
             const zh = escHtml(bpc.phase_zh || bpc.phase || '--');
             const bits = [];
-            if (bpc.continuation_reason) bits.push(String(bpc.continuation_reason));
+            let reasonLine = '';
+            if (bpc.continuation_reason_zh) reasonLine = String(bpc.continuation_reason_zh);
+            else if (bpc.continuation_reason) {
+                const r = String(bpc.continuation_reason);
+                reasonLine = BPC_CONTINUATION_REASON_ZH[r] || r;
+            }
+            if (reasonLine) bits.push(reasonLine);
             if (bpc.pullback_vol_contracted) bits.push('缩量回踩');
             if (bpc.ok === false && bpc.last_invalid_reason) bits.push(String(bpc.last_invalid_reason));
             const sub = bits.length
