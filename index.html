@@ -139,6 +139,21 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="重点关注看盘">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">👑 重点关注 · 看盘</h2>
+                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 否决（涨且 6h OI&lt;-5%）+ 三通道；含今天共保留 7 日。由每小时 OI 扫描写入，亦可下方「刷新」后读库。</p>
+                    </div>
+                    <span id="focus-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                </div>
+                <div id="focus-watch-board-root" class="p-4 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载重点关注…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注七类看盘">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -889,33 +904,73 @@
             }
         }
 
+        function renderFocusWatchBoard(fw) {
+            const root = document.getElementById('focus-watch-board-root');
+            const tsEl = document.getElementById('focus-watch-ts');
+            if (!root) return;
+            const items = fw && Array.isArray(fw.items) ? fw.items : [];
+            if (tsEl) {
+                const u = fw && fw.updated_at_cst ? String(fw.updated_at_cst) : '';
+                const n = fw && fw.retention_days != null ? `保留 ${fw.retention_days} 日` : '';
+                tsEl.textContent = [u, n].filter(Boolean).join(' · ') || '--';
+            }
+            if (!items.length) {
+                const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入收筹池，且满足逼空/天量/暗流条件；整点 :30 OI 扫描或点下方「刷新」后入库。';
+                root.innerHTML = `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>`;
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">#</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                            <th class="py-2 pr-3 font-medium">策略提示</th>
+                            <th class="py-2 pr-3 font-medium text-text-muted">快照指标</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items.map((row, idx) => {
+                const rk = row.rank_in_list != null ? String(row.rank_in_list) : String(idx + 1);
+                const sym = row.symbol || '';
+                const ch = escHtml(row.channel_label_zh || row.channel || '--');
+                const sum = row.summary_line ? oiRadarRowClickable(sym, escHtml(row.summary_line)) : oiRadarRowClickable(sym, escHtml(row.coin || sym));
+                const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
+                const snip = escHtml(worthDetailSnippet(row.detail));
+                const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
+                const coinCell = oiRadarRowClickable(sym, coinLine);
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 font-mono text-text-muted">${escHtml(rk)}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
+                    <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
+                    <td class="py-2 pr-3">${sum}</td>
+                    <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
+                    <td class="py-2 pr-3 text-[10px] text-text-muted font-mono break-all max-w-[200px]">${snip || '--'}</td>
+                </tr>`;
+            }).join('');
+            root.innerHTML = thead + rows + '</tbody></table>';
+            bindOiRadarPickHandlers(root);
+        }
+
+        async function hydrateFocusWatchBoard(snapshotPayload) {
+            let fw = snapshotPayload && snapshotPayload.focus_watchlist;
+            const hasItems = fw && Array.isArray(fw.items) && fw.items.length > 0;
+            if (!hasItems) {
+                try {
+                    fw = await API.focusWatch();
+                } catch (e) {
+                    console.error('focus-watch:', e);
+                    renderFocusWatchBoard({ items: [], message: 'focus_watch 接口暂不可用' });
+                    return;
+                }
+            }
+            renderFocusWatchBoard(fw || { items: [] });
+        }
+
         function fillOiRadarFromPayload(data, body, tsEl) {
             if (!body) return;
             tsEl.textContent = data.generated_at_cst || '';
-
-            const fw = data.focus_watchlist || {};
-            const focusItems = Array.isArray(fw.items) ? fw.items : [];
-            const focusInner = focusItems.slice(0, 16).map((it) => {
-                const det = it.detail && typeof it.detail === 'object' ? it.detail : {};
-                const sym = det.sym || it.symbol || '';
-                const tip = it.strategy_tip
-                    ? `<div class="text-[10px] text-text-muted mt-1 leading-snug">${escHtml(it.strategy_tip)}</div>`
-                    : '';
-                const lab = it.channel_label_zh ? `<span class="text-[10px] text-accent/80 mr-1">${escHtml(it.channel_label_zh)}</span>` : '';
-                const main = it.summary_line ? escHtml(it.summary_line) : escHtml(it.coin || sym);
-                const line = `<div>${lab}<span class="text-sm text-text-primary">${main}</span>${tip}</div>`;
-                return oiRadarRowClickable(sym, line);
-            }).join('');
-            const rd = fw.retention_days != null ? Number(fw.retention_days) : 7;
-            const focusBanner = focusItems.length
-                ? `<div class="mb-4 rounded-xl border border-warn/25 bg-warn/[0.06] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <span class="text-warn text-xs font-semibold tracking-wide">👑 重点关注</span>
-                            <span class="text-text-muted text-[10px] font-mono">SQLite · 含今天 ${rd} 日内</span>
-                        </div>
-                        <div class="space-y-1 text-xs">${focusInner}</div>
-                   </div>`
-                : '';
 
             const hot = (data.hot_coins || []).slice(0, 8).map(d => {
                 const px = Number(d.px_chg);
@@ -985,7 +1040,6 @@
             }
 
             const gridBlock = `
-                ${focusBanner}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     ${oiRadarCard('热度榜', '🔥', hot)}
                     ${oiRadarCard('追多（按费率）', '🔥', chase)}
@@ -997,6 +1051,7 @@
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
             hydrateWorthHighlightBoards(data);
+            void hydrateFocusWatchBoard(data);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
@@ -1027,6 +1082,7 @@
             if (hl) {
                 hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
             }
+            void hydrateFocusWatchBoard(null);
         }
 
         async function clearAccumulationPool() {
@@ -1088,6 +1144,7 @@
                     if (hl) {
                         hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
                     }
+                    void hydrateFocusWatchBoard(null);
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
@@ -1096,6 +1153,7 @@
                 if (hl) {
                     hl.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 }
+                void hydrateFocusWatchBoard(data);
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
@@ -1108,6 +1166,7 @@
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
                 hydrateWorthHighlightBoards({});
+                void hydrateFocusWatchBoard(null);
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -1244,6 +1303,7 @@
             }
             setupMaintPanel();
             hydrateWorthHighlightBoards({});
+            void hydrateFocusWatchBoard(null);
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
