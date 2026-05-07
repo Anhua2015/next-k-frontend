@@ -154,6 +154,25 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="Groq AI 交易计划">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">🧠 Groq AI · 交易计划</h2>
+                        <p class="text-text-muted text-xs mt-0.5">SQLite <code class="text-[10px] text-accent/90">ai_groq_trade_plan</code> · 标的范围：重点关注 ∪ 热度+收筹；服务端每小时 :15 批量写入（每批≤10，批次间隔 2 分钟）。非投资建议。</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="ai-trade-plan-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="ai-trade-plan-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">触发刷新</button>
+                    </div>
+                </div>
+                <p id="ai-trade-plan-msg" class="px-4 pt-2 text-[11px] text-text-muted min-h-[1rem]"></p>
+                <div id="ai-trade-plan-root" class="p-4 pt-2 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Groq 归档…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注七类看盘">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -260,7 +279,7 @@
             </div>
             <div class="border-t border-border/60 mt-4 pt-4">
                 <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
-                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_watch 每时 :07（热度看盘整表：现价/摘要 + 1h BPC）· oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_watch 每时 :07 · groq_ai_trade_plan 每时 :15 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                     <button type="button" data-maint-cron="heat_watch" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_watch 热度看盘</button>
@@ -268,6 +287,7 @@
                     <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
+                    <button type="button" data-maint-cron="groq_ai_trade_plan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">Groq AI 计划</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
@@ -325,6 +345,33 @@
                 const res = await fetch(`${API_BASE}/api/accumulation/heat-accum-watch`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            /** Groq：买入区间 / 止损 / 止盈（表 ai_groq_trade_plan） */
+            async aiTradePlan() {
+                const res = await fetch(`${API_BASE}/api/accumulation/ai-trade-plan`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            /** 触发服务端批量分析（后台；多标的时分批 + 间隔） */
+            async aiTradePlanRefresh(body = {}) {
+                const res = await fetch(`${API_BASE}/api/accumulation/ai-trade-plan/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
             },
             async s2FundingSignals() {
                 const res = await fetch(`${API_BASE}/api/s2/funding-signals`);
@@ -516,6 +563,101 @@
             bullish_engulfing: '看涨吞没',
             reclaim_micro_high: '收复回踩段前高',
         };
+
+        function fmtAiPx(x) {
+            if (x == null || x === '') return '--';
+            const n = Number(x);
+            if (!Number.isFinite(n)) return '--';
+            const ax = Math.abs(n);
+            if (ax >= 1000) return n.toFixed(2);
+            if (ax >= 1) return n.toFixed(4);
+            if (ax >= 0.0001) return n.toPrecision(6);
+            return n.toExponential(4);
+        }
+
+        /** GET /api/accumulation/ai-trade-plan → 表 ai_groq_trade_plan */
+        function renderAiTradePlanBoard(payload) {
+            const root = document.getElementById('ai-trade-plan-root');
+            const tsEl = document.getElementById('ai-trade-plan-ts');
+            if (!root) return;
+            const data = payload || {};
+            const items = Array.isArray(data.items) ? data.items : [];
+            if (tsEl) {
+                tsEl.textContent = data.updated_hint ? String(data.updated_hint) : '--';
+            }
+            if (!items.length) {
+                root.innerHTML =
+                    '<div class="text-text-muted text-sm leading-relaxed">暂无归档。请在后端配置 <code class="text-[10px]">GROQ_API_KEY</code>，等待每小时 :15，或点「触发刷新」（后台批量，标的多时需数分钟）。</div>';
+                return;
+            }
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[900px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">现价</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">买入区间</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">止损</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">止盈</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">相位</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">模型</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成(CST)</th>
+                            <th class="py-2 pr-3 font-medium">说明</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items
+                .map((row) => {
+                    const sym = row.symbol || '';
+                    const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
+                    const coinCell = oiRadarRowClickable(sym, coinLine);
+                    const px = fmtAiPx(row.current_price);
+                    const ok = row.ok === true || row.ok === 1;
+                    const zone = ok
+                        ? `${fmtAiPx(row.buy_zone_bottom)} ~ ${fmtAiPx(row.buy_zone_top)}`
+                        : '--';
+                    const sl = ok ? fmtAiPx(row.stop_loss) : '--';
+                    const tp = ok ? fmtAiPx(row.take_profit_1) : '--';
+                    const ph = escHtml(row.phase || '--');
+                    const md = escHtml(row.model || '--');
+                    const gd = escHtml(row.generated_cst || '--');
+                    const reason = escHtml((row.reasoning || '').slice(0, 320)) || '--';
+                    const errCell =
+                        !ok && row.error_detail
+                            ? `<span class="text-warn text-[10px] font-mono break-all">${escHtml(String(row.error_detail).slice(0, 220))}</span>`
+                            : '';
+                    const sumCell = ok ? `<span class="text-text-secondary">${reason}</span>` : errCell || '--';
+                    return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
+                    <td class="py-2 pr-3 font-mono">${escHtml(px)}</td>
+                    <td class="py-2 pr-3 font-mono">${escHtml(zone)}</td>
+                    <td class="py-2 pr-3 font-mono">${escHtml(sl)}</td>
+                    <td class="py-2 pr-3 font-mono">${escHtml(tp)}</td>
+                    <td class="py-2 pr-3">${ph}</td>
+                    <td class="py-2 pr-3 text-[10px] text-text-muted">${md}</td>
+                    <td class="py-2 pr-3 text-[10px] text-text-muted whitespace-nowrap">${gd}</td>
+                    <td class="py-2 pr-3 text-[11px] max-w-[300px]">${sumCell}</td>
+                </tr>`;
+                })
+                .join('');
+            root.innerHTML = thead + rows + '</tbody></table>';
+            bindOiRadarPickHandlers(root);
+        }
+
+        async function hydrateAiTradePlan() {
+            const root = document.getElementById('ai-trade-plan-root');
+            try {
+                const data = await API.aiTradePlan();
+                renderAiTradePlanBoard(data);
+            } catch (e) {
+                console.error('ai-trade-plan:', e);
+                if (root) {
+                    root.innerHTML =
+                        '<div class="text-neon-red text-sm">' +
+                        escHtml(e && e.message ? String(e.message) : '加载失败') +
+                        '</div>';
+                }
+            }
+        }
 
         /** 与旧「热度·收筹看盘」一致：1h K 线状态机展示 */
         function formatHeatAccumBpcCell(bpc) {
@@ -1334,6 +1476,34 @@
             setupMaintPanel();
             hydrateWorthHighlightBoards({});
             void hydrateFocusWatchBoard(null);
+            void hydrateAiTradePlan();
+            document.getElementById('ai-trade-plan-refresh')?.addEventListener('click', async () => {
+                const btn = document.getElementById('ai-trade-plan-refresh');
+                const msg = document.getElementById('ai-trade-plan-msg');
+                if (btn) btn.disabled = true;
+                if (msg) {
+                    msg.innerHTML =
+                        '<span class="text-text-muted">已提交后台批量分析（标的多时需数分钟 + 批次间隔），下方表格将在稍后自动更新…</span>';
+                }
+                try {
+                    const out = await API.aiTradePlanRefresh({});
+                    if (msg) {
+                        msg.innerHTML =
+                            '<span class="text-neon-green text-[11px]">' + escHtml(JSON.stringify(out)) + '</span>';
+                    }
+                    setTimeout(() => hydrateAiTradePlan(), 5000);
+                    setTimeout(() => hydrateAiTradePlan(), 20000);
+                    setTimeout(() => hydrateAiTradePlan(), 90000);
+                } catch (e) {
+                    console.error(e);
+                    if (msg) {
+                        msg.innerHTML =
+                            '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                    }
+                } finally {
+                    if (btn) btn.disabled = false;
+                }
+            });
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
