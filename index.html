@@ -287,7 +287,15 @@
                     <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
-                    <button type="button" data-maint-cron="groq_ai_trade_plan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">Groq AI 计划</button>
+                    <button type="button" data-maint-cron="groq_ai_trade_plan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">Groq AI 计划（cron 同源）</button>
+                </div>
+                <div class="border-t border-border/60 mt-4 pt-4">
+                    <div class="text-accent/85 text-[11px] font-medium mb-1">Groq AI · 专用接口</div>
+                    <p class="text-text-muted text-[10px] mb-2 leading-relaxed">
+                        <code class="text-[10px]">POST /api/accumulation/ai-trade-plan/refresh</code>
+                        · 批量分析「重点关注 ∪ 热度+收筹」· 后台排队（每批≤10、批次间隔约 2 分钟）· 需配置 <code class="text-[10px]">GROQ_API_KEY</code>
+                    </p>
+                    <button type="button" id="maint-ai-trade-plan-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-accent/[0.1] border border-accent/35 text-accent text-xs font-semibold hover:bg-accent/[0.14] hover:border-accent/50">主动触发 AI 分析</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
@@ -657,6 +665,13 @@
                         '</div>';
                 }
             }
+        }
+
+        /** Groq 写入后延迟轮询表格（适配后台分批 + 间隔） */
+        function scheduleHydrateAiTradePlanDelays() {
+            setTimeout(() => hydrateAiTradePlan(), 5000);
+            setTimeout(() => hydrateAiTradePlan(), 20000);
+            setTimeout(() => hydrateAiTradePlan(), 90000);
         }
 
         /** 与旧「热度·收筹看盘」一致：1h K 线状态机展示 */
@@ -1461,6 +1476,21 @@
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
                 }
             });
+
+            document.getElementById('maint-ai-trade-plan-refresh')?.addEventListener('click', async () => {
+                if (!msg) return;
+                msg.textContent = '提交 Groq AI 批量分析（POST ai-trade-plan/refresh）…';
+                try {
+                    const out = await API.aiTradePlanRefresh({});
+                    msg.innerHTML =
+                        '<span class="text-neon-green">' + escHtml(JSON.stringify(out)) + '</span>';
+                    scheduleHydrateAiTradePlanDelays();
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML =
+                        '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                }
+            });
         }
 
         async function init() {
@@ -1491,9 +1521,7 @@
                         msg.innerHTML =
                             '<span class="text-neon-green text-[11px]">' + escHtml(JSON.stringify(out)) + '</span>';
                     }
-                    setTimeout(() => hydrateAiTradePlan(), 5000);
-                    setTimeout(() => hydrateAiTradePlan(), 20000);
-                    setTimeout(() => hydrateAiTradePlan(), 90000);
+                    scheduleHydrateAiTradePlanDelays();
                 } catch (e) {
                     console.error(e);
                     if (msg) {
