@@ -736,16 +736,29 @@
                 tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
             }
             const thBpc = showBpc
-                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>'
+                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap align-top" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>'
                 : '';
+            const colgroup = showBpc
+                ? `<colgroup>
+                        <col style="width:12%" />
+                        <col style="width:20%" />
+                        <col style="width:14%" />
+                        <col />
+                    </colgroup>`
+                : `<colgroup>
+                        <col style="width:14%" />
+                        <col style="width:22%" />
+                        <col />
+                    </colgroup>`;
             const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[560px]">
+                <table class="w-full table-fixed text-left text-xs border-collapse min-w-[560px]">
+                    ${colgroup}
                     <thead>
                         <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">生成日期</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">标的</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">生成日期</th>
                             ${thBpc}
-                            <th class="py-2 pr-3 font-medium">摘要</th>
+                            <th class="py-2 pr-3 font-medium align-top">摘要</th>
                         </tr>
                     </thead><tbody>`;
             const blocks = WORTH_WATCH_META.map(([key, label]) => {
@@ -764,11 +777,11 @@
                         const bpcCell = showBpc
                             ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
                             : '';
-                        return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                            <td class="py-2 pr-3 whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                            <td class="py-2 pr-3 text-text-secondary whitespace-nowrap font-mono">${gd}</td>
+                        return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
+                            <td class="py-2 pr-3 align-top whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
+                            <td class="py-2 pr-3 align-top text-text-secondary whitespace-nowrap font-mono tabular-nums">${gd}</td>
                             ${bpcCell}
-                            <td class="py-2 pr-3">${summaryCell}</td>
+                            <td class="py-2 pr-3 align-top break-words">${summaryCell}</td>
                         </tr>`;
                     }).join('');
                     inner = thead + rows + '</tbody></table>';
