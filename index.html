@@ -525,10 +525,13 @@
             const zh = escHtml(bpc.phase_zh || bpc.phase || '--');
             const bits = [];
             let reasonLine = '';
-            if (bpc.continuation_reason_zh) reasonLine = String(bpc.continuation_reason_zh);
-            else if (bpc.continuation_reason) {
-                const r = String(bpc.continuation_reason);
-                reasonLine = BPC_CONTINUATION_REASON_ZH[r] || r;
+            // 与后端一致：延续形态副标题仅当相位为 continuation（避免陈旧 last_* 污染观望/回踩）
+            if (bpc.phase === 'continuation') {
+                if (bpc.continuation_reason_zh) reasonLine = String(bpc.continuation_reason_zh);
+                else if (bpc.continuation_reason) {
+                    const r = String(bpc.continuation_reason);
+                    reasonLine = BPC_CONTINUATION_REASON_ZH[r] || r;
+                }
             }
             if (reasonLine) bits.push(reasonLine);
             if (bpc.pullback_vol_contracted) bits.push('缩量回踩');
