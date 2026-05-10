@@ -173,6 +173,36 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="ZCT VWAP 虚拟信号">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 ZCT VWAP · 虚拟仓位</h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            SQLite <code class="text-[10px] text-accent/90">zct_vwap_signals</code>
+                            · 默认名义 <span class="text-text-secondary">100 USDT</span>/笔
+                            · 扫描标的由服务端环境变量 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置（逗号分隔）
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="zct-vwap-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="zct-vwap-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="zct-vwap-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="zct-vwap-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注七类看盘">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -289,6 +319,7 @@
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
                     <button type="button" data-maint-cron="groq_ai_trade_plan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">Groq AI 计划（cron 同源）</button>
+                    <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 扫描</button>
                 </div>
                 <div class="border-t border-border/60 mt-4 pt-4">
                     <div class="text-accent/85 text-[11px] font-medium mb-1">Groq AI · 专用接口</div>
@@ -455,6 +486,19 @@
                     throw new Error(msg || text || res.statusText);
                 }
                 return data;
+            },
+            /** ZCT VWAP 虚拟信号汇总（持仓数、累计盈亏 USDT、胜率等） */
+            async zctVwapSummary() {
+                const res = await fetch(`${API_BASE}/api/zct-vwap/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
+            async zctVwapSignals(query) {
+                const q = query instanceof URLSearchParams ? query : new URLSearchParams(query || {});
+                const res = await fetch(`${API_BASE}/api/zct-vwap/signals?` + q.toString());
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
         };
 
@@ -1240,6 +1284,138 @@
             renderFocusWatchBoard(fw || { items: [] }, heatWl);
         }
 
+        function fmtZctPx(v, decimals) {
+            if (v == null || v === '' || Number.isNaN(Number(v))) return '—';
+            return Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
+        }
+
+        function zctSideClass(side) {
+            if (side === 'LONG') return 'text-neon-green font-medium';
+            if (side === 'SHORT') return 'text-neon-red font-medium';
+            return 'text-text-muted';
+        }
+
+        function zctStatusClass(statusText) {
+            const s = String(statusText || '');
+            if (s.indexOf('持仓') >= 0) return 'text-neon-yellow';
+            if (s.indexOf('盈利') >= 0) return 'text-neon-green';
+            if (s.indexOf('止损') >= 0) return 'text-neon-red';
+            if (s.indexOf('超时') >= 0) return 'text-warn/95';
+            return 'text-text-secondary';
+        }
+
+        function renderZctVwapSummary(sum) {
+            const el = document.getElementById('zct-vwap-summary');
+            if (!el) return;
+            if (!sum || !sum.ok) {
+                el.innerHTML = '';
+                return;
+            }
+            const pnl = Number(sum.total_pnl_usdt) || 0;
+            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const wr = sum.win_rate_closed;
+            const wrStr = wr != null ? (Number(wr) * 100).toFixed(1) + '%' : '—';
+            el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓中</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">已结算</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.settled_count ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">累计盈亏 (USDT)</div>
+                    <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 2)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">胜率 (盈/亏)</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(wrStr)}</div>
+                </div>`;
+        }
+
+        function renderZctVwapTable(items, totalHint) {
+            const root = document.getElementById('zct-vwap-root');
+            if (!root) return;
+            const head = `
+                <table class="w-full text-left text-xs border-collapse min-w-[1080px]">
+                    <thead>
+                        <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
+                            <th class="py-2 pr-2 font-medium">#</th>
+                            <th class="py-2 pr-2 font-medium whitespace-nowrap">时间 UTC</th>
+                            <th class="py-2 pr-2 font-medium">标的</th>
+                            <th class="py-2 pr-2 font-medium">策略</th>
+                            <th class="py-2 pr-2 font-medium">方向</th>
+                            <th class="py-2 pr-2 font-medium text-right">入场</th>
+                            <th class="py-2 pr-2 font-medium text-right">SL</th>
+                            <th class="py-2 pr-2 font-medium text-right">TP</th>
+                            <th class="py-2 pr-2 font-medium text-right">名义U</th>
+                            <th class="py-2 pr-2 font-medium">状态</th>
+                            <th class="py-2 pr-2 font-medium text-right">平仓</th>
+                            <th class="py-2 pr-2 font-medium text-right">R</th>
+                            <th class="py-2 pr-2 font-medium text-right">盈亏U</th>
+                            <th class="py-2 pr-2 font-medium">摘要</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            if (!items || !items.length) {
+                root.innerHTML = head + '</tbody></table>'
+                    + `<p class="text-text-muted text-xs mt-2">${escHtml(totalHint || '暂无记录')}</p>`;
+                return;
+            }
+            const rows = items.map((row) => {
+                const pr = row.reasons_preview ? escHtml(row.reasons_preview) : '';
+                const pnlr = row.pnl_r;
+                const pnlru = row.pnl_usdt;
+                const prCls = pxClass(Number(pnlru));
+                const prRCls = pxClass(Number(pnlr));
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(String(row.id))}</td>
+                    <td class="py-2 pr-2 font-mono whitespace-nowrap text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
+                    <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(row.symbol)}</td>
+                    <td class="py-2 pr-2 max-w-[140px] truncate" title="${escHtml(row.play)}">${escHtml(row.play)}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap ${zctSideClass(row.side)}">${escHtml(row.side)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.entry_price, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.sl_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.tp_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.virtual_notional_usdt, 0)}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap ${zctStatusClass(row.display_status)}">${escHtml(row.display_status || '')}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.exit_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right ${prRCls}">${fmtZctPx(row.pnl_r, 3)}</td>
+                    <td class="py-2 pr-2 font-mono text-right ${prCls}">${fmtZctPx(row.pnl_usdt, 2)}</td>
+                    <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[240px] truncate" title="${pr}">${pr}</td>
+                </tr>`;
+            }).join('');
+            const foot = `<p class="text-text-muted text-[11px] mt-2">共 ${escHtml(String(items.length))} 条`
+                + (totalHint ? `（匹配 ${escHtml(String(totalHint))}）` : '')
+                + ' · 数据来自 next-k-api · <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
+            root.innerHTML = head + rows + '</tbody></table>' + foot;
+        }
+
+        async function hydrateZctVwapBoard() {
+            const root = document.getElementById('zct-vwap-root');
+            const tsEl = document.getElementById('zct-vwap-ts');
+            if (!root) return;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>';
+            try {
+                const sum = await API.zctVwapSummary();
+                renderZctVwapSummary(sum);
+                const stEl = document.getElementById('zct-vwap-filter-status');
+                const symEl = document.getElementById('zct-vwap-filter-symbol');
+                const qs = new URLSearchParams({ limit: '200', offset: '0', status: stEl ? stEl.value : 'all' });
+                if (symEl && symEl.value.trim()) qs.set('symbol', symEl.value.trim().toUpperCase());
+                const sig = await API.zctVwapSignals(qs);
+                const items = sig.items || [];
+                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '');
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } catch (e) {
+                console.error('zct-vwap:', e);
+                renderZctVwapSummary(null);
+                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
         function fillOiRadarFromPayload(data, body, tsEl) {
             if (!body) return;
             tsEl.textContent = data.generated_at_cst || '';
@@ -1625,6 +1801,12 @@
             });
             loadAccumulationOiRadar();
             loadS2FundingSignals();
+            void hydrateZctVwapBoard();
+            document.getElementById('zct-vwap-refresh')?.addEventListener('click', () => void hydrateZctVwapBoard());
+            document.getElementById('zct-vwap-filter-status')?.addEventListener('change', () => void hydrateZctVwapBoard());
+            document.getElementById('zct-vwap-filter-symbol')?.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') void hydrateZctVwapBoard();
+            });
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
         }
 
