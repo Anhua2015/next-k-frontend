@@ -163,7 +163,7 @@
                             SQLite <code class="text-[10px] text-accent/90">zct_vwap_signals</code>
                             + <code class="text-[10px] text-accent/90">zct_vwap_settlements</code>
                             · 默认名义 <span class="text-text-secondary">100 USDT</span>/笔
-                            · 扫描标的由服务端 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置；后端默认约每 15 分钟写入一次（视 Railway 定时）
+                            · 扫描标的由服务端 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置；定时默认全量扫描约每 30 分钟、结算(resolve)约每 5 分钟（<code class="text-[10px]">ZCT_VWAP_SCAN_INTERVAL_MINUTES</code> / <code class="text-[10px]">ZCT_VWAP_RESOLVE_INTERVAL_MINUTES</code>）
                         </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -300,7 +300,8 @@
                     <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                     <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
-                    <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 扫描</button>
+                    <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
+                    <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
