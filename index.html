@@ -181,7 +181,7 @@
                         <p class="text-text-muted text-xs mt-0.5">
                             SQLite <code class="text-[10px] text-accent/90">zct_vwap_signals</code>
                             · 默认名义 <span class="text-text-secondary">100 USDT</span>/笔
-                            · 扫描标的由服务端环境变量 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置（逗号分隔）
+                            · 扫描标的由服务端 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置；后端默认约每 15 分钟写入一次（视 Railway 定时）
                         </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -499,6 +499,27 @@
                 const res = await fetch(`${API_BASE}/api/zct-vwap/signals?` + q.toString());
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            /** 更新实盘入场/平仓/备注（PATCH，部分字段） */
+            async zctVwapPatchManual(signalId, body) {
+                const res = await fetch(`${API_BASE}/api/zct-vwap/signals/${encodeURIComponent(signalId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
             },
         };
 
@@ -1304,6 +1325,9 @@
             return 'text-text-secondary';
         }
 
+        /** 供「记录实盘」回填当前行 */
+        let zctVwapLastItems = [];
+
         function renderZctVwapSummary(sum) {
             const el = document.getElementById('zct-vwap-summary');
             if (!el) return;
@@ -1337,8 +1361,9 @@
         function renderZctVwapTable(items, totalHint) {
             const root = document.getElementById('zct-vwap-root');
             if (!root) return;
+            zctVwapLastItems = items || [];
             const head = `
-                <table class="w-full text-left text-xs border-collapse min-w-[1080px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[1320px]">
                     <thead>
                         <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
                             <th class="py-2 pr-2 font-medium">#</th>
@@ -1354,7 +1379,12 @@
                             <th class="py-2 pr-2 font-medium text-right">平仓</th>
                             <th class="py-2 pr-2 font-medium text-right">R</th>
                             <th class="py-2 pr-2 font-medium text-right">盈亏U</th>
+                            <th class="py-2 pr-2 font-medium text-right">实盘入</th>
+                            <th class="py-2 pr-2 font-medium text-right">实盘平</th>
+                            <th class="py-2 pr-2 font-medium text-right">实盘盈亏</th>
+                            <th class="py-2 pr-2 font-medium max-w-[100px]">实盘备注</th>
                             <th class="py-2 pr-2 font-medium">摘要</th>
+                            <th class="py-2 pr-2 font-medium whitespace-nowrap">操作</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -1369,6 +1399,9 @@
                 const pnlru = row.pnl_usdt;
                 const prCls = pxClass(Number(pnlru));
                 const prRCls = pxClass(Number(pnlr));
+                const mPnlu = row.manual_pnl_est_usdt;
+                const mPnluCls = pxClass(Number(mPnlu));
+                const mn = row.manual_notes != null ? escHtml(String(row.manual_notes)) : '';
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(String(row.id))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
@@ -1383,7 +1416,14 @@
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.exit_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right ${prRCls}">${fmtZctPx(row.pnl_r, 3)}</td>
                     <td class="py-2 pr-2 font-mono text-right ${prCls}">${fmtZctPx(row.pnl_usdt, 2)}</td>
-                    <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[240px] truncate" title="${pr}">${pr}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.manual_entry_price, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.manual_exit_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right ${mPnluCls}">${fmtZctPx(mPnlu, 2)}</td>
+                    <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[100px] truncate" title="${mn}">${mn}</td>
+                    <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[200px] truncate" title="${pr}">${pr}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap">
+                        <button type="button" data-zct-manual="${escHtml(String(row.id))}" class="btn-secondary px-2 py-1 rounded-md bg-surface-light/80 border border-border/90 text-text-secondary text-[10px] font-medium hover:border-accent/40 hover:text-accent">记录实盘</button>
+                    </td>
                 </tr>`;
             }).join('');
             const foot = `<p class="text-text-muted text-[11px] mt-2">共 ${escHtml(String(items.length))} 条`
@@ -1413,6 +1453,42 @@
                 renderZctVwapSummary(null);
                 root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
                 if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
+        async function zctVwapEditManual(id) {
+            const row = zctVwapLastItems.find((r) => Number(r.id) === Number(id));
+            if (!row) {
+                window.alert('未找到该行，请先刷新列表。');
+                return;
+            }
+            const defE = row.manual_entry_price != null ? String(row.manual_entry_price) : '';
+            const defX = row.manual_exit_price != null ? String(row.manual_exit_price) : '';
+            const defN = row.manual_notes != null ? String(row.manual_notes) : '';
+            const e = window.prompt(`[${id}] 实盘入场价（数字，留空跳过本字段）`, defE);
+            if (e === null) return;
+            const x = window.prompt(`[${id}] 实盘平仓价（数字，留空跳过本字段）`, defX);
+            if (x === null) return;
+            const n = window.prompt(`[${id}] 实盘备注`, defN);
+            if (n === null) return;
+            const body = {};
+            const et = e.trim();
+            const xt = x.trim();
+            if (et !== '') {
+                const v = parseFloat(et.replace(/,/g, ''));
+                if (Number.isFinite(v)) body.manual_entry_price = v;
+            }
+            if (xt !== '') {
+                const v = parseFloat(xt.replace(/,/g, ''));
+                if (Number.isFinite(v)) body.manual_exit_price = v;
+            }
+            body.manual_notes = n;
+            try {
+                await API.zctVwapPatchManual(id, body);
+                await hydrateZctVwapBoard();
+            } catch (err) {
+                console.error('zct-vwap manual:', err);
+                window.alert(err && err.message ? String(err.message) : '保存失败');
             }
         }
 
@@ -1806,6 +1882,13 @@
             document.getElementById('zct-vwap-filter-status')?.addEventListener('change', () => void hydrateZctVwapBoard());
             document.getElementById('zct-vwap-filter-symbol')?.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') void hydrateZctVwapBoard();
+            });
+            document.getElementById('zct-vwap-root')?.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
+                if (!btn) return;
+                ev.preventDefault();
+                const sid = btn.getAttribute('data-zct-manual');
+                if (sid) void zctVwapEditManual(sid);
             });
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
         }
