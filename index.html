@@ -1219,7 +1219,7 @@
             zctVwapLastItems = items || [];
             const pmap = perSymMap instanceof Map ? perSymMap : new Map();
             const head = `
-                <table class="w-full text-left text-xs border-collapse min-w-[1480px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[1560px]">
                     <thead>
                         <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
                             <th class="py-2 pr-2 font-medium">#</th>
@@ -1227,6 +1227,7 @@
                             <th class="py-2 pr-2 font-medium">标的</th>
                             <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的 settlements 历史：win+loss 触轨笔数">触轨胜率</th>
                             <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的 settlements：盈亏为正笔数 /（正+负），不含零盈亏">全量胜率</th>
+                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的全部已结算记录的 pnl_usdt 合计（summary.per_symbol.total_pnl_usdt）">标的累计盈亏U</th>
                             <th class="py-2 pr-2 font-medium">策略</th>
                             <th class="py-2 pr-2 font-medium">方向</th>
                             <th class="py-2 pr-2 font-medium text-right">入场</th>
@@ -1264,12 +1265,20 @@
                 const ps = pmap.get(symU);
                 const wrT = escHtml(fmtZctSymWinRate(ps, 'win_rate_touch'));
                 const wrA = escHtml(fmtZctSymWinRate(ps, 'win_rate_all_pnl'));
+                let symPnlNum = null;
+                if (ps && ps.total_pnl_usdt != null && ps.total_pnl_usdt !== '') {
+                    const t = Number(ps.total_pnl_usdt);
+                    if (Number.isFinite(t)) symPnlNum = t;
+                }
+                const symPnlCls = symPnlNum != null ? pxClass(symPnlNum) : '';
+                const symPnlDisp = symPnlNum != null ? escHtml(fmtZctPx(symPnlNum, 2)) : '—';
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(String(row.id))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(row.symbol)}</td>
                     <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrT}</td>
                     <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrA}</td>
+                    <td class="py-2 pr-2 font-mono text-right text-[11px] ${symPnlCls}">${symPnlDisp}</td>
                     <td class="py-2 pr-2 max-w-[140px] truncate" title="${escHtml(row.play)}">${escHtml(row.play)}</td>
                     <td class="py-2 pr-2 whitespace-nowrap ${zctSideClass(row.side)}">${escHtml(row.side)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.entry_price, 6)}</td>
@@ -1292,7 +1301,7 @@
             }).join('');
             const foot = `<p class="text-text-muted text-[11px] mt-2">共 ${escHtml(String(items.length))} 条`
                 + (totalHint ? `（匹配 ${escHtml(String(totalHint))}）` : '')
-                + ' · 标的右侧两列为该标的在 <code class="text-[10px]">settlements</code> 中的统计（与 summary.per_symbol 同步）；'
+                + ' · 标的旁三列为该标的在 <code class="text-[10px]">settlements</code> 的汇总（触轨胜率 / 全量胜率 / 累计盈亏 U，与 summary.per_symbol 同步）；'
                 + '「—」表示该标的尚无已结算归档'
                 + ' · <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
             root.innerHTML = head + rows + '</tbody></table>' + foot;
