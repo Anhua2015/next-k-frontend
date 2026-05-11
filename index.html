@@ -179,7 +179,7 @@
                         <button type="button" id="zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_vwap_signals 与 zct_vwap_settlements">清理数据库</button>
                     </div>
                 </div>
-                <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+                <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
                 <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
                     <div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>
                 </div>
@@ -1143,6 +1143,7 @@
             if (s.indexOf('盈利') >= 0) return 'text-neon-green';
             if (s.indexOf('止损') >= 0) return 'text-neon-red';
             if (s.indexOf('超时') >= 0) return 'text-warn/95';
+            if (s.indexOf('信号结束') >= 0) return 'text-accent/90';
             return 'text-text-secondary';
         }
 
@@ -1158,8 +1159,10 @@
             }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
-            const wr = sum.win_rate_closed;
-            const wrStr = wr != null ? (Number(wr) * 100).toFixed(1) + '%' : '—';
+            const wrTouch = sum.win_rate_touch != null ? sum.win_rate_touch : sum.win_rate_closed;
+            const wrAll = sum.win_rate_all_pnl;
+            const wrTouchStr = wrTouch != null ? (Number(wrTouch) * 100).toFixed(1) + '%' : '—';
+            const wrAllStr = wrAll != null ? (Number(wrAll) * 100).toFixed(1) + '%' : '—';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓中</div>
@@ -1174,8 +1177,12 @@
                     <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 2)}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase tracking-wide">胜率 (盈/亏)</div>
-                    <div class="text-lg font-semibold text-text-primary">${escHtml(wrStr)}</div>
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">触轨胜率</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(wrTouchStr)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">全量平仓胜率</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(wrAllStr)}</div>
                 </div>`;
         }
 
