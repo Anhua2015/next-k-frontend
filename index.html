@@ -186,6 +186,38 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="ZCT 🔥⚡热度+OI 量化">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-neon-purple/25">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">🔥⚡ ZCT · 热度+OI</h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            SQLite <code class="text-[10px] text-accent/90">zct_hot_oi_signals</code>
+                            + <code class="text-[10px] text-accent/90">zct_hot_oi_settlements</code>
+                            · 标的来自 <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code>（OI 雷达写入七类后）
+                            · 策略逻辑与上方 ZCT VWAP 相同 · 定时默认 <span class="text-text-secondary">35</span> 分钟扫描 / <span class="text-text-secondary">7</span> 分钟结算（与主 lane 错开，见 <code class="text-[10px]">ZCT_HOT_OI_*</code>）
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="zct-hot-oi-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                        <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
+                    </div>
+                </div>
+                <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
+                <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注七类历史与重点关注共八处列表">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -302,6 +334,8 @@
                     <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
                     <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
                     <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
+                    <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
+                    <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
@@ -467,6 +501,53 @@
             /** 更新实盘入场/平仓/备注（PATCH，部分字段） */
             async zctVwapPatchManual(signalId, body) {
                 const res = await fetch(`${API_BASE}/api/zct-vwap/signals/${encodeURIComponent(signalId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            async zctHotOiClearDb() {
+                const res = await fetch(`${API_BASE}/api/zct-hot-oi/maintenance/clear-db`, { method: 'POST' });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            async zctHotOiSummary() {
+                const res = await fetch(`${API_BASE}/api/zct-hot-oi/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async zctHotOiSignals(query) {
+                const q = query instanceof URLSearchParams ? query : new URLSearchParams(query || {});
+                const res = await fetch(`${API_BASE}/api/zct-hot-oi/signals?` + q.toString());
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async zctHotOiPatchManual(signalId, body) {
+                const res = await fetch(`${API_BASE}/api/zct-hot-oi/signals/${encodeURIComponent(signalId)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body || {}),
@@ -1157,6 +1238,7 @@
 
         /** 供「记录实盘」回填当前行 */
         let zctVwapLastItems = [];
+        let zctHotOiLastItems = [];
 
         /** 来自 summary.per_symbol，用于表格按标的展示胜率（无需额外 API） */
         function buildZctPerSymbolMap(sum) {
@@ -1177,8 +1259,8 @@
             return (n * 100).toFixed(1) + '%';
         }
 
-        function renderZctVwapSummary(sum) {
-            const el = document.getElementById('zct-vwap-summary');
+        function renderZctVwapSummary(sum, summaryElId) {
+            const el = document.getElementById(summaryElId || 'zct-vwap-summary');
             if (!el) return;
             if (!sum || !sum.ok) {
                 el.innerHTML = '';
@@ -1213,10 +1295,18 @@
                 </div>`;
         }
 
-        function renderZctVwapTable(items, totalHint, perSymMap) {
-            const root = document.getElementById('zct-vwap-root');
+        /**
+         * @param {{ rootId?: string, apiPath?: string, manualLane?: string }} [opts]
+         */
+        function renderZctVwapTable(items, totalHint, perSymMap, opts) {
+            opts = opts || {};
+            const rootId = opts.rootId || 'zct-vwap-root';
+            const apiPath = opts.apiPath || '/api/zct-vwap/signals';
+            const manualLane = opts.manualLane || '';
+            const root = document.getElementById(rootId);
             if (!root) return;
-            zctVwapLastItems = items || [];
+            if (manualLane === 'hot_oi') zctHotOiLastItems = items || [];
+            else zctVwapLastItems = items || [];
             const pmap = perSymMap instanceof Map ? perSymMap : new Map();
             const head = `
                 <table class="w-full text-left text-xs border-collapse min-w-[1560px]">
@@ -1295,7 +1385,7 @@
                     <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[100px] truncate" title="${mn}">${mn}</td>
                     <td class="py-2 pr-2 text-[11px] text-text-muted max-w-[200px] truncate" title="${pr}">${pr}</td>
                     <td class="py-2 pr-2 whitespace-nowrap">
-                        <button type="button" data-zct-manual="${escHtml(String(row.id))}" class="btn-secondary px-2 py-1 rounded-md bg-surface-light/80 border border-border/90 text-text-secondary text-[10px] font-medium hover:border-accent/40 hover:text-accent">记录实盘</button>
+                        <button type="button" data-zct-manual="${escHtml(String(row.id))}" ${manualLane ? `data-zct-lane="${escHtml(manualLane)}"` : ''} class="btn-secondary px-2 py-1 rounded-md bg-surface-light/80 border border-border/90 text-text-secondary text-[10px] font-medium hover:border-accent/40 hover:text-accent">记录实盘</button>
                     </td>
                 </tr>`;
             }).join('');
@@ -1303,7 +1393,7 @@
                 + (totalHint ? `（匹配 ${escHtml(String(totalHint))}）` : '')
                 + ' · 标的旁三列为该标的在 <code class="text-[10px]">settlements</code> 的汇总（触轨胜率 / 全量胜率 / 累计盈亏 U，与 summary.per_symbol 同步）；'
                 + '「—」表示该标的尚无已结算归档'
-                + ' · <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
+                + ` · <code class="text-[10px]">${escHtml(apiPath)}</code></p>`;
             root.innerHTML = head + rows + '</tbody></table>' + foot;
         }
 
@@ -1322,7 +1412,7 @@
                 if (symEl && symEl.value.trim()) qs.set('symbol', symEl.value.trim().toUpperCase());
                 const sig = await API.zctVwapSignals(qs);
                 const items = sig.items || [];
-                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '', perSymMap);
+                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '', perSymMap, {});
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('zct-vwap:', e);
@@ -1364,6 +1454,71 @@
                 await hydrateZctVwapBoard();
             } catch (err) {
                 console.error('zct-vwap manual:', err);
+                window.alert(err && err.message ? String(err.message) : '保存失败');
+            }
+        }
+
+        async function hydrateZctHotOiBoard() {
+            const root = document.getElementById('zct-hot-oi-root');
+            const tsEl = document.getElementById('zct-hot-oi-ts');
+            if (!root) return;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>';
+            try {
+                const sum = await API.zctHotOiSummary();
+                renderZctVwapSummary(sum, 'zct-hot-oi-summary');
+                const perSymMap = buildZctPerSymbolMap(sum);
+                const stEl = document.getElementById('zct-hot-oi-filter-status');
+                const symEl = document.getElementById('zct-hot-oi-filter-symbol');
+                const qs = new URLSearchParams({ limit: '200', offset: '0', status: stEl ? stEl.value : 'all' });
+                if (symEl && symEl.value.trim()) qs.set('symbol', symEl.value.trim().toUpperCase());
+                const sig = await API.zctHotOiSignals(qs);
+                const items = sig.items || [];
+                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '', perSymMap, {
+                    rootId: 'zct-hot-oi-root',
+                    apiPath: '/api/zct-hot-oi/signals',
+                    manualLane: 'hot_oi',
+                });
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } catch (e) {
+                console.error('zct-hot-oi:', e);
+                renderZctVwapSummary(null, 'zct-hot-oi-summary');
+                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
+        async function zctHotOiEditManual(id) {
+            const row = zctHotOiLastItems.find((r) => Number(r.id) === Number(id));
+            if (!row) {
+                window.alert('未找到该行，请先刷新列表。');
+                return;
+            }
+            const defE = row.manual_entry_price != null ? String(row.manual_entry_price) : '';
+            const defX = row.manual_exit_price != null ? String(row.manual_exit_price) : '';
+            const defN = row.manual_notes != null ? String(row.manual_notes) : '';
+            const e = window.prompt(`[🔥⚡${id}] 实盘入场价（数字，留空跳过本字段）`, defE);
+            if (e === null) return;
+            const x = window.prompt(`[🔥⚡${id}] 实盘平仓价（数字，留空跳过本字段）`, defX);
+            if (x === null) return;
+            const n = window.prompt(`[🔥⚡${id}] 实盘备注`, defN);
+            if (n === null) return;
+            const body = {};
+            const et = e.trim();
+            const xt = x.trim();
+            if (et !== '') {
+                const v = parseFloat(et.replace(/,/g, ''));
+                if (Number.isFinite(v)) body.manual_entry_price = v;
+            }
+            if (xt !== '') {
+                const v = parseFloat(xt.replace(/,/g, ''));
+                if (Number.isFinite(v)) body.manual_exit_price = v;
+            }
+            body.manual_notes = n;
+            try {
+                await API.zctHotOiPatchManual(id, body);
+                await hydrateZctHotOiBoard();
+            } catch (err) {
+                console.error('zct-hot-oi manual:', err);
                 window.alert(err && err.message ? String(err.message) : '保存失败');
             }
         }
@@ -1709,6 +1864,7 @@
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             void hydrateZctVwapBoard();
+            void hydrateZctHotOiBoard();
             document.getElementById('zct-vwap-refresh')?.addEventListener('click', () => void hydrateZctVwapBoard());
             document.getElementById('zct-vwap-clear-db')?.addEventListener('click', async () => {
                 if (
@@ -1740,8 +1896,45 @@
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
                 if (!btn) return;
                 ev.preventDefault();
+                const lane = btn.getAttribute('data-zct-lane') || '';
                 const sid = btn.getAttribute('data-zct-manual');
-                if (sid) void zctVwapEditManual(sid);
+                if (!sid) return;
+                if (lane === 'hot_oi') void zctHotOiEditManual(sid);
+                else void zctVwapEditManual(sid);
+            });
+            document.getElementById('zct-hot-oi-refresh')?.addEventListener('click', () => void hydrateZctHotOiBoard());
+            document.getElementById('zct-hot-oi-clear-db')?.addEventListener('click', async () => {
+                if (
+                    !confirm(
+                        '确定清空 🔥⚡热度+OI 数据库？\n将删除 zct_hot_oi_signals 与 zct_hot_oi_settlements 全部行，不可撤销。',
+                    )
+                ) {
+                    return;
+                }
+                const btn = document.getElementById('zct-hot-oi-clear-db');
+                if (btn) btn.disabled = true;
+                try {
+                    const out = await API.zctHotOiClearDb();
+                    const ns = out.deleted_zct_hot_oi_signals != null ? out.deleted_zct_hot_oi_signals : '?';
+                    const nt = out.deleted_zct_hot_oi_settlements != null ? out.deleted_zct_hot_oi_settlements : '?';
+                    alert('已清理 · zct_hot_oi_signals 删除 ' + ns + ' 行 · settlements 删除 ' + nt + ' 行');
+                    await hydrateZctHotOiBoard();
+                } catch (e) {
+                    alert(e && e.message ? String(e.message) : '清理失败');
+                } finally {
+                    if (btn) btn.disabled = false;
+                }
+            });
+            document.getElementById('zct-hot-oi-filter-status')?.addEventListener('change', () => void hydrateZctHotOiBoard());
+            document.getElementById('zct-hot-oi-filter-symbol')?.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') void hydrateZctHotOiBoard();
+            });
+            document.getElementById('zct-hot-oi-root')?.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
+                if (!btn) return;
+                ev.preventDefault();
+                const sid = btn.getAttribute('data-zct-manual');
+                if (sid) void zctHotOiEditManual(sid);
             });
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
         }
