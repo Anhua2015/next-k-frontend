@@ -1158,6 +1158,25 @@
         /** 供「记录实盘」回填当前行 */
         let zctVwapLastItems = [];
 
+        /** 来自 summary.per_symbol，用于表格按标的展示胜率（无需额外 API） */
+        function buildZctPerSymbolMap(sum) {
+            const m = new Map();
+            const arr = sum && Array.isArray(sum.per_symbol) ? sum.per_symbol : [];
+            arr.forEach((p) => {
+                const k = p && p.symbol ? String(p.symbol).toUpperCase() : '';
+                if (k) m.set(k, p);
+            });
+            return m;
+        }
+
+        function fmtZctSymWinRate(ps, key) {
+            const v = ps && ps[key];
+            if (v == null || v === '') return '—';
+            const n = Number(v);
+            if (Number.isNaN(n)) return '—';
+            return (n * 100).toFixed(1) + '%';
+        }
+
         function renderZctVwapSummary(sum) {
             const el = document.getElementById('zct-vwap-summary');
             if (!el) return;
@@ -1194,12 +1213,13 @@
                 </div>`;
         }
 
-        function renderZctVwapTable(items, totalHint) {
+        function renderZctVwapTable(items, totalHint, perSymMap) {
             const root = document.getElementById('zct-vwap-root');
             if (!root) return;
             zctVwapLastItems = items || [];
+            const pmap = perSymMap instanceof Map ? perSymMap : new Map();
             const head = `
-                <table class="w-full text-left text-xs border-collapse min-w-[1320px]">
+                <table class="w-full text-left text-xs border-collapse min-w-[1480px]">
                     <thead>
                         <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
                             <th class="py-2 pr-2 font-medium">#</th>
@@ -1211,6 +1231,8 @@
                             <th class="py-2 pr-2 font-medium text-right">SL</th>
                             <th class="py-2 pr-2 font-medium text-right">TP</th>
                             <th class="py-2 pr-2 font-medium text-right">名义U</th>
+                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的历史：触轨 win/(win+loss)">触轨胜率</th>
+                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的历史：pnl&gt;0 与 pnl&lt;0 笔数比">全量胜率</th>
                             <th class="py-2 pr-2 font-medium">状态</th>
                             <th class="py-2 pr-2 font-medium text-right">平仓</th>
                             <th class="py-2 pr-2 font-medium text-right">R</th>
@@ -1238,6 +1260,10 @@
                 const mPnlu = row.manual_pnl_est_usdt;
                 const mPnluCls = pxClass(Number(mPnlu));
                 const mn = row.manual_notes != null ? escHtml(String(row.manual_notes)) : '';
+                const symU = String(row.symbol || '').toUpperCase();
+                const ps = pmap.get(symU);
+                const wrT = escHtml(fmtZctSymWinRate(ps, 'win_rate_touch'));
+                const wrA = escHtml(fmtZctSymWinRate(ps, 'win_rate_all_pnl'));
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(String(row.id))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
@@ -1248,6 +1274,8 @@
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.sl_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.tp_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.virtual_notional_usdt, 0)}</td>
+                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrT}</td>
+                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrA}</td>
                     <td class="py-2 pr-2 whitespace-nowrap ${zctStatusClass(row.display_status)}">${escHtml(row.display_status || '')}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.exit_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right ${prRCls}">${fmtZctPx(row.pnl_r, 3)}</td>
@@ -1264,7 +1292,8 @@
             }).join('');
             const foot = `<p class="text-text-muted text-[11px] mt-2">共 ${escHtml(String(items.length))} 条`
                 + (totalHint ? `（匹配 ${escHtml(String(totalHint))}）` : '')
-                + ' · 数据来自 next-k-api · <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
+                + ' · 标的胜率来自同次 <code class="text-[10px]">/api/zct-vwap/summary</code> 的 <code class="text-[10px]">per_symbol</code>（基于 settlements 全历史）'
+                + ' · 信号表 <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
             root.innerHTML = head + rows + '</tbody></table>' + foot;
         }
 
@@ -1276,13 +1305,14 @@
             try {
                 const sum = await API.zctVwapSummary();
                 renderZctVwapSummary(sum);
+                const perSymMap = buildZctPerSymbolMap(sum);
                 const stEl = document.getElementById('zct-vwap-filter-status');
                 const symEl = document.getElementById('zct-vwap-filter-symbol');
                 const qs = new URLSearchParams({ limit: '200', offset: '0', status: stEl ? stEl.value : 'all' });
                 if (symEl && symEl.value.trim()) qs.set('symbol', symEl.value.trim().toUpperCase());
                 const sig = await API.zctVwapSignals(qs);
                 const items = sig.items || [];
-                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '');
+                renderZctVwapTable(items, sig.total != null ? String(sig.total) : '', perSymMap);
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('zct-vwap:', e);
