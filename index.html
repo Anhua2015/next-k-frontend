@@ -154,11 +154,11 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="ZCT VWAP 虚拟信号">
+        <section class="mb-6" aria-label="ZCT VWAP 信号">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 ZCT VWAP · 虚拟仓位</h2>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 ZCT VWAP · 仓位</h2>
                         <p class="text-text-muted text-xs mt-0.5">
                             SQLite <code class="text-[10px] text-accent/90">zct_vwap_signals</code>
                             + <code class="text-[10px] text-accent/90">zct_vwap_settlements</code>
@@ -207,7 +207,7 @@
                 <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 </h2>
-                        <p class="text-text-muted text-xs mt-0.5">近 2 日每小时扫描归档 · 当前虚拟持仓与权益</p>
+                        <p class="text-text-muted text-xs mt-0.5">近 2 日每小时扫描归档 · 当前持仓与权益</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="s6-alpha-ts" class="text-text-muted text-xs font-mono">--</span>
@@ -451,7 +451,7 @@
                 }
                 return data;
             },
-            /** ZCT VWAP 虚拟信号汇总（持仓数、累计盈亏 USDT、胜率等） */
+            /** ZCT VWAP 信号汇总（持仓数、累计盈亏 USDT、胜率等） */
             async zctVwapSummary() {
                 const res = await fetch(`${API_BASE}/api/zct-vwap/summary`);
                 if (!res.ok) throw new Error(await res.text());
@@ -927,7 +927,7 @@
                 posHead = `<div class="text-text-secondary text-xs mb-3">初始 ${initB.toFixed(0)} U → 当前权益 <span class="text-neon-green font-mono font-semibold">${bal.toFixed(2)} U</span> · 未平 <span class="text-text-primary">${open.length}</span> 笔</div>`;
             }
             if (!open.length) {
-                posBody.innerHTML = posHead + '<div class="text-text-muted text-sm py-2">当前无未平仓虚拟单。</div>';
+                posBody.innerHTML = posHead + '<div class="text-text-muted text-sm py-2">当前无未平仓单。</div>';
                 return;
             }
             const thead = `
