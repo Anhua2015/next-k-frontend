@@ -1352,6 +1352,20 @@
                     </thead>
                     <tbody>`;
             if (!items || !items.length) {
+                if (manualLane === 'hot_oi') {
+                    root.innerHTML = `
+                        <div class="rounded-lg border border-neon-purple/25 bg-neon-purple/[0.06] px-4 py-3 text-xs text-text-secondary leading-relaxed space-y-2 max-w-3xl">
+                            <p class="text-text-primary font-medium">当前没有可展示的合约行（快照表多半也为空）</p>
+                            <p><strong class="text-text-secondary">原因：</strong>本 lane 只扫 SQLite 表 <code class="text-[10px]">worth_watch_hot_oi</code> 里的永续标的。该表由 <strong>OI 雷达</strong>在「值得关注 · 🔥⚡热度+OI」写入；表为空时，调度器不会对任何合约下单式扫描。</p>
+                            <ul class="list-disc pl-5 space-y-1 text-[11px] text-text-muted">
+                                <li>等待或手动触发 OI 雷达（默认每小时整点后 <strong>:30</strong>；维护面板任务 <code class="text-[10px]">oi</code>）。</li>
+                                <li>入选 🔥⚡ 需同时满足热度与 6h OI 等条件；当日无人达标时池子可能为空，属正常。</li>
+                                <li>确认表内有标的后，再手动 <code class="text-[10px]">zct_hot_oi</code> 或打开 <code class="text-[10px]">ZCT_HOT_OI_SIGNAL_SCHEDULER_ENABLED</code> 定时扫描。</li>
+                            </ul>
+                            <p class="text-[11px] text-text-muted">筛选「全部」仍无数据时，优先检查库表是否已有行；仅当池子有合约却仍无信号时，才是策略本轮未给方向单。</p>
+                        </div>`;
+                    return;
+                }
                 root.innerHTML = head + '</tbody></table>'
                     + `<p class="text-text-muted text-xs mt-2">${escHtml(totalHint || '暂无记录')}</p>`;
                 return;
