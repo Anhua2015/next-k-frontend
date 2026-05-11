@@ -1203,12 +1203,12 @@
                     <div class="text-text-muted text-[10px] uppercase tracking-wide">累计盈亏 (USDT)</div>
                     <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 2)}</div>
                 </div>
-                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase tracking-wide">触轨胜率</div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2" title="全部 settlements：触轨 win/(win+loss)，与本系统纸面规则一致">
+                    <div class="text-text-muted text-[10px] tracking-wide">系统 · 触轨胜率</div>
                     <div class="text-lg font-semibold text-text-primary">${escHtml(wrTouchStr)}</div>
                 </div>
-                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase tracking-wide">全量平仓胜率</div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2" title="全部 settlements：盈亏为正笔数 /（正+负）">
+                    <div class="text-text-muted text-[10px] tracking-wide">系统 · 全量胜率</div>
                     <div class="text-lg font-semibold text-text-primary">${escHtml(wrAllStr)}</div>
                 </div>`;
         }
@@ -1225,14 +1225,14 @@
                             <th class="py-2 pr-2 font-medium">#</th>
                             <th class="py-2 pr-2 font-medium whitespace-nowrap">时间 UTC</th>
                             <th class="py-2 pr-2 font-medium">标的</th>
+                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的 settlements 历史：win+loss 触轨笔数">触轨胜率</th>
+                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的 settlements：盈亏为正笔数 /（正+负），不含零盈亏">全量胜率</th>
                             <th class="py-2 pr-2 font-medium">策略</th>
                             <th class="py-2 pr-2 font-medium">方向</th>
                             <th class="py-2 pr-2 font-medium text-right">入场</th>
                             <th class="py-2 pr-2 font-medium text-right">SL</th>
                             <th class="py-2 pr-2 font-medium text-right">TP</th>
                             <th class="py-2 pr-2 font-medium text-right">名义U</th>
-                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的历史：触轨 win/(win+loss)">触轨胜率</th>
-                            <th class="py-2 pr-2 font-medium text-right whitespace-nowrap" title="该标的历史：pnl&gt;0 与 pnl&lt;0 笔数比">全量胜率</th>
                             <th class="py-2 pr-2 font-medium">状态</th>
                             <th class="py-2 pr-2 font-medium text-right">平仓</th>
                             <th class="py-2 pr-2 font-medium text-right">R</th>
@@ -1268,14 +1268,14 @@
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(String(row.id))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
                     <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(row.symbol)}</td>
+                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrT}</td>
+                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrA}</td>
                     <td class="py-2 pr-2 max-w-[140px] truncate" title="${escHtml(row.play)}">${escHtml(row.play)}</td>
                     <td class="py-2 pr-2 whitespace-nowrap ${zctSideClass(row.side)}">${escHtml(row.side)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.entry_price, 6)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.sl_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.tp_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.virtual_notional_usdt, 0)}</td>
-                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrT}</td>
-                    <td class="py-2 pr-2 font-mono text-right text-[11px]">${wrA}</td>
                     <td class="py-2 pr-2 whitespace-nowrap ${zctStatusClass(row.display_status)}">${escHtml(row.display_status || '')}</td>
                     <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.exit_price, 4)}</td>
                     <td class="py-2 pr-2 font-mono text-right ${prRCls}">${fmtZctPx(row.pnl_r, 3)}</td>
@@ -1292,8 +1292,9 @@
             }).join('');
             const foot = `<p class="text-text-muted text-[11px] mt-2">共 ${escHtml(String(items.length))} 条`
                 + (totalHint ? `（匹配 ${escHtml(String(totalHint))}）` : '')
-                + ' · 标的胜率来自同次 <code class="text-[10px]">/api/zct-vwap/summary</code> 的 <code class="text-[10px]">per_symbol</code>（基于 settlements 全历史）'
-                + ' · 信号表 <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
+                + ' · 标的右侧两列为该标的在 <code class="text-[10px]">settlements</code> 中的统计（与 summary.per_symbol 同步）；'
+                + '「—」表示该标的尚无已结算归档'
+                + ' · <code class="text-[10px]">/api/zct-vwap/signals</code></p>';
             root.innerHTML = head + rows + '</tbody></table>' + foot;
         }
 
