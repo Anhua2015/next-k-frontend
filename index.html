@@ -144,11 +144,11 @@
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">👑 重点关注</h2>
-                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 由每小时 OI 扫描写入，亦可下方「刷新」后读库。</p>
+                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 由每小时 OI 扫描写入，亦可下方「刷新」后读库。列表约 10 行高，可向下滚动。</p>
                     </div>
                     <span id="focus-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
-                <div id="focus-watch-board-root" class="p-4 overflow-x-auto">
+                <div id="focus-watch-board-root" class="p-4">
                     <div class="text-text-muted text-sm animate-pulse">加载重点关注…</div>
                 </div>
             </div>
@@ -186,12 +186,12 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="值得关注七类看盘">
+        <section class="mb-6" aria-label="值得关注七类历史与重点关注共八处列表">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
-                        <p class="text-text-muted text-xs mt-0.5">保留最近 2 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">七类归档；与上方「👑 重点关注」合为八处历史表。每处约显示 10 行，其余在表内滚动。保留最近 2 日。</p>
                     </div>
                     <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
@@ -597,6 +597,9 @@
             ['ambush_dark', '🎯 埋伏·暗流'],
             ['ambush_gem', '💎 埋伏·低市值+OI'],
         ];
+        /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（与下方七类 + 上方「重点关注」共 8 处列表一致） */
+        const HISTORY_TABLE_SCROLL_WRAP =
+            'max-h-[min(26rem,40vh)] overflow-y-auto overflow-x-auto';
 
         /** 与后端 BPC_CONTINUATION_REASON_ZH 对齐；旧快照仅有英文 reason 时兜底 */
         const BPC_CONTINUATION_REASON_ZH = {
@@ -716,12 +719,12 @@
                 }
                 return `<div class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
                     <div class="px-3 py-2 border-b border-border/60 bg-surface-light/25 text-sm font-semibold text-text-primary tracking-tight">${escHtml(label)}</div>
-                    <div class="p-3 overflow-x-auto">${inner}</div>
+                    <div class="p-3 ${HISTORY_TABLE_SCROLL_WRAP}">${inner}</div>
                 </div>`;
             }).join('');
             const footNote = showBpc
-                ? '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
-                : '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
+                ? '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。以上七类列表每类约 10 行可视，其余滚动。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
+                : '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。以上七类列表每类约 10 行可视，其余滚动。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
             root.innerHTML = blocks + footNote;
             bindOiRadarPickHandlers(root);
         }
@@ -1086,7 +1089,12 @@
             const focusFoot = showBpc
                 ? '<p class="text-text-muted text-[11px] mt-2">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
                 : '<p class="text-text-muted text-[11px] mt-2"><span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
-            root.innerHTML = thead + rows + '</tbody></table>' + focusFoot;
+            root.innerHTML =
+                `<div class="${HISTORY_TABLE_SCROLL_WRAP} -mx-0.5 px-0.5">` +
+                thead +
+                rows +
+                '</tbody></table></div>' +
+                focusFoot;
             bindOiRadarPickHandlers(root);
         }
 
