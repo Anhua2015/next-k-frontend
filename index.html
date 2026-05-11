@@ -139,6 +139,84 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="两套量化 ZCT">
+            <div class="rounded-xl border border-border/80 bg-surface-light/[0.12] px-4 py-3 mb-4">
+                <h2 class="text-text-primary font-semibold text-base tracking-tight">📐 两套量化 · 分开展示</h2>
+                <p class="text-text-muted text-xs mt-2 leading-relaxed">
+                    <span class="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span><strong class="text-accent/95">① 主 lane</strong>：<code class="text-[10px] text-accent/90">zct_vwap_*</code> · <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code></span>
+                        <span class="text-border/80 hidden sm:inline">|</span>
+                        <span><strong class="text-neon-purple/95">② 热度+OI</strong>：<code class="text-[10px] text-accent/90">zct_hot_oi_*</code> · <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code></span>
+                    </span>
+                    <span class="block mt-1.5 text-[11px] text-text-muted/95">策略规则相同；标的池、SQLite 表、扫描/结算定时彼此独立。自上而下分块展示。</span>
+                </p>
+            </div>
+            <div class="flex flex-col gap-4">
+                <!-- ① 主 ZCT VWAP -->
+                <div class="min-w-0 flex flex-col" aria-label="主 lane ZCT VWAP">
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-accent/80 mb-2 px-1">① 主 lane · 全量标的</div>
+                    <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20 flex flex-col">
+                        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                            <div>
+                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">📊 ZCT VWAP · 仓位</h3>
+                                <p class="text-text-muted text-xs mt-0.5">
+                                    默认名义 <span class="text-text-secondary">100 USDT</span>/笔 · 标的 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code>
+                                    · 定时约每 30min 扫描 / 5min 结算（<code class="text-[10px]">ZCT_VWAP_*</code>）
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                                <select id="zct-vwap-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                                    <option value="all">全部</option>
+                                    <option value="open">持仓中</option>
+                                    <option value="settled">已结算</option>
+                                </select>
+                                <input type="text" id="zct-vwap-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                                    class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                                <span id="zct-vwap-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                                <button type="button" id="zct-vwap-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                                <button type="button" id="zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_vwap_signals 与 zct_vwap_settlements">清理数据库</button>
+                            </div>
+                        </div>
+                        <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                        <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
+                            <div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ② 热度+OI lane -->
+                <div class="min-w-0 flex flex-col" aria-label="热度+OI lane">
+                    <div class="text-[10px] font-medium uppercase tracking-wide text-neon-purple/85 mb-2 px-1">② 热度+OI lane · worth_watch_hot_oi</div>
+                    <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-neon-purple/25 flex flex-col">
+                        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                            <div>
+                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">🔥⚡ ZCT · 热度+OI</h3>
+                                <p class="text-text-muted text-xs mt-0.5">
+                                    标的来自 <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code>
+                                    · 规则与①主 lane 相同 · 定时默认 <span class="text-text-secondary">35</span>min / <span class="text-text-secondary">7</span>min（<code class="text-[10px]">ZCT_HOT_OI_*</code>）
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                                <select id="zct-hot-oi-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                                    <option value="all">全部</option>
+                                    <option value="open">持仓中</option>
+                                    <option value="settled">已结算</option>
+                                </select>
+                                <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                                    class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                                <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                                <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                                <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
+                            </div>
+                        </div>
+                        <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                        <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
+                            <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="重点关注看盘">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -154,76 +232,12 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="ZCT VWAP 信号">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 ZCT VWAP · 仓位</h2>
-                        <p class="text-text-muted text-xs mt-0.5">
-                            SQLite <code class="text-[10px] text-accent/90">zct_vwap_signals</code>
-                            + <code class="text-[10px] text-accent/90">zct_vwap_settlements</code>
-                            · 默认名义 <span class="text-text-secondary">100 USDT</span>/笔
-                            · 扫描标的由服务端 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code> 配置；定时默认全量扫描约每 30 分钟、结算(resolve)约每 5 分钟（<code class="text-[10px]">ZCT_VWAP_SCAN_INTERVAL_MINUTES</code> / <code class="text-[10px]">ZCT_VWAP_RESOLVE_INTERVAL_MINUTES</code>）
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                        <select id="zct-vwap-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
-                            <option value="all">全部</option>
-                            <option value="open">持仓中</option>
-                            <option value="settled">已结算</option>
-                        </select>
-                        <input type="text" id="zct-vwap-filter-symbol" placeholder="筛选标的" autocomplete="off"
-                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
-                        <span id="zct-vwap-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                        <button type="button" id="zct-vwap-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                        <button type="button" id="zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_vwap_signals 与 zct_vwap_settlements">清理数据库</button>
-                    </div>
-                </div>
-                <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
-                <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
-                    <div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-6" aria-label="ZCT 🔥⚡热度+OI 量化">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-neon-purple/25">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">🔥⚡ ZCT · 热度+OI</h2>
-                        <p class="text-text-muted text-xs mt-0.5">
-                            SQLite <code class="text-[10px] text-accent/90">zct_hot_oi_signals</code>
-                            + <code class="text-[10px] text-accent/90">zct_hot_oi_settlements</code>
-                            · 标的来自 <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code>（OI 雷达写入七类后）
-                            · 策略逻辑与上方 ZCT VWAP 相同 · 定时默认 <span class="text-text-secondary">35</span> 分钟扫描 / <span class="text-text-secondary">7</span> 分钟结算（与主 lane 错开，见 <code class="text-[10px]">ZCT_HOT_OI_*</code>）
-                        </p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                        <select id="zct-hot-oi-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
-                            <option value="all">全部</option>
-                            <option value="open">持仓中</option>
-                            <option value="settled">已结算</option>
-                        </select>
-                        <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
-                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
-                        <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                        <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                        <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
-                    </div>
-                </div>
-                <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2"></div>
-                <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
-                    <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
-                </div>
-            </div>
-        </section>
-
         <section class="mb-6" aria-label="值得关注七类历史与重点关注共八处列表">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
-                        <p class="text-text-muted text-xs mt-0.5">七类归档；与上方「👑 重点关注」合为八处历史表。每处约显示 10 行，其余在表内滚动。保留最近 2 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">七类归档；与「👑 重点关注」合为八处历史表。每处约显示 10 行，其余在表内滚动。保留最近 2 日。</p>
                     </div>
                     <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
