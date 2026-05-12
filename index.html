@@ -139,21 +139,63 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="ZCT VWAP 与热度+OI">
-            <div class="flex flex-col gap-4">
-                <!-- ① 主 ZCT VWAP -->
-                <div class="min-w-0 flex flex-col" aria-label="主 lane ZCT VWAP">
-                    <div class="text-[10px] font-medium uppercase tracking-wide text-accent/80 mb-2 px-1">① 主 lane · 全量标的</div>
-                    <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20 flex flex-col">
+        <section class="mb-6" aria-label="ZCT 量化" id="zct-lane-section">
+            <div id="zct-lane-wrap" class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div
+                    id="zct-lane-tab-bar"
+                    class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin shrink-0"
+                    role="tablist"
+                    aria-label="ZCT lane"
+                >
+                    <button
+                        type="button"
+                        role="tab"
+                        id="zct-tab-hot_oi"
+                        data-zct-lane-tab="hot_oi"
+                        aria-selected="true"
+                        aria-controls="zct-panel-hot_oi"
+                        tabindex="0"
+                        class="shrink-0 px-2.5 sm:px-3 py-2 text-[11px] sm:text-sm font-medium rounded-t-md border-b-2 border-accent text-text-primary bg-surface-light/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-0 focus-visible:ring-offset-background"
+                    >
+                        🔥⚡ ZCT · 热度+OI
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        id="zct-tab-vwap"
+                        data-zct-lane-tab="vwap"
+                        aria-selected="false"
+                        aria-controls="zct-panel-vwap"
+                        tabindex="-1"
+                        class="shrink-0 px-2.5 sm:px-3 py-2 text-[11px] sm:text-sm font-medium rounded-t-md border-b-2 border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-light/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-0 focus-visible:ring-offset-background"
+                    >
+                        📊 ZCT VWAP · 标的
+                    </button>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div id="zct-panel-hot_oi" role="tabpanel" aria-labelledby="zct-tab-hot_oi" class="flex flex-col min-w-0">
                         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                            <div>
-                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">📊 ZCT VWAP · 标的</h3>
-                                <p class="text-text-muted text-xs mt-0.5">
-                                    默认名义 <span class="text-text-secondary">100 USDT</span>/笔 · 标的 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code>
-                                    · 定时约每 30min 扫描 / 5min 结算（<code class="text-[10px]">ZCT_VWAP_*</code>）
-                                </p>
+                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto sm:ml-auto">
+                                <select id="zct-hot-oi-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                                    <option value="all">全部</option>
+                                    <option value="open">持仓中</option>
+                                    <option value="settled">已结算</option>
+                                </select>
+                                <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                                    class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                                <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                                <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                                <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
                             </div>
-                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        </div>
+                        <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                        <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
+                            <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
+                        </div>
+                    </div>
+                    <div id="zct-panel-vwap" role="tabpanel" aria-labelledby="zct-tab-vwap" class="hidden flex flex-col min-w-0">
+                        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto sm:ml-auto">
                                 <select id="zct-vwap-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
                                     <option value="all">全部</option>
                                     <option value="open">持仓中</option>
@@ -172,46 +214,15 @@
                         </div>
                     </div>
                 </div>
-                <!-- ② 热度+OI lane -->
-                <div class="min-w-0 flex flex-col" aria-label="热度+OI lane">
-                    <div class="text-[10px] font-medium uppercase tracking-wide text-neon-purple/85 mb-2 px-1">② 热度+OI lane · worth_watch_hot_oi</div>
-                    <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-neon-purple/25 flex flex-col">
-                        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                            <div>
-                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">🔥⚡ ZCT · 热度+OI</h3>
-                                <p class="text-text-muted text-xs mt-0.5">
-                                    标的来自 <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code>
-                                    · 规则与①主 lane 相同 · 定时默认 <span class="text-text-secondary">35</span>min / <span class="text-text-secondary">7</span>min（<code class="text-[10px]">ZCT_HOT_OI_*</code>）
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                                <select id="zct-hot-oi-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
-                                    <option value="all">全部</option>
-                                    <option value="open">持仓中</option>
-                                    <option value="settled">已结算</option>
-                                </select>
-                                <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
-                                    class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
-                                <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                                <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                                <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
-                            </div>
-                        </div>
-                        <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
-                        <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
-                            <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
 
-        <section class="mb-6" aria-label="值得关注与重点关注共八类历史，顶部标签切换">
+        <section class="mb-6" aria-label="值得关注与重点关注归档">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
-                        <p class="text-text-muted text-xs mt-0.5">👑 重点关注与七类 worth 共八处，顶部标签切换。每表约 10 行可视，其余在表内滚动。保留最近 2 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">每表约 10 行可视，其余在表内滚动。保留最近 2 日。</p>
                     </div>
                     <div class="text-right text-xs font-mono space-y-0.5 shrink-0">
                         <div id="worth-watch-ts" class="text-text-muted whitespace-nowrap">--</div>
@@ -1498,6 +1509,60 @@
             root.innerHTML = head + rows + '</tbody></table>' + foot;
         }
 
+        function zctLanePreferredTab() {
+            try {
+                const k = localStorage.getItem('zctLaneTabKey');
+                if (k === 'hot_oi' || k === 'vwap') return k;
+            } catch (e) { /* ignore */ }
+            return 'hot_oi';
+        }
+
+        function switchZctLaneTab(key) {
+            if (key !== 'hot_oi' && key !== 'vwap') return;
+            const onHot = key === 'hot_oi';
+            ['hot_oi', 'vwap'].forEach((id) => {
+                const tab = document.getElementById(`zct-tab-${id}`);
+                const panel = document.getElementById(`zct-panel-${id}`);
+                const on = (id === 'hot_oi') === onHot;
+                if (tab) {
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                    tab.className = worthHistTabBtnClass(on);
+                }
+                if (panel) {
+                    if (on) {
+                        panel.removeAttribute('hidden');
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.setAttribute('hidden', '');
+                        panel.classList.add('hidden');
+                    }
+                }
+            });
+            try {
+                localStorage.setItem('zctLaneTabKey', key);
+            } catch (e) { /* ignore */ }
+            const t = document.getElementById(`zct-tab-${key}`);
+            if (t && typeof t.scrollIntoView === 'function') {
+                try {
+                    t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                } catch (e2) { /* ignore */ }
+            }
+        }
+
+        function initZctLaneTabDelegationOnce() {
+            const bar = document.getElementById('zct-lane-tab-bar');
+            if (!bar || bar.dataset.zctDeleg === '1') return;
+            bar.dataset.zctDeleg = '1';
+            bar.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('button[data-zct-lane-tab]');
+                if (!btn || !bar.contains(btn)) return;
+                ev.preventDefault();
+                const k = btn.getAttribute('data-zct-lane-tab');
+                if (k) switchZctLaneTab(k);
+            });
+        }
+
         async function hydrateZctVwapBoard() {
             const root = document.getElementById('zct-vwap-root');
             const tsEl = document.getElementById('zct-vwap-ts');
@@ -1959,6 +2024,8 @@
             }
             setupMaintPanel();
             initWorthHistoryTabDelegationOnce();
+            initZctLaneTabDelegationOnce();
+            switchZctLaneTab(zctLanePreferredTab());
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
