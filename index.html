@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>收筹池 · OI 监控 - Next K</title>
+    <title>收筹池 · OI 监控 · ZCT Trading</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -158,7 +158,7 @@
                     <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 border-t border-accent/20 flex flex-col">
                         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                             <div>
-                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">📊 ZCT VWAP · 仓位</h3>
+                                <h3 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight text-[15px]">📊 ZCT VWAP · 标的</h3>
                                 <p class="text-text-muted text-xs mt-0.5">
                                     默认名义 <span class="text-text-secondary">100 USDT</span>/笔 · 标的 <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code>
                                     · 定时约每 30min 扫描 / 5min 结算（<code class="text-[10px]">ZCT_VWAP_*</code>）
@@ -232,17 +232,23 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="值得关注七类历史与重点关注共八处列表">
+        <section class="mb-6" aria-label="值得关注七类历史，顶部标签切换">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
-                        <p class="text-text-muted text-xs mt-0.5">七类归档；与「👑 重点关注」合为八处历史表。每处约显示 10 行，其余在表内滚动。保留最近 2 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">七类归档以顶部标签切换；与「👑 重点关注」合为八处历史。每表约 10 行可视，其余在表内滚动。保留最近 2 日。</p>
                     </div>
                     <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                 </div>
-                <div id="worth-watch-boards-root" class="p-4 space-y-4">
-                    <div class="text-text-muted text-sm animate-pulse">加载历史记录…</div>
+                <div id="worth-watch-boards-root" class="flex flex-col min-w-0">
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="值得关注七类历史"></div>
+                    <div class="px-4 pb-4 pt-3 min-w-0">
+                        <div id="worth-history-tab-panels">
+                            <div class="text-text-muted text-sm animate-pulse">加载历史记录…</div>
+                        </div>
+                        <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -692,7 +698,7 @@
             ['ambush_dark', '🎯 埋伏·暗流'],
             ['ambush_gem', '💎 埋伏·低市值+OI'],
         ];
-        /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（与下方七类 + 上方「重点关注」共 8 处列表一致） */
+        /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（七类以 Tab 切换 + 上方「重点关注」共 8 处列表） */
         const HISTORY_TABLE_SCROLL_WRAP =
             'max-h-[min(26rem,40vh)] overflow-y-auto overflow-x-auto';
 
@@ -738,13 +744,91 @@
             return m;
         }
 
+        function ensureWorthHistoryTabShell() {
+            const root = document.getElementById('worth-watch-boards-root');
+            if (!root) return null;
+            let tabBar = document.getElementById('worth-history-tab-bar');
+            let panelsRoot = document.getElementById('worth-history-tab-panels');
+            let footEl = document.getElementById('worth-history-footnote');
+            if (!tabBar || !panelsRoot || !footEl) {
+                root.className = 'flex flex-col min-w-0';
+                root.innerHTML = `
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="值得关注七类历史"></div>
+                    <div class="px-4 pb-4 pt-3 min-w-0">
+                        <div id="worth-history-tab-panels"></div>
+                        <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
+                    </div>`;
+                tabBar = document.getElementById('worth-history-tab-bar');
+                panelsRoot = document.getElementById('worth-history-tab-panels');
+                footEl = document.getElementById('worth-history-footnote');
+            }
+            return { root, tabBar, panelsRoot, footEl };
+        }
+
+        function worthHistTabBtnClass(active) {
+            const base =
+                'shrink-0 px-2.5 sm:px-3 py-2 text-[11px] sm:text-sm font-medium rounded-t-md border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-0 focus-visible:ring-offset-background';
+            return active
+                ? `${base} border-accent text-text-primary bg-surface-light/40`
+                : `${base} border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-light/20`;
+        }
+
+        function worthHistoryPreferredTabKey() {
+            try {
+                const k = localStorage.getItem('worthHistoryTabKey');
+                if (k && WORTH_WATCH_META.some(([id]) => id === k)) return k;
+            } catch (e) { /* ignore */ }
+            return WORTH_WATCH_META[0][0];
+        }
+
+        function switchWorthHistoryTab(key) {
+            if (!WORTH_WATCH_META.some(([id]) => id === key)) return;
+            WORTH_WATCH_META.forEach(([id]) => {
+                const tab = document.getElementById(`worth-tab-${id}`);
+                const panel = document.getElementById(`worth-panel-${id}`);
+                const on = id === key;
+                if (tab) {
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                    tab.className = worthHistTabBtnClass(on);
+                }
+                if (panel) {
+                    if (on) panel.removeAttribute('hidden');
+                    else panel.setAttribute('hidden', '');
+                }
+            });
+            try {
+                localStorage.setItem('worthHistoryTabKey', key);
+            } catch (e) { /* ignore */ }
+            const activeTab = document.getElementById(`worth-tab-${key}`);
+            if (activeTab && typeof activeTab.scrollIntoView === 'function') {
+                try {
+                    activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                } catch (e2) { /* ignore */ }
+            }
+        }
+
+        function initWorthHistoryTabDelegationOnce() {
+            const root = document.getElementById('worth-watch-boards-root');
+            if (!root || root.dataset.worthTabDeleg === '1') return;
+            root.dataset.worthTabDeleg = '1';
+            root.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('button[data-worth-tab-key]');
+                if (!btn || !root.contains(btn)) return;
+                ev.preventDefault();
+                const k = btn.getAttribute('data-worth-tab-key');
+                if (k) switchWorthHistoryTab(k);
+            });
+        }
+
         /**
          * @param heatWl 可选；热度看盘兜底：仅当 worth 行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
          */
         function renderWorthSevenBoards(wl, heatWl) {
-            const root = document.getElementById('worth-watch-boards-root');
+            const shell = ensureWorthHistoryTabShell();
             const tsEl = document.getElementById('worth-watch-ts');
-            if (!root) return;
+            if (!shell) return;
+            const { root, tabBar, panelsRoot, footEl } = shell;
             const cats = (wl && wl.categories) || {};
             const showBpc = SHOW_BPC_UI;
             const bpcBySym = showBpc ? buildBpcBySymbolFromHeatAccum(heatWl || {}) : new Map();
@@ -787,9 +871,17 @@
                             <th class="py-2 pr-3 font-medium align-top">摘要</th>
                         </tr>
                     </thead><tbody>`;
-            const blocks = WORTH_WATCH_META.map(([key, label]) => {
+            const pref = worthHistoryPreferredTabKey();
+            const tabHtml = WORTH_WATCH_META.map(([key, label]) => {
+                const active = key === pref;
+                return `<button type="button" role="tab" id="worth-tab-${key}" data-worth-tab-key="${key}"
+                    class="${worthHistTabBtnClass(active)}"
+                    aria-selected="${active ? 'true' : 'false'}" aria-controls="worth-panel-${key}" tabindex="${active ? '0' : '-1'}">${escHtml(label)}</button>`;
+            }).join('');
+            const panelsHtml = WORTH_WATCH_META.map(([key]) => {
                 const sec = cats[key] || { items: [] };
                 const items = sortWorthHighlightItemsDesc(sec.items || []);
+                const active = key === pref;
                 let inner;
                 if (!items.length) {
                     inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
@@ -812,15 +904,22 @@
                     }).join('');
                     inner = thead + rows + '</tbody></table>';
                 }
-                return `<div class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
-                    <div class="px-3 py-2 border-b border-border/60 bg-surface-light/25 text-sm font-semibold text-text-primary tracking-tight">${escHtml(label)}</div>
+                const hiddenAttr = active ? '' : ' hidden';
+                return `<div role="tabpanel" id="worth-panel-${key}" aria-labelledby="worth-tab-${key}"${hiddenAttr}
+                    class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
                     <div class="p-3 ${HISTORY_TABLE_SCROLL_WRAP}">${inner}</div>
                 </div>`;
             }).join('');
-            const footNote = showBpc
-                ? '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。以上七类列表每类约 10 行可视，其余滚动。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
-                : '<p class="text-text-muted text-[11px] mt-2">每轮 OI 扫描每类至多写入 2 条；点击币种或摘要打开币安合约。以上七类列表每类约 10 行可视，其余滚动。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
-            root.innerHTML = blocks + footNote;
+            const footHtml = showBpc
+                ? '每轮 OI 扫描每类至多写入 2 条；点击顶部标签切换分类，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。'
+                : '每轮 OI 扫描每类至多写入 2 条；点击顶部标签切换分类，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span>';
+            tabBar.innerHTML = tabHtml;
+            panelsRoot.innerHTML = panelsHtml;
+            if (footEl) {
+                footEl.classList.remove('hidden');
+                footEl.innerHTML = footHtml;
+            }
+            switchWorthHistoryTab(pref);
             bindOiRadarPickHandlers(root);
         }
 
@@ -1888,6 +1987,7 @@
                 conn.innerHTML = '<span>API 连接失败</span>';
             }
             setupMaintPanel();
+            initWorthHistoryTabDelegationOnce();
             hydrateWorthHighlightBoards({});
             void hydrateFocusWatchBoard(null);
             loadAccumulationOiRadar();
