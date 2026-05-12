@@ -217,32 +217,20 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="重点关注看盘">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">👑 重点关注</h2>
-                        <p class="text-text-muted text-xs mt-0.5">SQLite 表 <code class="text-[10px] text-accent/90">focus_watch</code> · 由每小时 OI 扫描写入，亦可下方「刷新」后读库。列表约 10 行高，可向下滚动。</p>
-                    </div>
-                    <span id="focus-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                </div>
-                <div id="focus-watch-board-root" class="p-4">
-                    <div class="text-text-muted text-sm animate-pulse">加载重点关注…</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-6" aria-label="值得关注七类历史，顶部标签切换">
+        <section class="mb-6" aria-label="值得关注与重点关注共八类历史，顶部标签切换">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
-                        <p class="text-text-muted text-xs mt-0.5">七类归档以顶部标签切换；与「👑 重点关注」合为八处历史。每表约 10 行可视，其余在表内滚动。保留最近 2 日。</p>
+                        <p class="text-text-muted text-xs mt-0.5">👑 重点关注与七类 worth 共八处，顶部标签切换。每表约 10 行可视，其余在表内滚动。保留最近 2 日。</p>
                     </div>
-                    <span id="worth-watch-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                    <div class="text-right text-xs font-mono space-y-0.5 shrink-0">
+                        <div id="worth-watch-ts" class="text-text-muted whitespace-nowrap">--</div>
+                        <div id="focus-watch-ts" class="text-[10px] text-text-muted/90 whitespace-nowrap">👑 关注 · --</div>
+                    </div>
                 </div>
                 <div id="worth-watch-boards-root" class="flex flex-col min-w-0">
-                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="值得关注七类历史"></div>
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="重点关注与值得关注七类"></div>
                     <div class="px-4 pb-4 pt-3 min-w-0">
                         <div id="worth-history-tab-panels">
                             <div class="text-text-muted text-sm animate-pulse">加载历史记录…</div>
@@ -698,7 +686,9 @@
             ['ambush_dark', '🎯 埋伏·暗流'],
             ['ambush_gem', '💎 埋伏·低市值+OI'],
         ];
-        /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（七类以 Tab 切换 + 上方「重点关注」共 8 处列表） */
+        /** 顶部 Tab：重点关注 + 七类 worth（与后端归档一致） */
+        const WORTH_HISTORY_TAB_META = [['focus_watch', '👑 重点关注'], ...WORTH_WATCH_META];
+        /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（八类均以 Tab 切换） */
         const HISTORY_TABLE_SCROLL_WRAP =
             'max-h-[min(26rem,40vh)] overflow-y-auto overflow-x-auto';
 
@@ -753,7 +743,7 @@
             if (!tabBar || !panelsRoot || !footEl) {
                 root.className = 'flex flex-col min-w-0';
                 root.innerHTML = `
-                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="值得关注七类历史"></div>
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="重点关注与值得关注七类"></div>
                     <div class="px-4 pb-4 pt-3 min-w-0">
                         <div id="worth-history-tab-panels"></div>
                         <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
@@ -776,14 +766,14 @@
         function worthHistoryPreferredTabKey() {
             try {
                 const k = localStorage.getItem('worthHistoryTabKey');
-                if (k && WORTH_WATCH_META.some(([id]) => id === k)) return k;
+                if (k && WORTH_HISTORY_TAB_META.some(([id]) => id === k)) return k;
             } catch (e) { /* ignore */ }
-            return WORTH_WATCH_META[0][0];
+            return 'focus_watch';
         }
 
         function switchWorthHistoryTab(key) {
-            if (!WORTH_WATCH_META.some(([id]) => id === key)) return;
-            WORTH_WATCH_META.forEach(([id]) => {
+            if (!WORTH_HISTORY_TAB_META.some(([id]) => id === key)) return;
+            WORTH_HISTORY_TAB_META.forEach(([id]) => {
                 const tab = document.getElementById(`worth-tab-${id}`);
                 const panel = document.getElementById(`worth-panel-${id}`);
                 const on = id === key;
@@ -822,11 +812,69 @@
         }
 
         /**
-         * @param heatWl 可选；热度看盘兜底：仅当 worth 行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
+         * 重点关注面板 HTML（与原 focus 看盘表格一致，供 Tab 内嵌）。
+         * @param heatWl 热度看盘兜底 bpc
          */
-        function renderWorthSevenBoards(wl, heatWl) {
+        function buildFocusWatchPanelInnerHtml(fw, heatWl) {
+            const items = fw && Array.isArray(fw.items) ? fw.items : [];
+            const showBpc = SHOW_BPC_UI;
+            const bpcBySym = showBpc ? buildBpcBySymbolFromHeatAccum(heatWl || {}) : new Map();
+            const focusFoot = showBpc
+                ? '<p class="text-text-muted text-[11px] mt-3">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
+                : '<p class="text-text-muted text-[11px] mt-3"><span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
+            if (!items.length) {
+                const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入收筹池，且满足逼空/天量/暗流条件；整点 :30 OI 扫描或点下方「刷新」后入库。';
+                return `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>${focusFoot}`;
+            }
+            const thBpc = showBpc
+                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与热度看盘按 symbol 对齐">1H 结构</th>'
+                : '';
+            const thead = `
+                <table class="w-full text-left text-xs border-collapse min-w-[560px]">
+                    <thead>
+                        <tr class="text-text-muted border-b border-border">
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
+                            ${thBpc}
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
+                            <th class="py-2 pr-3 font-medium">摘要</th>
+                            <th class="py-2 pr-3 font-medium">策略提示</th>
+                        </tr>
+                    </thead><tbody>`;
+            const rows = items.map((row) => {
+                const sym = row.symbol || '';
+                const ch = escHtml(row.channel_label_zh || row.channel || '--');
+                const sum = row.summary_line ? oiRadarRowClickable(sym, escHtml(row.summary_line)) : oiRadarRowClickable(sym, escHtml(row.coin || sym));
+                const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
+                const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
+                const coinCell = oiRadarRowClickable(sym, coinLine);
+                const bpcCell = showBpc
+                    ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
+                    : '';
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
+                    ${bpcCell}
+                    <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
+                    <td class="py-2 pr-3">${sum}</td>
+                    <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
+                </tr>`;
+            }).join('');
+            return (
+                `<div class="${HISTORY_TABLE_SCROLL_WRAP} -mx-0.5 px-0.5">` +
+                thead +
+                rows +
+                '</tbody></table></div>' +
+                focusFoot
+            );
+        }
+
+        /**
+         * @param heatWl 可选；热度看盘兜底：仅当 worth 行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
+         * @param fw 重点关注 focus_watch 载荷
+         */
+        function renderWorthSevenBoards(wl, heatWl, fw) {
             const shell = ensureWorthHistoryTabShell();
             const tsEl = document.getElementById('worth-watch-ts');
+            const fwTs = document.getElementById('focus-watch-ts');
             if (!shell) return;
             const { root, tabBar, panelsRoot, footEl } = shell;
             const cats = (wl && wl.categories) || {};
@@ -843,7 +891,20 @@
                     const snap = (wl && wl.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
                     bp = snap ? `${bipDisp}结构 ${snap}` : '';
                 }
-                tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
+                tsEl.textContent = 'worth · ' + ([u, n, bp].filter(Boolean).join(' · ') || '--');
+            }
+            if (fwTs) {
+                const u = fw && fw.updated_at_cst ? String(fw.updated_at_cst) : '';
+                const n = fw && fw.retention_days != null ? `保留 ${fw.retention_days} 日` : '';
+                let bp = '';
+                if (showBpc) {
+                    const bipSrc = fw && fw.bpc_interval ? fw : heatWl || {};
+                    const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
+                    const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
+                    const snap = (fw && fw.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
+                    bp = snap ? `${bipDisp}结构 ${snap}` : '';
+                }
+                fwTs.textContent = '👑 关注 · ' + ([u, n, bp].filter(Boolean).join(' · ') || '--');
             }
             const thBpc = showBpc
                 ? '<th class="py-2 pr-3 font-medium whitespace-nowrap align-top" title="1h K 线：突破→回踩→延续（不含 OI），与各板归档按 symbol 对齐">1H 结构</th>'
@@ -872,47 +933,51 @@
                         </tr>
                     </thead><tbody>`;
             const pref = worthHistoryPreferredTabKey();
-            const tabHtml = WORTH_WATCH_META.map(([key, label]) => {
+            const tabHtml = WORTH_HISTORY_TAB_META.map(([key, label]) => {
                 const active = key === pref;
                 return `<button type="button" role="tab" id="worth-tab-${key}" data-worth-tab-key="${key}"
                     class="${worthHistTabBtnClass(active)}"
                     aria-selected="${active ? 'true' : 'false'}" aria-controls="worth-panel-${key}" tabindex="${active ? '0' : '-1'}">${escHtml(label)}</button>`;
             }).join('');
-            const panelsHtml = WORTH_WATCH_META.map(([key]) => {
-                const sec = cats[key] || { items: [] };
-                const items = sortWorthHighlightItemsDesc(sec.items || []);
+            const panelsHtml = WORTH_HISTORY_TAB_META.map(([key]) => {
                 const active = key === pref;
                 let inner;
-                if (!items.length) {
-                    inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
+                if (key === 'focus_watch') {
+                    inner = buildFocusWatchPanelInnerHtml(fw || { items: [] }, heatWl);
                 } else {
-                    const rows = items.map((row) => {
-                        const gd = escHtml(row.generated_date || '--');
-                        const sym = row.symbol || '';
-                        const sum = escHtml(row.summary_line || '');
-                        const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
-                        const summaryCell = oiRadarRowClickable(sym, sum);
-                        const bpcCell = showBpc
-                            ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
-                            : '';
-                        return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
+                    const sec = cats[key] || { items: [] };
+                    const items = sortWorthHighlightItemsDesc(sec.items || []);
+                    if (!items.length) {
+                        inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
+                    } else {
+                        const rows = items.map((row) => {
+                            const gd = escHtml(row.generated_date || '--');
+                            const sym = row.symbol || '';
+                            const sum = escHtml(row.summary_line || '');
+                            const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
+                            const summaryCell = oiRadarRowClickable(sym, sum);
+                            const bpcCell = showBpc
+                                ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
+                                : '';
+                            return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
                             <td class="py-2 pr-3 align-top whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
                             <td class="py-2 pr-3 align-top text-text-secondary whitespace-nowrap font-mono tabular-nums">${gd}</td>
                             ${bpcCell}
                             <td class="py-2 pr-3 align-top break-words">${summaryCell}</td>
                         </tr>`;
-                    }).join('');
-                    inner = thead + rows + '</tbody></table>';
+                        }).join('');
+                        inner = thead + rows + '</tbody></table>';
+                    }
                 }
                 const hiddenAttr = active ? '' : ' hidden';
                 return `<div role="tabpanel" id="worth-panel-${key}" aria-labelledby="worth-tab-${key}"${hiddenAttr}
                     class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
-                    <div class="p-3 ${HISTORY_TABLE_SCROLL_WRAP}">${inner}</div>
+                    <div class="p-3 min-w-0${key !== 'focus_watch' ? ' ' + HISTORY_TABLE_SCROLL_WRAP : ''}">${inner}</div>
                 </div>`;
             }).join('');
             const footHtml = showBpc
-                ? '每轮 OI 扫描每类至多写入 2 条；点击顶部标签切换分类，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入对应 <code class="text-[10px]">worth_watch_*</code> 表（与热度看盘同一套定时任务，每小时）；若尚未写入则可用热度看盘接口兜底显示。'
-                : '每轮 OI 扫描每类至多写入 2 条；点击顶部标签切换分类，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span>';
+                ? '首项为 <strong class="text-text-secondary">👑 重点关注</strong>（<code class="text-[10px]">focus_watch</code>）；其余七类为 <code class="text-[10px]">worth_watch_*</code>。每轮 OI 扫描 worth 每类至多写入 2 条；点击顶部标签切换，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。各类「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入（与热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。'
+                : '首项为 <strong class="text-text-secondary">👑 重点关注</strong>（<code class="text-[10px]">focus_watch</code>）；其余七类为 <code class="text-[10px]">worth_watch_*</code>。每轮 OI 扫描 worth 每类至多写入 2 条；点击顶部标签切换，点击币种或摘要打开币安合约。当前表约 10 行可视，其余滚动。<span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span>';
             tabBar.innerHTML = tabHtml;
             panelsRoot.innerHTML = panelsHtml;
             if (footEl) {
@@ -923,31 +988,53 @@
             bindOiRadarPickHandlers(root);
         }
 
-        async function hydrateWorthHighlightBoards(_data) {
+        async function hydrateWorthHighlightBoards(snapshotPayload) {
             let wl;
+            let fw = snapshotPayload && snapshotPayload.focus_watchlist;
+            const hasSnapFocus = fw && Array.isArray(fw.items) && fw.items.length > 0;
             let heatWl = { items: [] };
+            const fetchFns = [() => API.worthWatch()];
+            if (!hasSnapFocus) {
+                fetchFns.push(() => API.focusWatch());
+            }
+            if (SHOW_BPC_UI) {
+                fetchFns.push(() => API.heatAccumWatch());
+            }
             try {
+                const results = await Promise.all(fetchFns.map((fn) => fn()));
+                let i = 0;
+                wl = results[i++];
+                if (!hasSnapFocus) {
+                    fw = results[i++];
+                }
                 if (SHOW_BPC_UI) {
-                    [wl, heatWl] = await Promise.all([API.worthWatch(), API.heatAccumWatch()]);
-                } else {
-                    wl = await API.worthWatch();
+                    heatWl = results[i++];
                 }
             } catch (e) {
-                console.error('worth / heat accum watch:', e);
+                console.error('worth / focus / heat accum watch:', e);
                 try {
                     wl = await API.worthWatch();
                 } catch (e2) {
                     wl = { categories: {}, message: '看盘接口暂不可用' };
                 }
+                if (!hasSnapFocus) {
+                    try {
+                        fw = await API.focusWatch();
+                    } catch (e3) {
+                        fw = { items: [], message: 'focus_watch 接口暂不可用' };
+                    }
+                } else if (!fw) {
+                    fw = { items: [] };
+                }
                 if (SHOW_BPC_UI) {
                     try {
                         heatWl = await API.heatAccumWatch();
-                    } catch (e3) {
+                    } catch (e4) {
                         heatWl = { items: [] };
                     }
                 }
             }
-            renderWorthSevenBoards(wl || { categories: {} }, heatWl || { items: [] });
+            renderWorthSevenBoards(wl || { categories: {} }, heatWl || { items: [] }, fw || { items: [] });
         }
 
         function bindOiRadarPickHandlers(root) {
@@ -1220,112 +1307,9 @@
             }
         }
 
-        /**
-         * @param heatWl 可选；热度看盘兜底：行尚无 bpc 时按 symbol 对齐（ heat-accum-watch ）
-         */
-        function renderFocusWatchBoard(fw, heatWl) {
-            const root = document.getElementById('focus-watch-board-root');
-            const tsEl = document.getElementById('focus-watch-ts');
-            if (!root) return;
-            const items = fw && Array.isArray(fw.items) ? fw.items : [];
-            const showBpc = SHOW_BPC_UI;
-            const bpcBySym = showBpc ? buildBpcBySymbolFromHeatAccum(heatWl || {}) : new Map();
-            if (tsEl) {
-                const u = fw && fw.updated_at_cst ? String(fw.updated_at_cst) : '';
-                const n = fw && fw.retention_days != null ? `保留 ${fw.retention_days} 日` : '';
-                let bp = '';
-                if (showBpc) {
-                    const bipSrc = fw && fw.bpc_interval ? fw : heatWl || {};
-                    const bip = bipSrc && bipSrc.bpc_interval ? String(bipSrc.bpc_interval) : '1h';
-                    const bipDisp = /^1h$/i.test(bip) ? '1H' : bip;
-                    const snap = (fw && fw.bpc_snapshot_cst) || (heatWl && heatWl.bpc_snapshot_cst);
-                    bp = snap ? `${bipDisp}结构 ${snap}` : '';
-                }
-                tsEl.textContent = [u, n, bp].filter(Boolean).join(' · ') || '--';
-            }
-            if (!items.length) {
-                const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入收筹池，且满足逼空/天量/暗流条件；整点 :30 OI 扫描或点下方「刷新」后入库。';
-                root.innerHTML = `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>`;
-                return;
-            }
-            const thBpc = showBpc
-                ? '<th class="py-2 pr-3 font-medium whitespace-nowrap" title="1h K 线：突破→回踩→延续（不含 OI），与热度看盘按 symbol 对齐">1H 结构</th>'
-                : '';
-            const thead = `
-                <table class="w-full text-left text-xs border-collapse min-w-[560px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            ${thBpc}
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
-                            <th class="py-2 pr-3 font-medium">摘要</th>
-                            <th class="py-2 pr-3 font-medium">策略提示</th>
-                        </tr>
-                    </thead><tbody>`;
-            const rows = items.map((row) => {
-                const sym = row.symbol || '';
-                const ch = escHtml(row.channel_label_zh || row.channel || '--');
-                const sum = row.summary_line ? oiRadarRowClickable(sym, escHtml(row.summary_line)) : oiRadarRowClickable(sym, escHtml(row.coin || sym));
-                const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
-                const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
-                const coinCell = oiRadarRowClickable(sym, coinLine);
-                const bpcCell = showBpc
-                    ? `<td class="py-2 pr-3 align-top">${formatHeatAccumBpcCell(row.bpc || bpcBySym.get(sym))}</td>`
-                    : '';
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
-                    ${bpcCell}
-                    <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
-                    <td class="py-2 pr-3">${sum}</td>
-                    <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
-                </tr>`;
-            }).join('');
-            const focusFoot = showBpc
-                ? '<p class="text-text-muted text-[11px] mt-2">「<strong class="text-text-secondary">1H 结构</strong>」由服务端按 1h K 线写入 <code class="text-[10px]">focus_watch</code>（与 worth 七类、热度看盘同一套定时，每小时）；若尚未写入则可用热度看盘接口兜底显示。</p>'
-                : '<p class="text-text-muted text-[11px] mt-2"><span class="text-text-muted/85">（1H 结构展示已暂时关闭）</span></p>';
-            root.innerHTML =
-                `<div class="${HISTORY_TABLE_SCROLL_WRAP} -mx-0.5 px-0.5">` +
-                thead +
-                rows +
-                '</tbody></table></div>' +
-                focusFoot;
-            bindOiRadarPickHandlers(root);
-        }
-
+        /** 与 hydrateWorthHighlightBoards 同源（重点关注已并入「值得关注 · 历史记录」Tab） */
         async function hydrateFocusWatchBoard(snapshotPayload) {
-            let fw = snapshotPayload && snapshotPayload.focus_watchlist;
-            const hasItems = fw && Array.isArray(fw.items) && fw.items.length > 0;
-            let heatWl = { items: [] };
-            try {
-                if (!hasItems) {
-                    if (SHOW_BPC_UI) {
-                        [fw, heatWl] = await Promise.all([API.focusWatch(), API.heatAccumWatch()]);
-                    } else {
-                        fw = await API.focusWatch();
-                    }
-                } else if (SHOW_BPC_UI) {
-                    heatWl = await API.heatAccumWatch();
-                }
-            } catch (e) {
-                console.error('focus-watch / heat accum:', e);
-                if (!hasItems) {
-                    try {
-                        fw = await API.focusWatch();
-                    } catch (e2) {
-                        console.error('focus-watch:', e2);
-                        renderFocusWatchBoard({ items: [], message: 'focus_watch 接口暂不可用' }, {});
-                        return;
-                    }
-                }
-                if (SHOW_BPC_UI) {
-                    try {
-                        heatWl = await API.heatAccumWatch();
-                    } catch (_) {
-                        heatWl = { items: [] };
-                    }
-                }
-            }
-            renderFocusWatchBoard(fw || { items: [] }, heatWl);
+            return hydrateWorthHighlightBoards(snapshotPayload);
         }
 
         function fmtZctPx(v, decimals) {
@@ -1734,7 +1718,6 @@
             body.innerHTML = hlSlot ? gridBlock : (highlightsHtml + gridBlock);
             bindOiRadarPickHandlers(body);
             hydrateWorthHighlightBoards(data);
-            void hydrateFocusWatchBoard(data);
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
@@ -1765,7 +1748,7 @@
             if (hl) {
                 hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
             }
-            void hydrateFocusWatchBoard(null);
+            void hydrateWorthHighlightBoards(null);
         }
 
         async function clearAccumulationPool() {
@@ -1827,7 +1810,7 @@
                     if (hl) {
                         hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
                     }
-                    void hydrateFocusWatchBoard(null);
+                    void hydrateWorthHighlightBoards(null);
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
@@ -1836,7 +1819,7 @@
                 if (hl) {
                     hl.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 }
-                void hydrateFocusWatchBoard(data);
+                void hydrateWorthHighlightBoards(data);
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
@@ -1848,8 +1831,7 @@
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
-                hydrateWorthHighlightBoards({});
-                void hydrateFocusWatchBoard(null);
+                void hydrateWorthHighlightBoards({});
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -1988,8 +1970,7 @@
             }
             setupMaintPanel();
             initWorthHistoryTabDelegationOnce();
-            hydrateWorthHighlightBoards({});
-            void hydrateFocusWatchBoard(null);
+            void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             void hydrateZctVwapBoard();
