@@ -139,18 +139,7 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="两套量化 ZCT">
-            <div class="rounded-xl border border-border/80 bg-surface-light/[0.12] px-4 py-3 mb-4">
-                <h2 class="text-text-primary font-semibold text-base tracking-tight">📐 两套量化 · 分开展示</h2>
-                <p class="text-text-muted text-xs mt-2 leading-relaxed">
-                    <span class="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <span><strong class="text-accent/95">① 主 lane</strong>：<code class="text-[10px] text-accent/90">zct_vwap_*</code> · <code class="text-[10px] text-accent/90">ZCT_VWAP_SYMBOLS</code></span>
-                        <span class="text-border/80 hidden sm:inline">|</span>
-                        <span><strong class="text-neon-purple/95">② 热度+OI</strong>：<code class="text-[10px] text-accent/90">zct_hot_oi_*</code> · <code class="text-[10px] text-accent/90">worth_watch_hot_oi</code></span>
-                    </span>
-                    <span class="block mt-1.5 text-[11px] text-text-muted/95">策略规则相同；标的池、SQLite 表、扫描/结算定时彼此独立。自上而下分块展示。</span>
-                </p>
-            </div>
+        <section class="mb-6" aria-label="ZCT VWAP 与热度+OI">
             <div class="flex flex-col gap-4">
                 <!-- ① 主 ZCT VWAP -->
                 <div class="min-w-0 flex flex-col" aria-label="主 lane ZCT VWAP">
