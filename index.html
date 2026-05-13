@@ -318,51 +318,59 @@
     <!-- 隐藏维护：地址栏 ?maint=1 或快速三连击页脚第一行标题显示 -->
     <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-warn/25 bg-background/95 backdrop-blur-md shadow-[0_-12px_40px_rgba(0,0,0,0.45)] max-h-[min(70vh,620px)] overflow-y-auto">
         <div class="max-w-7xl mx-auto px-4 py-3 pb-6">
-            <div class="flex items-start justify-between gap-3 mb-2">
+            <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
                     <p class="text-text-muted text-[11px] mt-1 leading-relaxed">清库后可点上方「刷新」拉快照；定时任务在服务端后台线程执行，耗时可达数分钟。</p>
                 </div>
                 <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
             </div>
-            <div class="text-text-secondary text-[11px] font-medium uppercase tracking-wide mb-1.5">清理看盘 SQLite（各表独立）</div>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" id="maint-clear-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="watchlist 收筹标的池">清空 watchlist</button>
-                <button type="button" id="maint-clear-focus" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="focus_watch 重点关注">清空 focus_watch</button>
-                <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="ambush_watch">清空 ambush_watch</button>
-                <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="heat_accum_watch">清空 heat_accum_watch</button>
-                <button type="button" id="maint-clear-patrick" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="patrick_core_watch">清空 patrick_core_watch</button>
-            </div>
-            <div class="text-text-muted text-[10px] mt-3 mb-1 font-medium">worth_watch_* 七张物理表（逐张清空）</div>
-            <div class="flex flex-wrap gap-2">
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_heat_accum" title="worth_watch_heat_accum">worth·🔥💤热度收筹</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_patrick_core" title="worth_watch_patrick_core">worth·📍Patrick</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_hot_oi" title="worth_watch_hot_oi">worth·🔥⚡热度OI</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_chase_fire" title="worth_watch_chase_fire">worth·追多加速</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_dual_list" title="worth_watch_dual_list">worth·双榜</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_ambush_dark" title="worth_watch_ambush_dark">worth·埋伏暗流</button>
-                <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_ambush_gem" title="worth_watch_ambush_gem">worth·埋伏低市值</button>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-                <button type="button" id="maint-clear-worth" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="一次清空全部 worth_watch_*">清空 worth 七表（批量）</button>
-                <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15" title="不含 watchlist 收筹池">清空全部看盘表</button>
-            </div>
-            <div class="border-t border-border/60 mt-4 pt-4">
-                <div class="text-accent/85 text-[11px] font-medium mb-1">手动触发定时任务（与 Cron 相同）</div>
-                <p class="text-text-muted text-[10px] mb-2 leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_watch 每时 :07 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
-                    <button type="button" data-maint-cron="heat_watch" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_watch 热度看盘</button>
-                    <button type="button" id="maint-refresh-heat-watch" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度看盘（后台）</button>
-                    <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
-                    <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
-                    <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
-                    <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
-                    <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
-                    <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
-                    <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
-                    <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT VWAP 库</button>
-                    <button type="button" id="maint-zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-hot-oi/maintenance/clear-db">清理 ZCT 🔥⚡热度+OI 库</button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
+                <!-- 左栏：清理 -->
+                <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
+                    <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
+                    <div class="text-text-secondary text-[11px] font-medium uppercase tracking-wide">清理看盘 SQLite（各表独立）</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-clear-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="watchlist 收筹标的池">清空 watchlist</button>
+                        <button type="button" id="maint-clear-focus" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="focus_watch 重点关注">清空 focus_watch</button>
+                        <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="ambush_watch">清空 ambush_watch</button>
+                        <button type="button" id="maint-clear-heat" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="heat_accum_watch">清空 heat_accum_watch</button>
+                        <button type="button" id="maint-clear-patrick" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="patrick_core_watch">清空 patrick_core_watch</button>
+                    </div>
+                    <div class="text-text-muted text-[10px] mb-1 font-medium">worth_watch_* 七张物理表（逐张清空）</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_heat_accum" title="worth_watch_heat_accum">worth·🔥💤热度收筹</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_patrick_core" title="worth_watch_patrick_core">worth·📍Patrick</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_hot_oi" title="worth_watch_hot_oi">worth·🔥⚡热度OI</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_chase_fire" title="worth_watch_chase_fire">worth·追多加速</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_dual_list" title="worth_watch_dual_list">worth·双榜</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_ambush_dark" title="worth_watch_ambush_dark">worth·埋伏暗流</button>
+                        <button type="button" class="maint-clear-worth-table btn-secondary px-2.5 py-1.5 rounded-lg bg-surface-light/70 border border-border/85 text-text-secondary text-[11px] hover:border-warn/35 hover:text-warn" data-worth-table="worth_watch_ambush_gem" title="worth_watch_ambush_gem">worth·埋伏低市值</button>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-clear-worth" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="一次清空全部 worth_watch_*">清空 worth 七表（批量）</button>
+                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs hover:bg-warn/15" title="不含 watchlist 收筹池">清空全部看盘表</button>
+                    </div>
+                </div>
+                <!-- 右栏：手动触发 -->
+                <div class="min-w-0 space-y-3 md:pl-1">
+                    <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
+                    <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_watch 每时 :07 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
+                        <button type="button" data-maint-cron="heat_watch" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_watch 热度看盘</button>
+                        <button type="button" id="maint-refresh-heat-watch" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度看盘（后台）</button>
+                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                        <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                        <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
+                        <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
+                        <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
+                        <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
+                        <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
+                        <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT VWAP 库</button>
+                        <button type="button" id="maint-zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-hot-oi/maintenance/clear-db">清理 ZCT 🔥⚡热度+OI 库</button>
+                    </div>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
