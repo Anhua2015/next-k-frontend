@@ -297,7 +297,6 @@
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
-                        <button type="button" id="oi-radar-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 accumulation.db 中的 watchlist 收筹池">清理收筹池</button>
                         <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                     </div>
                 </div>
@@ -331,6 +330,7 @@
                     <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
                     <div class="text-text-secondary text-[11px] font-medium uppercase tracking-wide">清理看盘 SQLite（各表独立）</div>
                     <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 accumulation.db 中的 watchlist 收筹池（与「清空 watchlist」同表，含 OI 快照联动提示）">清理收筹池</button>
                         <button type="button" id="maint-clear-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="watchlist 收筹标的池">清空 watchlist</button>
                         <button type="button" id="maint-clear-focus" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="focus_watch 重点关注">清空 focus_watch</button>
                         <button type="button" id="maint-clear-ambush" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn" title="ambush_watch">清空 ambush_watch</button>
@@ -1987,7 +1987,7 @@
             if (!confirm('确定清空收筹池（SQLite 表 watchlist）？\n\n清空后须重新运行 pool 扫描（定时每日 10:00 或维护里的「pool 收筹池」），再点「刷新」，否则 OI 雷达无法基于池内标的计算。')) {
                 return;
             }
-            const btn = document.getElementById('oi-radar-clear-pool');
+            const btn = document.getElementById('maint-clear-pool');
             const refreshBtn = document.getElementById('oi-radar-refresh');
             try {
                 if (btn) btn.disabled = true;
