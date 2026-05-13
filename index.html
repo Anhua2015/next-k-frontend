@@ -173,7 +173,7 @@
                         tabindex="0"
                         class="shrink-0 px-2.5 sm:px-3 py-2 text-[11px] sm:text-sm font-medium rounded-t-md border-b-2 border-accent text-text-primary bg-surface-light/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-0 focus-visible:ring-offset-background"
                     >
-                        🔥⚡ ZCT · 热度+OI
+                        🔥⚡ ZCT
                     </button>
                     <button
                         type="button"
@@ -185,7 +185,7 @@
                         tabindex="-1"
                         class="shrink-0 px-2.5 sm:px-3 py-2 text-[11px] sm:text-sm font-medium rounded-t-md border-b-2 border-transparent text-text-secondary hover:text-text-primary hover:bg-surface-light/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/35 focus-visible:ring-offset-0 focus-visible:ring-offset-background"
                     >
-                        📊 ZCT VWAP · 标的
+                        📊 ZCT
                     </button>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -205,7 +205,7 @@
                         </div>
                         <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
                         <div id="zct-hot-oi-root" class="p-4 pt-2 overflow-x-auto">
-                            <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>
+                            <div class="text-text-muted text-sm animate-pulse">加载 🔥⚡ ZCT…</div>
                         </div>
                     </div>
                     <div id="zct-panel-vwap" role="tabpanel" aria-labelledby="zct-tab-vwap" class="hidden flex flex-col min-w-0">
@@ -224,7 +224,7 @@
                         </div>
                         <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
                         <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
-                            <div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>
+                            <div class="text-text-muted text-sm animate-pulse">加载 📊 ZCT…</div>
                         </div>
                     </div>
                 </div>
@@ -331,14 +331,11 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">对应 FastAPI 内 APScheduler：pool 每日 10:00 · heat_watch 每时 :07 · oi 每时 :30 · S2 每时 :05 · S6 每时 :25（S6 前台面板默认隐藏仍可跑脚本）。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 与 ZCT 🔥⚡ 的扫描/结算（后台执行，可能需数分钟）。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
-                        <button type="button" data-maint-cron="heat_watch" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">heat_watch 热度看盘</button>
-                        <button type="button" id="maint-refresh-heat-watch" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/[0.08] border border-neon-green/25 text-neon-green text-xs hover:bg-neon-green/[0.12]">刷新热度看盘（后台）</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                         <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
-                        <button type="button" data-maint-cron="s6_alpha" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S6 期货 Alpha</button>
                         <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                         <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
@@ -1681,7 +1678,7 @@
             const root = document.getElementById('zct-vwap-root');
             const tsEl = document.getElementById('zct-vwap-ts');
             if (!root) return;
-            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 ZCT VWAP…</div>';
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 📊 ZCT…</div>';
             try {
                 const sum = await API.zctVwapSummary();
                 renderZctVwapSummary(sum);
@@ -1742,7 +1739,7 @@
             const root = document.getElementById('zct-hot-oi-root');
             const tsEl = document.getElementById('zct-hot-oi-ts');
             if (!root) return;
-            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 🔥⚡热度+OI…</div>';
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 🔥⚡ ZCT…</div>';
             try {
                 const sum = await API.zctHotOiSummary();
                 renderZctVwapSummary(sum, 'zct-hot-oi-summary');
@@ -2162,21 +2159,6 @@
                 }
             });
 
-            document.getElementById('maint-refresh-heat-watch')?.addEventListener('click', async () => {
-                if (!msg) return;
-                msg.textContent = SHOW_BPC_UI
-                    ? '提交热度看盘整表刷新（现价 + 1H 结构）…'
-                    : '提交热度看盘整表刷新（现价/摘要；BPC 已关闭）…';
-                try {
-                    const data = await API.refreshHeatWatch();
-                    msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
-                    setTimeout(() => hydrateWorthHighlightBoards({}), 2500);
-                    setTimeout(() => hydrateWorthHighlightBoards({}), 8000);
-                } catch (e) {
-                    console.error(e);
-                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
-                }
-            });
         }
 
         async function init() {
