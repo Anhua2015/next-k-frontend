@@ -139,6 +139,25 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="ZCT 资金盈利曲线">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover p-3 min-w-0 flex flex-col">
+                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">📊 ZCT VWAP · 累计盈亏（USDT，按结算日 UTC）</div>
+                    <p id="zct-equity-vwap-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 日汇总数据</p>
+                    <div class="relative flex-1 min-h-[200px] h-[220px] w-full">
+                        <canvas id="zct-equity-canvas-vwap"></canvas>
+                    </div>
+                </div>
+                <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover p-3 min-w-0 flex flex-col">
+                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">🔥⚡ ZCT 热度+OI · 累计盈亏（USDT，按结算日 UTC）</div>
+                    <p id="zct-equity-hot-oi-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 日汇总数据</p>
+                    <div class="relative flex-1 min-h-[200px] h-[220px] w-full">
+                        <canvas id="zct-equity-canvas-hot-oi"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="ZCT 量化" id="zct-lane-section">
             <div id="zct-lane-wrap" class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div
@@ -184,8 +203,7 @@
                                 <input type="text" id="zct-hot-oi-filter-symbol" placeholder="筛选标的" autocomplete="off"
                                     class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
                                 <span id="zct-hot-oi-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                                <button type="button" id="zct-hot-oi-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                                <button type="button" id="zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_hot_oi_*">清理数据库</button>
+                                <button type="button" id="zct-hot-oi-refresh" title="刷新列表" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                             </div>
                         </div>
                         <div id="zct-hot-oi-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
@@ -204,8 +222,7 @@
                                 <input type="text" id="zct-vwap-filter-symbol" placeholder="筛选标的" autocomplete="off"
                                     class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
                                 <span id="zct-vwap-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                                <button type="button" id="zct-vwap-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                                <button type="button" id="zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="清空 zct_vwap_signals 与 zct_vwap_settlements">清理数据库</button>
+                                <button type="button" id="zct-vwap-refresh" title="刷新列表" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
                             </div>
                         </div>
                         <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
@@ -344,12 +361,15 @@
                     <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                     <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
                     <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
+                    <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT VWAP 库</button>
+                    <button type="button" id="maint-zct-hot-oi-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-hot-oi/maintenance/clear-db">清理 ZCT 🔥⚡热度+OI 库</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
         const API_BASE = (function resolveApiBase() {
             try {
@@ -496,6 +516,16 @@
             /** ZCT VWAP 信号汇总（持仓数、累计盈亏 USDT、胜率等） */
             async zctVwapSummary() {
                 const res = await fetch(`${API_BASE}/api/zct-vwap/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async zctVwapEquityCurve() {
+                const res = await fetch(`${API_BASE}/api/zct-vwap/equity-curve`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async zctHotOiEquityCurve() {
+                const res = await fetch(`${API_BASE}/api/zct-hot-oi/equity-curve`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -1563,6 +1593,95 @@
             });
         }
 
+        let zctEquityChartVwap = null;
+        let zctEquityChartHotOi = null;
+
+        function destroyZctEquityChart(ch) {
+            if (ch && typeof ch.destroy === 'function') {
+                try {
+                    ch.destroy();
+                } catch (e) { /* ignore */ }
+            }
+        }
+
+        function makeZctEquityLineChart(canvasId, labels, values, lineColor, fillRgba) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas || typeof Chart === 'undefined' || !labels.length) return null;
+            const ctx = canvas.getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '累计盈亏 USDT',
+                        data: values,
+                        borderColor: lineColor,
+                        backgroundColor: fillRgba,
+                        fill: true,
+                        tension: 0.2,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            ticks: { color: '#8b9cb3', maxRotation: 45, autoSkip: true, maxTicksLimit: 14 },
+                            grid: { color: 'rgba(42,53,68,0.55)' },
+                        },
+                        y: {
+                            ticks: { color: '#8b9cb3' },
+                            grid: { color: 'rgba(42,53,68,0.55)' },
+                        },
+                    },
+                },
+            });
+        }
+
+        async function loadZctEquityCharts() {
+            const evW = document.getElementById('zct-equity-vwap-empty');
+            const evH = document.getElementById('zct-equity-hot-oi-empty');
+            try {
+                const [vw, ho] = await Promise.all([API.zctVwapEquityCurve(), API.zctHotOiEquityCurve()]);
+                const pw = (vw && vw.points) || [];
+                const ph = (ho && ho.points) || [];
+                destroyZctEquityChart(zctEquityChartVwap);
+                destroyZctEquityChart(zctEquityChartHotOi);
+                zctEquityChartVwap = null;
+                zctEquityChartHotOi = null;
+                if (evW) evW.classList.toggle('hidden', pw.length > 0);
+                if (evH) evH.classList.toggle('hidden', ph.length > 0);
+                zctEquityChartVwap = makeZctEquityLineChart(
+                    'zct-equity-canvas-vwap',
+                    pw.map((p) => p.date),
+                    pw.map((p) => p.cum_pnl_usdt),
+                    '#8ab4f8',
+                    'rgba(138,180,248,0.14)',
+                );
+                zctEquityChartHotOi = makeZctEquityLineChart(
+                    'zct-equity-canvas-hot-oi',
+                    ph.map((p) => p.date),
+                    ph.map((p) => p.cum_pnl_usdt),
+                    '#9b93ea',
+                    'rgba(155,147,234,0.14)',
+                );
+            } catch (e) {
+                console.error('zct equity charts:', e);
+                if (evW) {
+                    evW.textContent = '曲线加载失败（见控制台）';
+                    evW.classList.remove('hidden');
+                }
+                if (evH) {
+                    evH.textContent = '曲线加载失败（见控制台）';
+                    evH.classList.remove('hidden');
+                }
+            }
+        }
+
         async function hydrateZctVwapBoard() {
             const root = document.getElementById('zct-vwap-root');
             const tsEl = document.getElementById('zct-vwap-ts');
@@ -1995,6 +2114,60 @@
                 });
             });
 
+            document.getElementById('maint-zct-vwap-clear-db')?.addEventListener('click', async () => {
+                if (
+                    !confirm(
+                        '确定清空 ZCT VWAP 数据库？\n将删除「当前快照」与「已结算历史」两张表的全部行，不可撤销。',
+                    )
+                ) {
+                    return;
+                }
+                const b = document.getElementById('maint-zct-vwap-clear-db');
+                if (!msg) return;
+                if (b) b.disabled = true;
+                msg.textContent = 'ZCT VWAP 清库请求中…';
+                try {
+                    const out = await API.zctVwapClearDb();
+                    const ns = out.deleted_zct_vwap_signals != null ? out.deleted_zct_vwap_signals : '?';
+                    const nt = out.deleted_zct_vwap_settlements != null ? out.deleted_zct_vwap_settlements : '?';
+                    msg.innerHTML = '<span class="text-neon-green">ZCT VWAP 已清库 · signals=' + escHtml(String(ns)) + ' · settlements=' + escHtml(String(nt)) + '</span>';
+                    void hydrateZctVwapBoard();
+                    void loadZctEquityCharts();
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                } finally {
+                    if (b) b.disabled = false;
+                }
+            });
+
+            document.getElementById('maint-zct-hot-oi-clear-db')?.addEventListener('click', async () => {
+                if (
+                    !confirm(
+                        '确定清空 🔥⚡热度+OI 数据库？\n将删除 zct_hot_oi_signals 与 zct_hot_oi_settlements 全部行，不可撤销。',
+                    )
+                ) {
+                    return;
+                }
+                const b = document.getElementById('maint-zct-hot-oi-clear-db');
+                if (!msg) return;
+                if (b) b.disabled = true;
+                msg.textContent = 'ZCT 热度+OI 清库请求中…';
+                try {
+                    const out = await API.zctHotOiClearDb();
+                    const ns = out.deleted_zct_hot_oi_signals != null ? out.deleted_zct_hot_oi_signals : '?';
+                    const nt = out.deleted_zct_hot_oi_settlements != null ? out.deleted_zct_hot_oi_settlements : '?';
+                    msg.innerHTML = '<span class="text-neon-green">ZCT 热度+OI 已清库 · signals=' + escHtml(String(ns)) + ' · settlements=' + escHtml(String(nt)) + '</span>';
+                    void hydrateZctHotOiBoard();
+                    void loadZctEquityCharts();
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                } finally {
+                    if (b) b.disabled = false;
+                }
+            });
+
             document.getElementById('maint-refresh-heat-watch')?.addEventListener('click', async () => {
                 if (!msg) return;
                 msg.textContent = SHOW_BPC_UI
@@ -2031,29 +2204,8 @@
             loadS2FundingSignals();
             void hydrateZctVwapBoard();
             void hydrateZctHotOiBoard();
+            void loadZctEquityCharts();
             document.getElementById('zct-vwap-refresh')?.addEventListener('click', () => void hydrateZctVwapBoard());
-            document.getElementById('zct-vwap-clear-db')?.addEventListener('click', async () => {
-                if (
-                    !confirm(
-                        '确定清空 ZCT VWAP 数据库？\n将删除「当前快照」与「已结算历史」两张表的全部行，不可撤销。',
-                    )
-                ) {
-                    return;
-                }
-                const btn = document.getElementById('zct-vwap-clear-db');
-                if (btn) btn.disabled = true;
-                try {
-                    const out = await API.zctVwapClearDb();
-                    const ns = out.deleted_zct_vwap_signals != null ? out.deleted_zct_vwap_signals : '?';
-                    const nt = out.deleted_zct_vwap_settlements != null ? out.deleted_zct_vwap_settlements : '?';
-                    alert('已清理 · zct_vwap_signals 删除 ' + ns + ' 行 · settlements 删除 ' + nt + ' 行');
-                    await hydrateZctVwapBoard();
-                } catch (e) {
-                    alert(e && e.message ? String(e.message) : '清理失败');
-                } finally {
-                    if (btn) btn.disabled = false;
-                }
-            });
             document.getElementById('zct-vwap-filter-status')?.addEventListener('change', () => void hydrateZctVwapBoard());
             document.getElementById('zct-vwap-filter-symbol')?.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') void hydrateZctVwapBoard();
@@ -2069,28 +2221,6 @@
                 else void zctVwapEditManual(sid);
             });
             document.getElementById('zct-hot-oi-refresh')?.addEventListener('click', () => void hydrateZctHotOiBoard());
-            document.getElementById('zct-hot-oi-clear-db')?.addEventListener('click', async () => {
-                if (
-                    !confirm(
-                        '确定清空 🔥⚡热度+OI 数据库？\n将删除 zct_hot_oi_signals 与 zct_hot_oi_settlements 全部行，不可撤销。',
-                    )
-                ) {
-                    return;
-                }
-                const btn = document.getElementById('zct-hot-oi-clear-db');
-                if (btn) btn.disabled = true;
-                try {
-                    const out = await API.zctHotOiClearDb();
-                    const ns = out.deleted_zct_hot_oi_signals != null ? out.deleted_zct_hot_oi_signals : '?';
-                    const nt = out.deleted_zct_hot_oi_settlements != null ? out.deleted_zct_hot_oi_settlements : '?';
-                    alert('已清理 · zct_hot_oi_signals 删除 ' + ns + ' 行 · settlements 删除 ' + nt + ' 行');
-                    await hydrateZctHotOiBoard();
-                } catch (e) {
-                    alert(e && e.message ? String(e.message) : '清理失败');
-                } finally {
-                    if (btn) btn.disabled = false;
-                }
-            });
             document.getElementById('zct-hot-oi-filter-status')?.addEventListener('change', () => void hydrateZctHotOiBoard());
             document.getElementById('zct-hot-oi-filter-symbol')?.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') void hydrateZctHotOiBoard();
