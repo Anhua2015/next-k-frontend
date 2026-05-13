@@ -142,14 +142,14 @@
         <section class="mb-6" aria-label="ZCT 资金盈利曲线">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover p-3 min-w-0 flex flex-col">
-                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">🔥⚡ ZCT 热度+OI · 累计盈亏（USDT，按结算日 UTC）</div>
+                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">🔥⚡ ZCT 热度+OI · 累计盈亏（USDT，横轴自 5/11 UTC）</div>
                     <p id="zct-equity-hot-oi-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 日汇总数据</p>
                     <div class="relative flex-1 min-h-[200px] h-[220px] w-full">
                         <canvas id="zct-equity-canvas-hot-oi"></canvas>
                     </div>
                 </div>
                 <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover p-3 min-w-0 flex flex-col">
-                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">📊 ZCT VWAP · 累计盈亏（USDT，按结算日 UTC）</div>
+                    <div class="text-text-secondary text-xs font-medium mb-1 shrink-0">📊 ZCT VWAP · 累计盈亏（USDT，横轴自 5/11 UTC）</div>
                     <p id="zct-equity-vwap-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 日汇总数据</p>
                     <div class="relative flex-1 min-h-[200px] h-[220px] w-full">
                         <canvas id="zct-equity-canvas-vwap"></canvas>
@@ -1604,6 +1604,49 @@
             }
         }
 
+        /** 横轴从当年 5-11（UTC 日历）起；首笔日晚于 5-11 时在 5-11 插入「此前累计」锚点。 */
+        function zctEquityMay11StartIso(points) {
+            const arr = points || [];
+            let y = new Date().getUTCFullYear();
+            if (arr.length) {
+                const ys = String(arr[0].date || '').slice(0, 4);
+                const yi = parseInt(ys, 10);
+                if (!Number.isNaN(yi)) y = yi;
+            }
+            return `${String(y).padStart(4, '0')}-05-11`;
+        }
+
+        function buildZctEquityChartSeriesFromMay11(points) {
+            const arr = (points || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+            if (!arr.length) return { labels: [], values: [] };
+            const start = zctEquityMay11StartIso(arr);
+            const i0 = arr.findIndex((p) => String(p.date || '') >= start);
+            if (i0 < 0) return { labels: [], values: [] };
+            const baseCum = i0 > 0 ? Number(arr[i0 - 1].cum_pnl_usdt || 0) : 0;
+            const sliced = arr.slice(i0);
+            const labels = [];
+            const values = [];
+            if (String(sliced[0].date || '') > start) {
+                labels.push(start);
+                values.push(baseCum);
+            }
+            sliced.forEach((p) => {
+                labels.push(String(p.date || '').trim());
+                values.push(Number(p.cum_pnl_usdt));
+            });
+            if (labels.length === 1) {
+                const p0 = sliced[0];
+                const ds = String(p0.date || '').trim();
+                const dp = Number(p0.day_pnl_usdt != null ? p0.day_pnl_usdt : 0);
+                const cum0 = Number(p0.cum_pnl_usdt != null ? p0.cum_pnl_usdt : 0);
+                if (ds > start) {
+                    const prev = cum0 - dp;
+                    return { labels: [start, ds], values: [prev, cum0] };
+                }
+            }
+            return { labels, values };
+        }
+
         function makeZctEquityLineChart(canvasId, labels, values, lineColor, fillRgba) {
             const canvas = document.getElementById(canvasId);
             if (!canvas || typeof Chart === 'undefined' || !labels.length) return null;
@@ -1653,19 +1696,27 @@
                 destroyZctEquityChart(zctEquityChartHotOi);
                 zctEquityChartVwap = null;
                 zctEquityChartHotOi = null;
-                if (evW) evW.classList.toggle('hidden', pw.length > 0);
-                if (evH) evH.classList.toggle('hidden', ph.length > 0);
+                const vwPad = buildZctEquityChartSeriesFromMay11(pw);
+                const hoPad = buildZctEquityChartSeriesFromMay11(ph);
+                if (evW) {
+                    evW.textContent = '暂无 settlements 日汇总数据';
+                    evW.classList.toggle('hidden', vwPad.labels.length > 0);
+                }
+                if (evH) {
+                    evH.textContent = '暂无 settlements 日汇总数据';
+                    evH.classList.toggle('hidden', hoPad.labels.length > 0);
+                }
                 zctEquityChartVwap = makeZctEquityLineChart(
                     'zct-equity-canvas-vwap',
-                    pw.map((p) => p.date),
-                    pw.map((p) => p.cum_pnl_usdt),
+                    vwPad.labels,
+                    vwPad.values,
                     '#8ab4f8',
                     'rgba(138,180,248,0.14)',
                 );
                 zctEquityChartHotOi = makeZctEquityLineChart(
                     'zct-equity-canvas-hot-oi',
-                    ph.map((p) => p.date),
-                    ph.map((p) => p.cum_pnl_usdt),
+                    hoPad.labels,
+                    hoPad.values,
                     '#9b93ea',
                     'rgba(155,147,234,0.14)',
                 );
