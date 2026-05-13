@@ -333,7 +333,7 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 与 ZCT 🔥⚡ 的扫描/结算（后台执行，可能需数分钟）。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 与 ZCT 🔥⚡ 的扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code> 为 VP 量价同步扫描（维护内按钮，数十秒内返回）。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
@@ -342,6 +342,8 @@
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                         <button type="button" data-maint-cron="zct_hot_oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 扫描</button>
                         <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
+                        <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
+                        <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                     </div>
                 </div>
             </div>
@@ -443,6 +445,27 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ task }),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            /** VP 量价环境扫描（同步，可能数十秒） */
+            async vpRegimeScan(body) {
+                const res = await fetch(`${API_BASE}/api/vp-regime/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
                 });
                 const text = await res.text();
                 let data;
@@ -2105,6 +2128,50 @@
                         msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
                     }
                 });
+            });
+
+            async function runVpRegimeScan(payload) {
+                if (!msg) return;
+                const b1 = document.getElementById('maint-vp-sample');
+                const b2 = document.getElementById('maint-vp-watchlist');
+                const busy = (on) => {
+                    if (b1) b1.disabled = on;
+                    if (b2) b2.disabled = on;
+                };
+                busy(true);
+                msg.textContent = 'VP 扫描请求中（同步等待，可能数十秒）…';
+                try {
+                    const data = await API.vpRegimeScan(payload);
+                    const brief = {
+                        ok: data.ok,
+                        universe: data.universe,
+                        symbols: data.symbols,
+                        rows: (data.results || []).length,
+                        by_scheme: data.by_scheme,
+                        errors: data.errors,
+                    };
+                    let html = '<span class="text-neon-green">VP 完成 · ' + escHtml(JSON.stringify(brief, null, 2)) + '</span>';
+                    const rows = (data.results || []).slice(0, 30);
+                    if (rows.length) {
+                        const table = rows.map((r) => `${r.symbol}\t${r.scheme}\t${r.vol_pattern}\tliq=${r.liquidity_ok ? 'Y' : 'N'}`).join('\n');
+                        html += '<pre class="mt-2 text-text-muted text-[11px] whitespace-pre overflow-x-auto">' + escHtml(table) + '</pre>';
+                    }
+                    if ((data.results || []).length > 30) {
+                        html += '<p class="text-text-muted text-[10px] mt-1">仅显示前 30 行；完整 JSON 见浏览器 Network 响应。</p>';
+                    }
+                    msg.innerHTML = html;
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                } finally {
+                    busy(false);
+                }
+            }
+            document.getElementById('maint-vp-sample')?.addEventListener('click', () => {
+                void runVpRegimeScan({ symbols: 'BTCUSDT,ETHUSDT,SOLUSDT', persist: true, notify_tg: true });
+            });
+            document.getElementById('maint-vp-watchlist')?.addEventListener('click', () => {
+                void runVpRegimeScan({ watchlist: true, persist: true, notify_tg: true });
             });
 
             document.getElementById('maint-zct-vwap-clear-db')?.addEventListener('click', async () => {
