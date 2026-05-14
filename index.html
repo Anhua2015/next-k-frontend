@@ -333,7 +333,7 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 与 ZCT 🔥⚡ 的扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code> 为 VP 量价同步扫描（维护内按钮，数十秒内返回）。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 与 ZCT 🔥⚡ 的扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code> 为 VP 量价同步扫描；<code class="text-[10px]">/api/zct-vwap/touch-pool-scan</code> 为 ZCT 触轨池 walk-forward（可能数分钟）。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
@@ -344,6 +344,7 @@
                         <button type="button" data-maint-cron="zct_hot_oi_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/45 hover:text-neon-purple">ZCT 🔥⚡热度+OI 结算</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
+                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="POST /api/zct-vwap/touch-pool-scan 默认 ZEC/ONDO/1000SHIB 近3天">ZCT 触轨池试跑</button>
                     </div>
                 </div>
             </div>
@@ -463,6 +464,27 @@
             /** VP 量价环境扫描（同步，可能数十秒） */
             async vpRegimeScan(body) {
                 const res = await fetch(`${API_BASE}/api/vp-regime/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) {
+                    const d = data.detail;
+                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
+                    throw new Error(msg || text || res.statusText);
+                }
+                return data;
+            },
+            /** ZCT 触轨资产池 walk-forward（同步，可能数分钟；不入库） */
+            async zctTouchPoolScan(body) {
+                const res = await fetch(`${API_BASE}/api/zct-vwap/touch-pool-scan`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body || {}),
@@ -2130,13 +2152,62 @@
                 });
             });
 
+            async function runZctTouchPoolScan(payload) {
+                if (!msg) return;
+                const b1 = document.getElementById('maint-vp-sample');
+                const b2 = document.getElementById('maint-vp-watchlist');
+                const b3 = document.getElementById('maint-zct-touch-pool');
+                const busy = (on) => {
+                    if (b1) b1.disabled = on;
+                    if (b2) b2.disabled = on;
+                    if (b3) b3.disabled = on;
+                };
+                busy(true);
+                msg.textContent = 'ZCT 触轨池 walk-forward 请求中（同步等待，可能数分钟）…';
+                try {
+                    const data = await API.zctTouchPoolScan(payload || {});
+                    const pool = data.pool || {};
+                    const crit = pool.criteria || {};
+                    const matched = pool.matched || [];
+                    const rejected = pool.rejected || [];
+                    const brief = {
+                        ok: data.ok,
+                        criteria: crit,
+                        matched_count: matched.length,
+                        rejected_count: rejected.length,
+                        matched_symbols: pool.matched_symbols,
+                        backtest_meta: pool.backtest_meta,
+                    };
+                    let html = '<span class="text-neon-green">触轨池完成 · ' + escHtml(JSON.stringify(brief, null, 2)) + '</span>';
+                    if (matched.length) {
+                        const lines = matched.map(
+                            (r) =>
+                                `${r.symbol}\ttouch=${(r.win_rate_touch_sl_tp != null ? (100 * r.win_rate_touch_sl_tp).toFixed(2) : '?')}%` +
+                                `\tw/L=${r.win}/${r.loss}\tunr=${r.unresolved}`,
+                        );
+                        html +=
+                            '<pre class="mt-2 text-text-muted text-[11px] whitespace-pre overflow-x-auto">' +
+                            escHtml(lines.join('\n')) +
+                            '</pre>';
+                    }
+                    msg.innerHTML = html;
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                } finally {
+                    busy(false);
+                }
+            }
+
             async function runVpRegimeScan(payload) {
                 if (!msg) return;
                 const b1 = document.getElementById('maint-vp-sample');
                 const b2 = document.getElementById('maint-vp-watchlist');
+                const b3 = document.getElementById('maint-zct-touch-pool');
                 const busy = (on) => {
                     if (b1) b1.disabled = on;
                     if (b2) b2.disabled = on;
+                    if (b3) b3.disabled = on;
                 };
                 busy(true);
                 msg.textContent = 'VP 扫描请求中（同步等待，可能数十秒）…';
@@ -2172,6 +2243,9 @@
             });
             document.getElementById('maint-vp-watchlist')?.addEventListener('click', () => {
                 void runVpRegimeScan({ watchlist: true, persist: true, notify_tg: true });
+            });
+            document.getElementById('maint-zct-touch-pool')?.addEventListener('click', () => {
+                void runZctTouchPoolScan({});
             });
 
             document.getElementById('maint-zct-vwap-clear-db')?.addEventListener('click', async () => {
