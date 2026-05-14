@@ -2163,7 +2163,11 @@
                     if (b3) b3.disabled = on;
                 };
                 busy(true);
-                msg.textContent = 'ZCT 触轨池 walk-forward 请求中（同步等待，可能数分钟）…';
+                msg.innerHTML =
+                    '<span class="text-text-muted">ZCT 触轨池 walk-forward 请求中（可能数分钟）…</span><br/>' +
+                    '<span class="text-[10px] text-text-muted/80">API：<code>' +
+                    escHtml(API_BASE) +
+                    '</code></span>';
                 try {
                     const data = await API.zctTouchPoolScan(payload || {});
                     const pool = data.pool || {};
@@ -2193,7 +2197,18 @@
                     msg.innerHTML = html;
                 } catch (e) {
                     console.error(e);
-                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                    const m = e && e.message ? String(e.message) : '失败';
+                    msg.innerHTML =
+                        '<div class="text-neon-red">' + escHtml(m) + '</div>' +
+                        '<div class="mt-2 text-[10px] text-text-muted leading-relaxed space-y-1">' +
+                        '<p>当前请求：<code class="text-[10px]">' +
+                        escHtml(API_BASE) +
+                        '/api/zct-vwap/touch-pool-scan</code></p>' +
+                        '<ul class="list-disc pl-4">' +
+                        '<li>本机是否已启动 API（例如 <code>uvicorn main:app --host 0.0.0.0 --port 8000</code>）？</li>' +
+                        '<li>HTTPS 页面不要直连 <code>http://127.0.0.1</code>（会被浏览器拦）；可试地址栏 <code>?api=https://你的后端域名</code> 或 <code>localStorage.NEXT_K_API_BASE</code>。</li>' +
+                        '<li>walk-forward 可能跑<strong>数分钟</strong>，网关/托管若超时断开，也会显示 Failed to fetch；可改在本地跑 API 或换更长的代理超时。</li>' +
+                        '</ul></div>';
                 } finally {
                     busy(false);
                 }
