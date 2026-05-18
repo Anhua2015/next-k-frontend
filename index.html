@@ -288,7 +288,7 @@
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
-                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="POST /api/zct-vwap/touch-pool-scan：近3天 walk-forward；标的=worth_watch_hot_oi ∪ 默认22永续（与生产一致）；默认落库 touch_pool">ZCT 触轨池试跑</button>
+                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="POST /api/zct-vwap/touch-pool-scan：24h walk-forward，与 08:05 主筛同参（worth_watch ∪ 默认永续）；默认落库">ZCT 触轨池试跑</button>
                     </div>
                 </div>
             </div>
@@ -2142,7 +2142,7 @@
                 void runVpRegimeScan({ watchlist: true, persist: true, notify_tg: true });
             });
             document.getElementById('maint-zct-touch-pool')?.addEventListener('click', () => {
-                void runZctTouchPoolScan({ symbols_source: 'hot_oi_plus_default_22' });
+                void runZctTouchPoolScan({ symbols_source: 'worth_watch_plus_default_22' });
             });
 
             document.getElementById('maint-zct-vwap-clear-db')?.addEventListener('click', async () => {
