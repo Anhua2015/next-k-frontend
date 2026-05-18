@@ -250,9 +250,19 @@
             <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
-                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">清库后可点上方「刷新」拉快照；定时任务在服务端后台线程执行，耗时可达数分钟。</p>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「刷新」与 ZCT 手动改单无需维护令牌（OI 刷新有约 2 分钟冷却）。下方清库 / 手动 Cron 需先在「维护令牌」处保存。清库后可点上方「刷新」拉快照。</p>
                 </div>
                 <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
+            </div>
+            <div class="mb-3 p-3 rounded-lg border border-border/60 bg-surface-light/40 space-y-2">
+                <div class="text-text-secondary text-xs font-semibold">维护令牌</div>
+                <p class="text-text-muted text-[10px] leading-relaxed">与 Railway 环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库与手动 Cron。</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="password" id="maint-token-input" autocomplete="off" spellcheck="false" placeholder="粘贴维护令牌" class="flex-1 min-w-[12rem] max-w-md px-2.5 py-1.5 rounded-lg bg-background/80 border border-border/90 text-text-primary text-xs font-mono placeholder:text-text-muted/70 focus:border-accent/50 focus:outline-none" />
+                    <button type="button" id="maint-token-save" class="btn-secondary px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/35 text-accent text-xs font-medium hover:bg-accent/15">保存</button>
+                    <button type="button" id="maint-token-clear" class="btn-secondary px-3 py-1.5 rounded-lg border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清除</button>
+                    <span id="maint-token-status" class="text-[10px] text-text-muted"></span>
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
                 <!-- 左栏：清理 -->
@@ -269,7 +279,7 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code> 为 VP 量价同步扫描；<code class="text-[10px]">/api/zct-vwap/touch-pool-scan</code> 为 ZCT 触轨池 walk-forward（默认标的 = worth_watch_hot_oi ∪ 默认 22 永续，与生产 daily job 一致；可能数分钟）。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code>、<code class="text-[10px]">/api/zct-vwap/touch-pool-scan</code> 等需先在上方保存维护令牌。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
@@ -308,6 +318,68 @@
             return 'https://next-k-api-production.up.railway.app';
         })();
 
+        function getMaintenanceToken() {
+            try {
+                const q = new URLSearchParams(window.location.search).get('maint_token');
+                if (q && String(q).trim()) return String(q).trim();
+            } catch (e) { /* ignore */ }
+            try {
+                const ls = localStorage.getItem('NEXT_K_MAINTENANCE_TOKEN');
+                if (ls && String(ls).trim()) return String(ls).trim();
+            } catch (e2) { /* ignore */ }
+            return '';
+        }
+
+        function setMaintenanceToken(tok) {
+            const t = String(tok || '').trim();
+            if (!t) return false;
+            try {
+                localStorage.setItem('NEXT_K_MAINTENANCE_TOKEN', t);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
+
+        function clearMaintenanceToken() {
+            try {
+                localStorage.removeItem('NEXT_K_MAINTENANCE_TOKEN');
+            } catch (e) { /* ignore */ }
+        }
+
+        function updateMaintTokenStatus() {
+            const el = document.getElementById('maint-token-status');
+            if (!el) return;
+            const tok = getMaintenanceToken();
+            if (tok) {
+                el.textContent = '已配置（' + tok.length + ' 字符）';
+                el.className = 'text-[10px] text-neon-green';
+            } else {
+                el.textContent = '未配置（清库 / Cron 可能 403）';
+                el.className = 'text-[10px] text-warn';
+            }
+        }
+
+        function maintenanceHeaders(extra) {
+            const h = Object.assign({}, extra || {});
+            const tok = getMaintenanceToken();
+            if (tok) h['X-Maintenance-Token'] = tok;
+            return h;
+        }
+
+        function apiErrorDetail(data, text, res) {
+            const d = data && data.detail;
+            if (d === 'maintenance_token_required') {
+                return '需要维护令牌：在维护面板上方粘贴并保存，或与 Railway 的 NEXT_K_MAINTENANCE_TOKEN 一致';
+            }
+            if (d && typeof d === 'object' && d.error === 'rate_limited') {
+                return d.message || ('刷新过于频繁，请 ' + (d.retry_after_sec != null ? d.retry_after_sec : '?') + ' 秒后再试');
+            }
+            if (typeof d === 'string') return d;
+            if (Array.isArray(d)) return d.map((x) => x.msg || x).join('; ');
+            return JSON.stringify(d || data || text || (res && res.statusText) || '请求失败');
+        }
+
         const API = {
             async health() {
                 const res = await fetch(`${API_BASE}/api/health`);
@@ -320,8 +392,15 @@
             },
             async accumulationOiRadarRefresh() {
                 const res = await fetch(`${API_BASE}/api/accumulation/oi-radar/refresh`, { method: 'POST' });
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             async worthWatch() {
                 const res = await fetch(`${API_BASE}/api/accumulation/worth-watch`);
@@ -356,9 +435,7 @@
             async clearWatchTables(tables) {
                 const res = await fetch(`${API_BASE}/api/accumulation/maintenance/clear-watch-tables`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: maintenanceHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ tables }),
                 });
                 const text = await res.text();
@@ -368,17 +445,13 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             async triggerCron(task) {
                 const res = await fetch(`${API_BASE}/api/accumulation/maintenance/trigger-cron`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: maintenanceHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({ task }),
                 });
                 const text = await res.text();
@@ -388,18 +461,14 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             /** VP 量价环境扫描（同步，可能数十秒） */
             async vpRegimeScan(body) {
                 const res = await fetch(`${API_BASE}/api/vp-regime/scan`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: maintenanceHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(body || {}),
                 });
                 const text = await res.text();
@@ -409,18 +478,14 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             /** ZCT 触轨资产池 walk-forward（同步，可能数分钟；默认 symbols_source=生产并落库 touch_pool） */
             async zctTouchPoolScan(body) {
                 const res = await fetch(`${API_BASE}/api/zct-vwap/touch-pool-scan`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: maintenanceHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(body || {}),
                 });
                 const text = await res.text();
@@ -430,16 +495,13 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             async refreshHeatWatch() {
                 const res = await fetch(`${API_BASE}/api/accumulation/maintenance/refresh-heat-watch`, {
                     method: 'POST',
+                    headers: maintenanceHeaders(),
                 });
                 const text = await res.text();
                 let data;
@@ -448,16 +510,15 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             /** 清空 ZCT VWAP 两张 SQLite 表（快照 + 结算历史） */
             async zctVwapClearDb() {
-                const res = await fetch(`${API_BASE}/api/zct-vwap/maintenance/clear-db`, { method: 'POST' });
+                const res = await fetch(`${API_BASE}/api/zct-vwap/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
                 const text = await res.text();
                 let data;
                 try {
@@ -465,11 +526,7 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             /** ZCT VWAP 信号汇总（持仓数、累计盈亏 USDT、胜率等） */
@@ -509,11 +566,7 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
             async zctHotOiClearDb() {
@@ -556,11 +609,7 @@
                 } catch (e) {
                     throw new Error(text || res.statusText);
                 }
-                if (!res.ok) {
-                    const d = data.detail;
-                    const msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map((x) => x.msg || x).join('; ') : JSON.stringify(d || data));
-                    throw new Error(msg || text || res.statusText);
-                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
         };
@@ -575,7 +624,8 @@
             return d.innerHTML;
         }
 
-        function perpSymToChartSymbol(sym) {
+        /** 永续合约 symbol（如 BTCUSDT）→ 展示/外链用 pair（如 BTC/USDT） */
+        function perpSymToPairLabel(sym) {
             if (!sym || typeof sym !== 'string') return null;
             if (!sym.endsWith('USDT')) return null;
             const base = sym.slice(0, -4);
@@ -620,15 +670,15 @@
         }
 
         function oiRadarRowClickable(sym, innerLineHtml) {
-            const chartSym = perpSymToChartSymbol(sym);
-            if (!chartSym) return `<div class="text-xs text-text-secondary leading-relaxed py-0.5">${innerLineHtml}</div>`;
-            const safe = chartSym.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded-lg hover:bg-surface-light/55 transition-colors cursor-pointer border border-transparent hover:border-border/60" data-chart-symbol="${safe}">${innerLineHtml}</div>`;
+            const perpPair = perpSymToPairLabel(sym);
+            if (!perpPair) return `<div class="text-xs text-text-secondary leading-relaxed py-0.5">${innerLineHtml}</div>`;
+            const safe = perpPair.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded-lg hover:bg-surface-light/55 transition-colors cursor-pointer border border-transparent hover:border-border/60" data-perp-pair="${safe}">${innerLineHtml}</div>`;
         }
 
-        function onOiRadarPickSymbol(chartSymbol) {
-            if (!chartSymbol) return;
-            const perp = chartSymbol.replace('/', '').toUpperCase();
+        function openBinanceFuturesByPair(perpPair) {
+            if (!perpPair) return;
+            const perp = perpPair.replace('/', '').toUpperCase();
             const url = 'https://www.binance.com/zh-CN/futures/' + encodeURIComponent(perp);
             window.open(url, '_blank', 'noopener,noreferrer');
         }
@@ -994,8 +1044,8 @@
 
         function bindOiRadarPickHandlers(root) {
             if (!root) return;
-            root.querySelectorAll('.oi-radar-pick[data-chart-symbol]').forEach((el) => {
-                const go = () => onOiRadarPickSymbol(el.getAttribute('data-chart-symbol'));
+            root.querySelectorAll('.oi-radar-pick[data-perp-pair]').forEach((el) => {
+                const go = () => openBinanceFuturesByPair(el.getAttribute('data-perp-pair'));
                 el.addEventListener('click', go);
                 el.addEventListener('keydown', (ev) => {
                     if (ev.key === 'Enter' || ev.key === ' ') {
@@ -1056,7 +1106,7 @@
                     <tbody>`;
             const rows = list.map((s) => {
                 const sym = s.symbol || (s.coin ? s.coin + 'USDT' : '');
-                const chartSym = perpSymToChartSymbol(sym);
+                const perpPair = perpSymToPairLabel(sym);
                 const px = Number(s.price_chg_24h);
                 const oi = Number(s.oi_change_pct);
                 const frFrom = fmtFrPct(s.prev_fr);
@@ -1069,8 +1119,8 @@
                     const vStr = v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : String(v);
                     sq = escHtml(String(s.square_posts)) + '帖 / ' + escHtml(vStr);
                 }
-                const coinCell = chartSym
-                    ? `<button type="button" class="s2-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(s.coin || '')}</button>`
+                const coinCell = perpPair
+                    ? `<button type="button" class="s2-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-perp-pair="${perpPair.replace(/"/g, '&quot;')}">${escHtml(s.coin || '')}</button>`
                     : escHtml(s.coin || '');
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
                     <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${escHtml(fmtS2RecordedAt(s.recorded_at))}</td>
@@ -1085,8 +1135,8 @@
                 </tr>`;
             }).join('');
             body.innerHTML = head + rows + '</tbody></table>';
-            body.querySelectorAll('.s2-sym-pick[data-chart-symbol]').forEach((btn) => {
-                btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
+            body.querySelectorAll('.s2-sym-pick[data-perp-pair]').forEach((btn) => {
+                btn.addEventListener('click', () => openBinanceFuturesByPair(btn.getAttribute('data-perp-pair')));
             });
         }
 
@@ -1138,9 +1188,9 @@
                 const rows = list.map((r) => {
                     const coin = r.best_coin || (r.best_symbol || '').replace('USDT', '') || '--';
                     const sym = r.best_symbol || '';
-                    const chartSym = perpSymToChartSymbol(sym);
-                    const coinCell = chartSym
-                        ? `<button type="button" class="s6-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                    const perpPair = perpSymToPairLabel(sym);
+                    const coinCell = perpPair
+                        ? `<button type="button" class="s6-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-perp-pair="${perpPair.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
                         : escHtml(coin);
                     const dir = r.best_direction === 'short' ? '空' : r.best_direction === 'long' ? '多' : '--';
                     const reason = (r.best_reason || '').slice(0, 72) + ((r.best_reason || '').length > 72 ? '…' : '');
@@ -1157,8 +1207,8 @@
                     </tr>`;
                 }).join('');
                 sigBody.innerHTML = head + rows + '</tbody></table>';
-                sigBody.querySelectorAll('.s6-sym-pick[data-chart-symbol]').forEach((btn) => {
-                    btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
+                sigBody.querySelectorAll('.s6-sym-pick[data-perp-pair]').forEach((btn) => {
+                    btn.addEventListener('click', () => openBinanceFuturesByPair(btn.getAttribute('data-perp-pair')));
                 });
             }
             let posHead = '';
@@ -1185,10 +1235,10 @@
                     </thead><tbody>`;
             const rowsP = open.map((p) => {
                 const sym = p.symbol || '';
-                const chartSym = perpSymToChartSymbol(sym);
+                const perpPair = perpSymToPairLabel(sym);
                 const coin = sym.replace('USDT', '') || '--';
-                const coinCell = chartSym
-                    ? `<button type="button" class="s6-pos-pick font-semibold text-accent hover:underline decoration-accent/40" data-chart-symbol="${chartSym.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
+                const coinCell = perpPair
+                    ? `<button type="button" class="s6-pos-pick font-semibold text-accent hover:underline decoration-accent/40" data-perp-pair="${perpPair.replace(/"/g, '&quot;')}">${escHtml(coin)}</button>`
                     : escHtml(coin);
                 const dir = p.direction === 'short' ? '空' : p.direction === 'long' ? '多' : '--';
                 return `<tr class="border-b border-border/60">
@@ -1203,8 +1253,8 @@
                 </tr>`;
             }).join('');
             posBody.innerHTML = posHead + thead + rowsP + '</tbody></table>';
-            posBody.querySelectorAll('.s6-pos-pick[data-chart-symbol]').forEach((btn) => {
-                btn.addEventListener('click', () => onOiRadarPickSymbol(btn.getAttribute('data-chart-symbol')));
+            posBody.querySelectorAll('.s6-pos-pick[data-perp-pair]').forEach((btn) => {
+                btn.addEventListener('click', () => openBinanceFuturesByPair(btn.getAttribute('data-perp-pair')));
             });
         }
 
@@ -1710,7 +1760,20 @@
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
             const hl = document.getElementById('oi-radar-highlights-slot');
-            const j = await API.accumulationOiRadarRefresh();
+            let j;
+            try {
+                j = await API.accumulationOiRadarRefresh();
+            } catch (e) {
+                const msg = e && e.message ? String(e.message) : '刷新失败';
+                body.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(msg) + '</div>';
+                if (hl) {
+                    hl.innerHTML =
+                        '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">' +
+                        escHtml(msg) +
+                        '</div>';
+                }
+                return;
+            }
             if (!j.accepted) {
                 if (j.busy) {
                     body.innerHTML = '<div class="text-warn text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
@@ -1829,6 +1892,7 @@
             const panel = document.getElementById('maint-panel');
             if (!panel) return;
             panel.classList.remove('hidden');
+            updateMaintTokenStatus();
         }
 
         function closeMaintPanel() {
@@ -1847,9 +1911,49 @@
             const msg = document.getElementById('maint-msg');
 
             try {
-                const q = new URLSearchParams(window.location.search).get('maint');
-                if (q === '1') openMaintPanel();
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('maint') === '1') openMaintPanel();
+                const mt = params.get('maint_token');
+                if (mt && String(mt).trim()) {
+                    setMaintenanceToken(mt);
+                    try {
+                        const u = new URL(window.location.href);
+                        u.searchParams.delete('maint_token');
+                        window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+                    } catch (eUrl) { /* ignore */ }
+                }
             } catch (e) { /* ignore */ }
+
+            updateMaintTokenStatus();
+
+            const tokenInput = document.getElementById('maint-token-input');
+            document.getElementById('maint-token-save')?.addEventListener('click', () => {
+                const raw = tokenInput ? String(tokenInput.value || '').trim() : '';
+                if (!raw) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">请先输入维护令牌</span>';
+                    return;
+                }
+                if (!setMaintenanceToken(raw)) {
+                    if (msg) msg.innerHTML = '<span class="text-neon-red">无法写入 localStorage</span>';
+                    return;
+                }
+                if (tokenInput) tokenInput.value = '';
+                updateMaintTokenStatus();
+                if (msg) msg.innerHTML = '<span class="text-neon-green">维护令牌已保存</span>';
+            });
+            tokenInput?.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    document.getElementById('maint-token-save')?.click();
+                }
+            });
+            document.getElementById('maint-token-clear')?.addEventListener('click', () => {
+                if (!confirm('确定清除本浏览器保存的维护令牌？')) return;
+                clearMaintenanceToken();
+                if (tokenInput) tokenInput.value = '';
+                updateMaintTokenStatus();
+                if (msg) msg.textContent = '已清除维护令牌';
+            });
 
             let trip = 0;
             let tripT = 0;
