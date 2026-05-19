@@ -10,3 +10,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+DEPLOY.md
+start.sh
+stop.sh
