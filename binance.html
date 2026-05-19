@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实盘看板 · Next K</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0d1219',
+                        surface: '#141b24',
+                        'surface-light': '#1c2530',
+                        border: '#2a3544',
+                        accent: '#8ab4f8',
+                        'neon-green': '#52c49a',
+                        'neon-red': '#e07884',
+                        'neon-purple': '#9b93ea',
+                        'neon-blue': '#73b5ee',
+                        'neon-yellow': '#d4b878',
+                        warn: '#c9a66b',
+                        'text-primary': '#e8edf4',
+                        'text-secondary': '#94a3b8',
+                        'text-muted': '#647891',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            color: #e8edf4;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #0d1219;
+            background-image:
+                radial-gradient(ellipse 90% 55% at 50% -15%, rgba(138, 180, 248, 0.07), transparent 52%),
+                radial-gradient(ellipse 70% 45% at 100% 40%, rgba(82, 196, 154, 0.04), transparent 48%),
+                linear-gradient(180deg, #0e141c 0%, #0d1219 28%);
+            background-attachment: fixed;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0d1219; }
+        ::-webkit-scrollbar-thumb { background: #3d4a5c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #647891; }
+        ::selection { background: rgba(138, 180, 248, 0.28); }
+        .card {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+        }
+        .btn-secondary {
+            transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+        }
+        .pnl-pos { color: #52c49a; }
+        .pnl-neg { color: #e07884; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.1rem 0.45rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .badge-open    { background: rgba(82, 196, 154, 0.12); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.2); }
+        .badge-closed  { background: rgba(100, 120, 145, 0.12); color: #94a3b8; border: 1px solid rgba(100, 120, 145, 0.2); }
+        .badge-long    { background: rgba(82, 196, 154, 0.1); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.18); }
+        .badge-short   { background: rgba(224, 120, 132, 0.1); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.18); }
+        .badge-tp      { background: rgba(82, 196, 154, 0.1); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.18); }
+        .badge-sl      { background: rgba(224, 120, 132, 0.1); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.18); }
+        .badge-expired { background: rgba(196, 150, 107, 0.1); color: #c9a66b; border: 1px solid rgba(196, 150, 107, 0.18); }
+        .badge-manual  { background: rgba(155, 147, 234, 0.1); color: #9b93ea; border: 1px solid rgba(155, 147, 234, 0.18); }
+        .badge-unknown { background: rgba(100, 120, 145, 0.1); color: #647891; border: 1px solid rgba(100, 120, 145, 0.18); }
+        .badge-enabled  { background: rgba(82, 196, 154, 0.12); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.2); }
+        .badge-disabled { background: rgba(224, 120, 132, 0.12); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.2); }
+        .badge-testnet  { background: rgba(196, 150, 107, 0.12); color: #c9a66b; border: 1px solid rgba(196, 150, 107, 0.2); }
+        table { border-collapse: collapse; width: 100%; }
+        th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600; color: #647891; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2a3544; white-space: nowrap; }
+        td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid rgba(42, 53, 68, 0.6); white-space: nowrap; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(28, 37, 48, 0.6); }
+        input.config-input {
+            background: #1c2530;
+            border: 1px solid #2a3544;
+            border-radius: 0.5rem;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.78rem;
+            color: #e8edf4;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        input.config-input:focus { border-color: rgba(138, 180, 248, 0.5); }
+        .tab-btn { transition: color 0.15s, border-color 0.15s; }
+        .tab-btn.active { color: #8ab4f8; border-bottom: 2px solid #8ab4f8; }
+        .tab-btn:not(.active) { color: #647891; border-bottom: 2px solid transparent; }
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 0.6rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            z-index: 999;
+            animation: fadein 0.2s ease;
+        }
+        .toast-ok  { background: rgba(82, 196, 154, 0.18); border: 1px solid rgba(82, 196, 154, 0.3); color: #52c49a; }
+        .toast-err { background: rgba(224, 120, 132, 0.18); border: 1px solid rgba(224, 120, 132, 0.3); color: #e07884; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="flex items-center gap-2 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/90 to-neon-blue/75 shadow-[0_4px_14px_-4px_rgba(138,180,248,0.35)] flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold text-text-primary tracking-tight group-hover:text-accent transition-colors">Next <span class="text-accent">K</span></span>
+                </a>
+                <span class="text-text-muted text-sm">/</span>
+                <span class="text-text-secondary text-sm font-medium">实盘看板</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="refreshAll()" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                <div id="status-badge" class="badge badge-disabled">离线</div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Settings modal (token + API base) -->
+<div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 class="text-text-primary font-semibold mb-4">连接设置</h3>
+        <div class="space-y-3">
+            <div>
+                <label class="text-text-muted text-xs mb-1 block">API Base URL</label>
+                <input id="cfg-api-base" type="text" class="config-input w-full" placeholder="http://localhost:8000"/>
+            </div>
+            <div>
+                <label class="text-text-muted text-xs mb-1 block">Maintenance Token</label>
+                <input id="cfg-token" type="password" class="config-input w-full" placeholder="留空则无鉴权"/>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-5">
+            <button type="button" onclick="closeSettings()" class="btn-secondary px-4 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-sm hover:border-accent/40 hover:text-accent">取消</button>
+            <button type="button" onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent text-sm font-medium hover:bg-accent/25">保存</button>
+        </div>
+        <p class="text-text-muted text-xs mt-3">设置存储在浏览器 localStorage，不会上传至服务器。</p>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<main class="max-w-7xl mx-auto px-4 py-6 space-y-5">
+
+    <!-- Status + Config row -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Status card -->
+        <div class="bg-surface rounded-xl border border-border card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-text-primary font-semibold text-sm">系统状态</h2>
+                <button type="button" onclick="openSettings()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">设置连接</button>
+            </div>
+            <div id="status-body" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
+            </div>
+        </div>
+
+        <!-- Binance config editor -->
+        <div class="bg-surface rounded-xl border border-border card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-text-primary font-semibold text-sm">交易配置</h2>
+                <button type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25">保存配置</button>
+            </div>
+            <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PnL summary -->
+    <section class="bg-surface rounded-xl border border-border card p-4">
+        <h2 class="text-text-primary font-semibold text-sm mb-3">PnL 汇总</h2>
+        <div id="pnl-summary-body">
+            <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+        </div>
+        <div id="pnl-daily-body" class="mt-4 overflow-x-auto"></div>
+    </section>
+
+    <!-- Open positions -->
+    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
+        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
+            <h2 class="text-text-primary font-semibold text-sm">当前持仓</h2>
+            <span id="open-pos-count" class="text-text-muted text-xs">—</span>
+        </div>
+        <div class="overflow-x-auto">
+            <div id="open-positions-body" class="p-4">
+                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History / all positions tabs -->
+    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
+        <div class="px-4 pt-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center gap-0">
+            <button type="button" class="tab-btn active px-4 py-2 text-xs font-medium" id="tab-closed" onclick="switchTab('closed')">历史持仓</button>
+            <button type="button" class="tab-btn px-4 py-2 text-xs font-medium" id="tab-all" onclick="switchTab('all')">全部</button>
+        </div>
+        <div class="overflow-x-auto">
+            <div id="closed-positions-body" class="p-4">
+                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Signal log -->
+    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
+        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
+            <h2 class="text-text-primary font-semibold text-sm">信号日志</h2>
+            <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+        </div>
+        <div class="overflow-x-auto">
+            <div id="signals-body" class="p-4">
+                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script src="api-base.js"></script>
+<script>
+function getApiBase() { return resolveApiBase(); }
+function getToken() { return getMaintenanceToken(); }
+function buildHeaders() {
+    const t = getToken();
+    const h = { 'Content-Type': 'application/json' };
+    if (t) h['X-Maintenance-Token'] = t;
+    return h;
+}
+
+function openSettings() {
+    document.getElementById('cfg-api-base').value = getApiBase();
+    document.getElementById('cfg-token').value = getToken();
+    document.getElementById('settings-modal').classList.remove('hidden');
+}
+function closeSettings() {
+    document.getElementById('settings-modal').classList.add('hidden');
+}
+function saveSettings() {
+    const base = document.getElementById('cfg-api-base').value.trim();
+    const token = document.getElementById('cfg-token').value.trim();
+    if (base) localStorage.setItem('NEXT_K_API_BASE', base);
+    if (token) localStorage.setItem('NEXT_K_MAINTENANCE_TOKEN', token);
+    closeSettings();
+    refreshAll();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+function showToast(msg, ok) {
+    const el = document.createElement('div');
+    el.className = 'toast ' + (ok ? 'toast-ok' : 'toast-err');
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// ── API fetch ─────────────────────────────────────────────────────────────────
+
+async function apiFetch(path, opts) {
+    const url = getApiBase() + path;
+    const res = await fetch(url, { headers: buildHeaders(), ...(opts || {}) });
+    if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(res.status + ' ' + body);
+    }
+    return res.json();
+}
+
+// ── Countdown ─────────────────────────────────────────────────────────────────
+
+let _countdownTimer = null;
+
+function startCountdowns() {
+    if (_countdownTimer) clearInterval(_countdownTimer);
+    _countdownTimer = setInterval(tickCountdowns, 1000);
+}
+
+function tickCountdowns() {
+    document.querySelectorAll('[data-expire]').forEach(function(el) {
+        const expStr = el.dataset.expire;
+        if (!expStr) return;
+        const diff = Math.floor((new Date(expStr) - new Date()) / 1000);
+        if (diff <= 0) {
+            el.textContent = '已过期';
+            el.style.color = '#e07884';
+            return;
+        }
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+        const s = diff % 60;
+        el.textContent = h + 'h ' + String(m).padStart(2, '0') + 'm ' + String(s).padStart(2, '0') + 's';
+        el.style.color = diff < 600 ? '#c9a66b' : '#94a3b8';
+    });
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+
+function fmtTime(iso) {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\//g, '-');
+    } catch(e) {
+        return iso;
+    }
+}
+
+function fmtNum(v, decimals) {
+    if (v == null) return '—';
+    return Number(v).toFixed(decimals != null ? decimals : 4);
+}
+
+function pnlColor(v) {
+    if (v == null) return '';
+    return Number(v) >= 0 ? 'color:#52c49a' : 'color:#e07884';
+}
+
+function sideBadge(side) {
+    if (!side) return '—';
+    var cls = side.toLowerCase() === 'long' ? 'badge-long' : 'badge-short';
+    return '<span class="badge ' + cls + '">' + side + '</span>';
+}
+
+function reasonBadge(r) {
+    if (!r) return '—';
+    var labels = { tp: '止盈', sl: '止损', expired: '到期', manual: '手动', unknown: '未知' };
+    return '<span class="badge badge-' + r + '">' + (labels[r] || r) + '</span>';
+}
+
+function signalStatusBadge(s) {
+    if (!s) return '—';
+    var cls = s === 'traded' ? 'badge-open' : s === 'error' ? 'badge-sl' : 'badge-unknown';
+    var labels = { traded: '已开仓', received: '已收到', error: '错误' };
+    return '<span class="badge ' + cls + '">' + (labels[s] || s) + '</span>';
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+
+async function loadStatus() {
+    try {
+        var d = await apiFetch('/api/binance/status');
+        var enabled = d.enabled === 'true' || d.enabled === true;
+        var testnet  = d.testnet  === 'true' || d.testnet  === true;
+
+        var badge = document.getElementById('status-badge');
+        badge.className = 'badge ' + (enabled ? 'badge-enabled' : 'badge-disabled');
+        badge.textContent = enabled ? (testnet ? 'TESTNET' : '实盘') : '已禁用';
+
+        var items = [
+            ['状态',     enabled ? '<span class="badge badge-enabled">启用</span>' : '<span class="badge badge-disabled">禁用</span>'],
+            ['网络',     testnet  ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
+            ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
+            ['最大持仓', '<span class="text-text-primary font-mono">' + (d.max_positions || '—') + '</span>'],
+            ['过期时限', '<span class="text-text-primary font-mono">' + (d.position_expire_hours || '—') + 'h</span>'],
+            ['API Key',  d.api_key_set ? '<span style="color:#52c49a" class="text-xs">已设置</span>' : '<span style="color:#e07884" class="text-xs">未设置</span>'],
+        ];
+
+        document.getElementById('status-body').innerHTML = items.map(function(item) {
+            return '<div class="flex flex-col gap-0.5">'
+                + '<span class="text-text-muted text-[10px] uppercase tracking-wider">' + item[0] + '</span>'
+                + '<div class="text-xs">' + item[1] + '</div>'
+                + '</div>';
+        }).join('');
+    } catch(e) {
+        document.getElementById('status-body').innerHTML =
+            '<div class="col-span-3" style="color:#e07884;font-size:0.75rem">无法连接：' + e.message + '</div>';
+        var badge = document.getElementById('status-badge');
+        badge.className = 'badge badge-disabled';
+        badge.textContent = '离线';
+    }
+}
+
+// ── Config editor ─────────────────────────────────────────────────────────────
+
+var EDITABLE_KEYS = [
+    { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
+    { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
+    { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
+    { key: 'testnet',               label: 'Testnet',         hint: 'true / false' },
+    { key: 'margin_usdt',           label: '单笔保证金 (USDT)',  hint: '100' },
+    { key: 'leverage',              label: '杠杆',            hint: '10' },
+    { key: 'max_positions',         label: '最大持仓数',      hint: '3' },
+    { key: 'position_expire_hours', label: '过期时限 (小时)', hint: '4' },
+];
+
+async function loadConfig() {
+    try {
+        var cfg = await apiFetch('/api/binance/config');
+        var html = EDITABLE_KEYS.map(function(item) {
+            var raw = cfg[item.key] != null ? cfg[item.key] : '';
+            // Don't prefill masked values — user must re-enter to change
+            var val = (item.password && raw === '****') ? '' : raw;
+            var inputType = item.password ? 'password' : 'text';
+            return '<div class="flex flex-col gap-0.5">'
+                + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + item.label + '</label>'
+                + '<input id="cfg-' + item.key + '" type="' + inputType + '" value="' + val + '" placeholder="' + item.hint + '" class="config-input"/>'
+                + '</div>';
+        }).join('');
+        document.getElementById('config-body').innerHTML = html;
+    } catch(e) {
+        document.getElementById('config-body').innerHTML =
+            '<div class="col-span-2" style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+async function saveConfig() {
+    var pairs = {};
+    EDITABLE_KEYS.forEach(function(item) {
+        var el = document.getElementById('cfg-' + item.key);
+        if (!el) return;
+        var v = el.value.trim();
+        // Skip empty password fields — blank means "leave unchanged"
+        if (item.password && !v) return;
+        pairs[item.key] = v;
+    });
+    try {
+        await apiFetch('/api/binance/config', {
+            method: 'POST',
+            body: JSON.stringify({ pairs: pairs }),
+        });
+        showToast('配置已保存', true);
+        loadStatus();
+        loadConfig();
+    } catch(e) {
+        showToast('保存失败：' + e.message, false);
+    }
+}
+
+// ── PnL summary ───────────────────────────────────────────────────────────────
+
+async function loadPnlSummary() {
+    try {
+        var d = await apiFetch('/api/binance/pnl/summary');
+        var winRate = d.total > 0 ? ((d.wins / d.total) * 100).toFixed(1) + '%' : '—';
+        var stats = [
+            ['总交易', String(d.total)],
+            ['盈利', '<span style="color:#52c49a">' + d.wins + '</span>'],
+            ['亏损', '<span style="color:#e07884">' + d.losses + '</span>'],
+            ['胜率', winRate],
+            ['累计 PnL', '<span style="' + pnlColor(d.total_pnl) + '">' + fmtNum(d.total_pnl, 2) + ' USDT</span>'],
+            ['平均 PnL', '<span style="' + pnlColor(d.avg_pnl) + '">' + fmtNum(d.avg_pnl, 2) + ' USDT</span>'],
+        ];
+        document.getElementById('pnl-summary-body').innerHTML =
+            '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">'
+            + stats.map(function(item) {
+                return '<div class="bg-surface-light rounded-lg p-3 border border-border/60">'
+                    + '<div class="text-text-muted text-[10px] uppercase tracking-wider mb-1">' + item[0] + '</div>'
+                    + '<div class="text-text-primary font-mono text-sm">' + item[1] + '</div>'
+                    + '</div>';
+            }).join('')
+            + '</div>';
+
+        if (d.daily && d.daily.length > 0) {
+            var rows = d.daily.map(function(r) {
+                var pnl = Number(r.pnl);
+                return '<tr>'
+                    + '<td class="text-text-secondary">' + r.day + '</td>'
+                    + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pnl) + '">' + (pnl >= 0 ? '+' : '') + pnl.toFixed(4) + '</td>'
+                    + '</tr>';
+            }).join('');
+            document.getElementById('pnl-daily-body').innerHTML =
+                '<div class="text-text-muted text-[10px] uppercase tracking-wider mb-2">近 30 日每日 PnL（Asia/Shanghai）</div>'
+                + '<table style="max-width:260px"><thead><tr><th>日期</th><th>PnL (USDT)</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        } else {
+            document.getElementById('pnl-daily-body').innerHTML = '';
+        }
+    } catch(e) {
+        document.getElementById('pnl-summary-body').innerHTML =
+            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+// ── Open positions ────────────────────────────────────────────────────────────
+
+async function loadOpenPositions() {
+    try {
+        var rows = await apiFetch('/api/binance/positions?status=open&limit=50');
+        document.getElementById('open-pos-count').textContent = rows.length + ' 条';
+
+        if (!rows.length) {
+            document.getElementById('open-positions-body').innerHTML =
+                '<div class="text-text-muted text-xs">暂无持仓</div>';
+            return;
+        }
+
+        var trs = rows.map(function(p) {
+            return '<tr>'
+                + '<td style="font-weight:500;color:#e8edf4">' + (p.symbol || '—') + '</td>'
+                + '<td>' + sideBadge(p.side) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:#e07884">' + fmtNum(p.sl_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:#52c49a">' + fmtNum(p.tp_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
+                + '<td data-expire="' + (p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:#94a3b8">—</td>'
+                + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
+                + '</tr>';
+        }).join('');
+
+        document.getElementById('open-positions-body').innerHTML =
+            '<table><thead><tr>'
+            + '<th>标的</th><th>方向</th><th>开仓价</th><th>止损</th><th>止盈</th><th>数量</th><th>剩余时间</th><th>开仓时间</th>'
+            + '</tr></thead><tbody>' + trs + '</tbody></table>';
+        startCountdowns();
+    } catch(e) {
+        document.getElementById('open-positions-body').innerHTML =
+            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+// ── Closed / all positions ────────────────────────────────────────────────────
+
+var _currentTab = 'closed';
+
+function switchTab(tab) {
+    _currentTab = tab;
+    document.getElementById('tab-closed').classList.toggle('active', tab === 'closed');
+    document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+    loadClosedPositions();
+}
+
+async function loadClosedPositions() {
+    var param = _currentTab === 'closed' ? '?status=closed&limit=100' : '?limit=100';
+    try {
+        var rows = await apiFetch('/api/binance/positions' + param);
+
+        if (!rows.length) {
+            document.getElementById('closed-positions-body').innerHTML =
+                '<div class="text-text-muted text-xs">暂无数据</div>';
+            return;
+        }
+
+        var trs = rows.map(function(p) {
+            var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
+            var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
+            return '<tr>'
+                + '<td style="font-weight:500;color:#e8edf4">' + (p.symbol || '—') + '</td>'
+                + '<td>' + sideBadge(p.side) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + (p.close_price != null ? fmtNum(p.close_price, 6) : '—') + '</td>'
+                + '<td>' + reasonBadge(p.close_reason) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pnl) + '">' + (pnl != null ? (pnl >= 0 ? '+' : '') + pnl.toFixed(4) : '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pct) + '">' + (pct != null ? (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%' : '—') + '</td>'
+                + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
+                + '<td class="text-text-muted">' + fmtTime(p.closed_at) + '</td>'
+                + '</tr>';
+        }).join('');
+
+        document.getElementById('closed-positions-body').innerHTML =
+            '<table><thead><tr>'
+            + '<th>标的</th><th>方向</th><th>开仓价</th><th>平仓价</th><th>原因</th><th>PnL (USDT)</th><th>PnL %</th><th>开仓时间</th><th>平仓时间</th>'
+            + '</tr></thead><tbody>' + trs + '</tbody></table>';
+    } catch(e) {
+        document.getElementById('closed-positions-body').innerHTML =
+            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+// ── Signal log ────────────────────────────────────────────────────────────────
+
+async function loadSignals() {
+    try {
+        var rows = await apiFetch('/api/binance/signals?limit=100');
+
+        if (!rows.length) {
+            document.getElementById('signals-body').innerHTML =
+                '<div class="text-text-muted text-xs">暂无信号日志</div>';
+            return;
+        }
+
+        var trs = rows.map(function(s) {
+            return '<tr>'
+                + '<td class="text-text-secondary">' + (s.source || '—') + '</td>'
+                + '<td style="font-weight:500;color:#e8edf4">' + (s.symbol || '—') + '</td>'
+                + '<td>' + sideBadge(s.side) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:#e07884">' + fmtNum(s.sl_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:#52c49a">' + fmtNum(s.tp_price, 4) + '</td>'
+                + '<td>' + signalStatusBadge(s.status) + '</td>'
+                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis" title="' + (s.skip_reason || '') + '">' + (s.skip_reason || '—') + '</td>'
+                + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
+                + '</tr>';
+        }).join('');
+
+        document.getElementById('signals-body').innerHTML =
+            '<table><thead><tr>'
+            + '<th>来源</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>跳过原因</th><th>收到时间</th>'
+            + '</tr></thead><tbody>' + trs + '</tbody></table>';
+    } catch(e) {
+        document.getElementById('signals-body').innerHTML =
+            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+// ── Refresh all ───────────────────────────────────────────────────────────────
+
+function refreshAll() {
+    loadStatus();
+    loadConfig();
+    loadPnlSummary();
+    loadOpenPositions();
+    loadClosedPositions();
+    loadSignals();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function() {
+    refreshAll();
+    // Refresh open positions and status every 30s to keep countdown and state current.
+    setInterval(function() {
+        loadOpenPositions();
+        loadStatus();
+    }, 30000);
+});
+</script>
+</body>
+</html>
