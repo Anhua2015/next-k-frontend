@@ -258,13 +258,13 @@
             <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
                     <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
-                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「刷新」与 ZCT 手动改单无需维护令牌（OI 刷新有约 2 分钟冷却）。下方清库 / 手动 Cron 需先在「维护令牌」处保存。清库后可点上方「刷新」拉快照。</p>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「刷新」与 ZCT 手动改单无需维护令牌（OI 刷新有约 2 分钟冷却）。下方清库 / 手动 Cron / 数据导出需先在「维护令牌」处保存。清库后可点上方「刷新」拉快照。</p>
                 </div>
                 <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
             </div>
             <div class="mb-3 p-3 rounded-lg border border-border/60 bg-surface-light/40 space-y-2">
                 <div class="text-text-secondary text-xs font-semibold">维护令牌</div>
-                <p class="text-text-muted text-[10px] leading-relaxed">与 Railway 环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库与手动 Cron。</p>
+                <p class="text-text-muted text-[10px] leading-relaxed">与 Railway 环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库、手动 Cron 与数据卷导出。</p>
                 <div class="flex flex-wrap items-center gap-2">
                     <input type="password" id="maint-token-input" autocomplete="off" spellcheck="false" placeholder="粘贴维护令牌" class="flex-1 min-w-[12rem] max-w-md px-2.5 py-1.5 rounded-lg bg-background/80 border border-border/90 text-text-primary text-xs font-mono placeholder:text-text-muted/70 focus:border-accent/50 focus:outline-none" />
                     <button type="button" id="maint-token-save" class="btn-secondary px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/35 text-accent text-xs font-medium hover:bg-accent/15">保存</button>
@@ -300,6 +300,13 @@
                     </div>
                 </div>
             </div>
+            <div class="mt-4 pt-3 border-t border-border/50 space-y-2">
+                <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据备份</div>
+                <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（Railway Volume）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需维护令牌与 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
+                </div>
+            </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
         </div>
     </div>
@@ -329,10 +336,34 @@
             return h;
         }
 
+        function formatBytes(n) {
+            const num = Number(n);
+            if (!Number.isFinite(num) || num < 0) return '?';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let v = num;
+            let i = 0;
+            while (v >= 1024 && i < units.length - 1) {
+                v /= 1024;
+                i += 1;
+            }
+            const digits = v >= 100 || i === 0 ? 0 : v >= 10 ? 1 : 2;
+            return v.toFixed(digits) + ' ' + units[i];
+        }
+
+        function buildExportVolumeUrl(fmt) {
+            const tok = getMaintenanceToken();
+            const params = new URLSearchParams({ fmt: fmt || 'zip' });
+            if (tok) params.set('maintenance_token', tok);
+            return `${API_BASE}/export-volume?${params.toString()}`;
+        }
+
         function apiErrorDetail(data, text, res) {
             const d = data && data.detail;
             if (d === 'maintenance_token_required') {
                 return '需要维护令牌：在维护面板上方粘贴并保存，或与 Railway 的 NEXT_K_MAINTENANCE_TOKEN 一致';
+            }
+            if (d === 'export_volume_disabled_set_NEXT_K_EXPORT_VOLUME_ENABLED=1') {
+                return '服务端未开启卷导出：请设置 NEXT_K_EXPORT_VOLUME_ENABLED=1 并重新部署';
             }
             if (d && typeof d === 'object' && d.error === 'rate_limited') {
                 return d.message || ('刷新过于频繁，请 ' + (d.retry_after_sec != null ? d.retry_after_sec : '?') + ' 秒后再试');
@@ -2131,6 +2162,72 @@
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
                 } finally {
                     if (b) b.disabled = false;
+                }
+            });
+
+            document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
+                const btn = document.getElementById('maint-export-volume');
+                if (!msg) return;
+                const tok = getMaintenanceToken();
+                if (!tok) {
+                    msg.innerHTML = '<span class="text-warn">请先在上方保存维护令牌</span>';
+                    return;
+                }
+                if (btn) btn.disabled = true;
+                msg.textContent = '正在查询 DATA_DIR 体量…';
+                try {
+                    const res = await fetch(`${API_BASE}/api/export-volume/info`, {
+                        headers: maintenanceHeaders(),
+                    });
+                    const text = await res.text();
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (parseErr) {
+                        throw new Error(text || res.statusText || '无法解析响应');
+                    }
+                    if (!res.ok) {
+                        throw new Error(apiErrorDetail(data, text, res));
+                    }
+                    if (!data.exists) {
+                        throw new Error('DATA_DIR 不存在：' + (data.data_dir || '?'));
+                    }
+                    const dir = data.data_dir || 'DATA_DIR';
+                    const files = data.file_count != null ? data.file_count : '?';
+                    const sizeStr = formatBytes(data.total_bytes);
+                    if (
+                        !confirm(
+                            '一键导出 DATA_DIR\n\n'
+                                + '路径：' + dir + '\n'
+                                + '文件数：' + files + '\n'
+                                + '未压缩合计：约 ' + sizeStr + '\n\n'
+                                + '服务端将打包为 zip（可能需数分钟）。浏览器会开始下载；若长时间无响应，请查看 Railway 日志或代理超时。\n\n'
+                                + '下载完成后请关闭 NEXT_K_EXPORT_VOLUME_ENABLED 并重新部署。\n\n'
+                                + '确定继续？',
+                        )
+                    ) {
+                        msg.textContent = '已取消导出';
+                        return;
+                    }
+                    const url = buildExportVolumeUrl('zip');
+                    msg.innerHTML =
+                        '<span class="text-neon-green">已发起下载</span>'
+                        + '<br/><span class="text-text-muted text-[10px]">'
+                        + escHtml(dir) + ' · ' + escHtml(String(files)) + ' 文件 · ' + escHtml(sizeStr)
+                        + '<br/>若未出现保存对话框，可<a class="text-accent underline" href="'
+                        + escHtml(url) + '" target="_blank" rel="noopener">点此直接打开下载链接</a></span>';
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '导出失败') + '</span>';
+                } finally {
+                    if (btn) btn.disabled = false;
                 }
             });
 
