@@ -597,7 +597,7 @@ async function loadSignals() {
                 + '<td style="font-variant-numeric:tabular-nums;color:#e07884">' + fmtNum(s.sl_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:#52c49a">' + fmtNum(s.tp_price, 4) + '</td>'
                 + '<td>' + signalStatusBadge(s.status) + '</td>'
-                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis" title="' + (s.skip_reason || '') + '">' + (s.skip_reason || '—') + '</td>'
+                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + (s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + (s.skip_reason || '—') + '</td>'
                 + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
                 + '</tr>';
         }).join('');
