@@ -400,8 +400,14 @@ var EDITABLE_KEYS = [
     { key: 'testnet',               label: 'Testnet',         hint: 'true / false' },
     { key: 'margin_usdt',           label: '单笔保证金 (USDT)',  hint: '100' },
     { key: 'leverage',              label: '杠杆',            hint: '10' },
-    { key: 'max_positions',         label: '最大持仓数',      hint: '3' },
-    { key: 'position_expire_hours', label: '过期时限 (小时)', hint: '4' },
+    { key: 'max_positions',         label: '最大持仓(总)',     hint: '8 (≤8)' },
+    { key: 'max_positions_play01',  label: 'PLAY01 最大持仓',  hint: '5 (≤5)' },
+    { key: 'max_positions_play02',  label: 'PLAY02 最大持仓',  hint: '5 (≤5)' },
+    { key: 'max_positions_play03',  label: 'PLAY03 最大持仓',  hint: '5 (≤5)' },
+    { key: 'position_expire_hours', label: '过期时限(全局h)',  hint: '4' },
+    { key: 'expire_hours_play01',   label: 'PLAY01 过期(h)',   hint: '5' },
+    { key: 'expire_hours_play02',   label: 'PLAY02 过期(h)',   hint: '4' },
+    { key: 'expire_hours_play03',   label: 'PLAY03 过期(h)',   hint: '3' },
 ];
 
 async function loadConfig() {
