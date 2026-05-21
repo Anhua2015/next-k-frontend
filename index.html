@@ -287,16 +287,17 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP 扫描/结算（后台执行，可能需数分钟）。另：<code class="text-[10px]">/api/vp-regime/scan</code>、<code class="text-[10px]">/api/zct-vwap/touch-pool-scan</code> 等需先在上方保存维护令牌。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP、<strong class="text-text-secondary font-normal">触轨池 6h 回测</strong>（后台，与每 4h 定时相同）等。同步试跑见「触轨池试跑」。均需先在上方保存维护令牌。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                         <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                        <button type="button" data-maint-cron="touch_pool_4h" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs font-medium hover:border-accent/55 hover:bg-accent/10" title="trigger-cron touch_pool_4h：6h walk-forward 全宇宙筛选并写入 touch_pool（后台子进程，与定时任务相同）">触轨池回测</button>
                         <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
-                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="POST /api/zct-vwap/touch-pool-scan：24h walk-forward，与 08:05 主筛同参（worth_watch ∪ 默认永续）；默认落库">ZCT 触轨池试跑</button>
+                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
                     </div>
                 </div>
             </div>
@@ -2012,11 +2013,16 @@
                 ]);
             });
 
+            const MAINT_CRON_LABELS = {
+                touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
+            };
+
             document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     const task = btn.getAttribute('data-maint-cron');
                     if (!task || !msg) return;
-                    msg.textContent = `已提交 ${task}，服务端后台执行中（可能需数分钟）…`;
+                    const label = MAINT_CRON_LABELS[task] || task;
+                    msg.textContent = `已提交 ${label}，服务端后台执行中（可能需数分钟）…`;
                     try {
                         const data = await API.triggerCron(task);
                         msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
@@ -2026,6 +2032,20 @@
                     }
                 });
             });
+
+            /** 与后端 touch_pool_config / ZctTouchPoolScanBody 默认一致 */
+            const ZCT_TOUCH_POOL_SCAN_DEFAULTS = {
+                symbols_source: 'worth_watch_plus_default_22',
+                days: 6 / 24,
+                min_touch_trades: 3,
+                min_touch_win_rate: 0.7,
+                min_total_trades: 5,
+                min_win_loss_abs: 3,
+                min_profit_factor: 1.3,
+                max_consecutive_losses_at_end: 1,
+                min_t4_touch_win_rate: 0,
+                persist_db: true,
+            };
 
             async function runZctTouchPoolScan(payload) {
                 if (!msg) return;
@@ -2044,7 +2064,10 @@
                     escHtml(API_BASE) +
                     '</code></span>';
                 try {
-                    const data = await API.zctTouchPoolScan(payload || {});
+                    const data = await API.zctTouchPoolScan({
+                        ...ZCT_TOUCH_POOL_SCAN_DEFAULTS,
+                        ...(payload || {}),
+                    });
                     const pool = data.pool || {};
                     const crit = pool.criteria || {};
                     const matched = pool.matched || [];
@@ -2135,7 +2158,7 @@
                 void runVpRegimeScan({ watchlist: true, persist: true, notify_tg: true });
             });
             document.getElementById('maint-zct-touch-pool')?.addEventListener('click', () => {
-                void runZctTouchPoolScan({ symbols_source: 'worth_watch_plus_default_22' });
+                void runZctTouchPoolScan({});
             });
 
             document.getElementById('maint-zct-vwap-clear-db')?.addEventListener('click', async () => {
