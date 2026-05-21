@@ -140,16 +140,10 @@
 <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
     <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <h3 class="text-text-primary font-semibold mb-4">连接 Next K Protocol</h3>
-        <p class="text-text-secondary text-xs mb-4">请输入 Next-k-protocol 服务地址和鉴权 Token，验证通过后方可查看实盘数据。</p>
-        <div class="space-y-3">
-            <div>
-                <label class="text-text-muted text-xs mb-1 block">API Base URL</label>
-                <input id="cfg-api-base" type="text" class="config-input w-full" placeholder="http://localhost:8001"/>
-            </div>
-            <div>
-                <label class="text-text-muted text-xs mb-1 block">Maintenance Token</label>
-                <input id="cfg-token" type="password" class="config-input w-full" placeholder="输入鉴权 Token"/>
-            </div>
+        <p class="text-text-secondary text-xs mb-4">请输入鉴权 Token，验证通过后方可查看实盘数据。</p>
+        <div>
+            <label class="text-text-muted text-xs mb-1 block">Maintenance Token</label>
+            <input id="cfg-token" type="password" class="config-input w-full" placeholder="输入鉴权 Token"/>
         </div>
         <div id="settings-error" class="hidden mt-3 text-xs" style="color:#e07884"></div>
         <div class="flex justify-end gap-2 mt-4">
@@ -253,7 +247,6 @@ function buildHeaders() {
 let _authVerified = false;
 
 function openSettings() {
-    document.getElementById('cfg-api-base').value = getApiBase();
     document.getElementById('cfg-token').value = getToken();
     document.getElementById('settings-error').classList.add('hidden');
     document.getElementById('settings-modal').classList.remove('hidden');
@@ -263,12 +256,10 @@ function closeSettings() {
     document.getElementById('settings-modal').classList.add('hidden');
 }
 async function saveSettings() {
-    const base = document.getElementById('cfg-api-base').value.trim();
     const token = document.getElementById('cfg-token').value.trim();
     const btn = document.getElementById('settings-save-btn');
     const errEl = document.getElementById('settings-error');
 
-    if (!base) { errEl.textContent = '请输入 API Base URL'; errEl.classList.remove('hidden'); return; }
     if (!token) { errEl.textContent = '请输入 Maintenance Token'; errEl.classList.remove('hidden'); return; }
 
     errEl.classList.add('hidden');
@@ -277,7 +268,7 @@ async function saveSettings() {
 
     try {
         const headers = { 'Content-Type': 'application/json', 'X-Maintenance-Token': token };
-        const res = await fetch(base + '/api/binance/health', { headers });
+        const res = await fetch(getApiBase() + '/api/binance/health', { headers });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         if (data.status !== 'ok') throw new Error('服务未就绪');
@@ -289,7 +280,6 @@ async function saveSettings() {
         return;
     }
 
-    localStorage.setItem('PROTOCOL_API_BASE', base);
     setProtocolToken(token);
     _authVerified = true;
     document.getElementById('settings-modal').classList.add('hidden');
