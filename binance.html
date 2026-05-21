@@ -136,25 +136,26 @@
     </div>
 </header>
 
-<!-- Settings modal (token + API base) -->
+<!-- Auth gate modal (required on first load) -->
 <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
     <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <h3 class="text-text-primary font-semibold mb-4">连接设置</h3>
+        <h3 class="text-text-primary font-semibold mb-4">连接 Next K Protocol</h3>
+        <p class="text-text-secondary text-xs mb-4">请输入 Next-k-protocol 服务地址和鉴权 Token，验证通过后方可查看实盘数据。</p>
         <div class="space-y-3">
             <div>
                 <label class="text-text-muted text-xs mb-1 block">API Base URL</label>
-                <input id="cfg-api-base" type="text" class="config-input w-full" placeholder="http://localhost:8000"/>
+                <input id="cfg-api-base" type="text" class="config-input w-full" placeholder="http://localhost:8001"/>
             </div>
             <div>
                 <label class="text-text-muted text-xs mb-1 block">Maintenance Token</label>
-                <input id="cfg-token" type="password" class="config-input w-full" placeholder="留空则无鉴权"/>
+                <input id="cfg-token" type="password" class="config-input w-full" placeholder="输入鉴权 Token"/>
             </div>
         </div>
-        <div class="flex justify-end gap-2 mt-5">
-            <button type="button" onclick="closeSettings()" class="btn-secondary px-4 py-1.5 rounded-lg bg-surface-light border border-border text-text-secondary text-sm hover:border-accent/40 hover:text-accent">取消</button>
-            <button type="button" onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent text-sm font-medium hover:bg-accent/25">保存</button>
+        <div id="settings-error" class="hidden mt-3 text-xs" style="color:#e07884"></div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button" id="settings-save-btn" onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent text-sm font-medium hover:bg-accent/25">连接并验证</button>
         </div>
-        <p class="text-text-muted text-xs mt-3">设置存储在浏览器 localStorage，不会上传至服务器。</p>
+        <p class="text-text-muted text-xs mt-3">凭据存储在浏览器 localStorage，不会上传至第三方。</p>
     </div>
 </div>
 
@@ -238,10 +239,10 @@
 
 </main>
 
-<script src="api-base.js"></script>
+<script src="binance-api-base.js"></script>
 <script>
-function getApiBase() { return resolveApiBase(); }
-function getToken() { return getMaintenanceToken(); }
+function getApiBase() { return resolveProtocolApiBase(); }
+function getToken() { return getProtocolToken(); }
 function buildHeaders() {
     const t = getToken();
     const h = { 'Content-Type': 'application/json' };
@@ -249,20 +250,49 @@ function buildHeaders() {
     return h;
 }
 
+let _authVerified = false;
+
 function openSettings() {
     document.getElementById('cfg-api-base').value = getApiBase();
     document.getElementById('cfg-token').value = getToken();
+    document.getElementById('settings-error').classList.add('hidden');
     document.getElementById('settings-modal').classList.remove('hidden');
 }
 function closeSettings() {
+    if (!_authVerified) return;
     document.getElementById('settings-modal').classList.add('hidden');
 }
-function saveSettings() {
+async function saveSettings() {
     const base = document.getElementById('cfg-api-base').value.trim();
     const token = document.getElementById('cfg-token').value.trim();
-    if (base) localStorage.setItem('NEXT_K_API_BASE', base);
-    if (token) localStorage.setItem('NEXT_K_MAINTENANCE_TOKEN', token);
-    closeSettings();
+    const btn = document.getElementById('settings-save-btn');
+    const errEl = document.getElementById('settings-error');
+
+    if (!base) { errEl.textContent = '请输入 API Base URL'; errEl.classList.remove('hidden'); return; }
+    if (!token) { errEl.textContent = '请输入 Maintenance Token'; errEl.classList.remove('hidden'); return; }
+
+    errEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = '验证中…';
+
+    try {
+        const headers = { 'Content-Type': 'application/json', 'X-Maintenance-Token': token };
+        const res = await fetch(base + '/api/binance/health', { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.status !== 'ok') throw new Error('服务未就绪');
+    } catch (e) {
+        errEl.textContent = '连接失败：' + e.message;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '连接并验证';
+        return;
+    }
+
+    localStorage.setItem('PROTOCOL_API_BASE', base);
+    setProtocolToken(token);
+    _authVerified = true;
+    document.getElementById('settings-modal').classList.add('hidden');
     refreshAll();
 }
 
@@ -631,12 +661,34 @@ function refreshAll() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function() {
-    refreshAll();
-    // Refresh open positions and status every 30s to keep countdown and state current.
+async function tryAuth() {
+    const token = getToken();
+    const base = getApiBase();
+    if (!token || !base) return false;
+    try {
+        const headers = { 'Content-Type': 'application/json', 'X-Maintenance-Token': token };
+        const res = await fetch(base + '/api/binance/health', { headers });
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.status === 'ok';
+    } catch (e) {
+        return false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const ok = await tryAuth();
+    if (ok) {
+        _authVerified = true;
+        refreshAll();
+    } else {
+        document.getElementById('settings-modal').classList.remove('hidden');
+    }
     setInterval(function() {
-        loadOpenPositions();
-        loadStatus();
+        if (_authVerified) {
+            loadOpenPositions();
+            loadStatus();
+        }
     }, 30000);
 });
 </script>
