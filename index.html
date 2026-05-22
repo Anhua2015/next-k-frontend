@@ -85,6 +85,13 @@
         .section-accent-patrick {
             border-top: 1px solid rgba(138, 180, 248, 0.22);
         }
+        .section-accent-powder-keg {
+            border-top: 1px solid rgba(201, 166, 107, 0.35);
+        }
+        .powder-keg-card {
+            background: linear-gradient(145deg, rgba(201, 166, 107, 0.08) 0%, rgba(20, 27, 36, 0.95) 55%);
+            border: 1px solid rgba(201, 166, 107, 0.22);
+        }
         .btn-secondary {
             transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
         }
@@ -175,6 +182,31 @@
                 <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
                     <div class="text-text-muted text-sm animate-pulse">加载 ZCT…</div>
                 </div>
+            </div>
+        </section>
+
+        <section class="mb-6 section-accent-powder-keg" aria-label="火药桶宏观雷达">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">🧨</span> 火药桶看盘
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">收筹池 · OI 激增 + 费率极端 + 横盘 · 每币一条（24h 滚动）</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="powder-keg-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" id="powder-keg-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-warn/35 text-warn text-xs font-medium hover:border-warn/55 hover:bg-warn/10">刷新</button>
+                    </div>
+                </div>
+                <div id="powder-keg-meta" class="px-4 py-2 border-b border-border/50 bg-surface-light/[0.15] text-[11px] text-text-muted flex flex-wrap gap-x-4 gap-y-1"></div>
+                <div id="powder-keg-root" class="p-4">
+                    <div class="text-text-muted text-sm animate-pulse">加载火药桶…</div>
+                </div>
+                <details id="powder-keg-audit-wrap" class="px-4 pb-4 border-t border-border/40 hidden">
+                    <summary class="text-text-muted text-[11px] cursor-pointer py-2 hover:text-text-secondary">最近扫描审计（run_audit）</summary>
+                    <div id="powder-keg-audit" class="overflow-x-auto text-[11px] font-mono"></div>
+                </details>
             </div>
         </section>
 
@@ -396,6 +428,11 @@
                 }
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
+            },
+            async powderKegWatchlist() {
+                const res = await fetch(`${API_BASE}/api/accumulation/powder-keg`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
             async worthWatch() {
                 const res = await fetch(`${API_BASE}/api/accumulation/worth-watch`);
@@ -641,6 +678,176 @@
             if (n > 0) return 'text-neon-green';
             if (n < 0) return 'text-neon-red';
             return 'text-text-muted';
+        }
+
+        function pctSigned(v, digits) {
+            if (v == null || Number.isNaN(Number(v))) return '--';
+            const n = Number(v);
+            const d = digits != null ? digits : 2;
+            return (n >= 0 ? '+' : '') + n.toFixed(d) + '%';
+        }
+
+        function powderKegSideBadge(item) {
+            const side = String(item.allowed_side || '');
+            const label = item.allowed_side_label || item.funding_extreme_label || '';
+            if (side === 'LONG') {
+                return '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-neon-green/15 text-neon-green border border-neon-green/25">'
+                    + escHtml(label || '仅做多') + '</span>';
+            }
+            if (side === 'SHORT') {
+                return '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-neon-red/15 text-neon-red border border-neon-red/25">'
+                    + escHtml(label || '仅做空') + '</span>';
+            }
+            return '<span class="text-text-muted text-[10px]">' + escHtml(label || '—') + '</span>';
+        }
+
+        function renderPowderKegBoard(data) {
+            const root = document.getElementById('powder-keg-root');
+            const metaEl = document.getElementById('powder-keg-meta');
+            const tsEl = document.getElementById('powder-keg-ts');
+            const auditWrap = document.getElementById('powder-keg-audit-wrap');
+            const auditEl = document.getElementById('powder-keg-audit');
+            if (!root) return;
+
+            const items = Array.isArray(data.items) ? data.items : [];
+            const rules = data.funding_extreme_rules || {};
+            const thr = rules.threshold_abs_pct != null ? Number(rules.threshold_abs_pct) : null;
+
+            if (tsEl) {
+                tsEl.textContent = data.updated_at_cst
+                    ? String(data.updated_at_cst).replace(' CST', '')
+                    : (items[0] && items[0].run_cst ? String(items[0].run_cst).replace(' CST', '') : '--');
+            }
+
+            if (metaEl) {
+                const negLab = rules.negative && rules.negative.label ? rules.negative.label : '负费率→多';
+                const posLab = rules.positive && rules.positive.label ? rules.positive.label : '正费率→空';
+                metaEl.innerHTML = [
+                    '<span>在库 <strong class="text-text-secondary">' + escHtml(String(data.count != null ? data.count : items.length)) + '</strong> 币</span>',
+                    '<span>保留 <strong class="text-text-secondary">' + escHtml(String(data.retention_hours != null ? data.retention_hours : 24)) + 'h</strong></span>',
+                    thr != null && !Number.isNaN(thr)
+                        ? '<span>|费率|≥ <strong class="text-warn">' + escHtml(thr.toFixed(3)) + '%</strong></span>'
+                        : '',
+                    '<span class="text-text-muted/90">' + escHtml(negLab) + ' · ' + escHtml(posLab) + '</span>',
+                    data.dedupe_by_symbol
+                        ? '<span class="text-text-muted/80">按 symbol 去重</span>'
+                        : '',
+                ].filter(Boolean).join('');
+            }
+
+            if (!items.length) {
+                root.innerHTML = '<div class="rounded-lg border border-border/70 bg-surface-light/20 p-6 text-center">'
+                    + '<p class="text-text-secondary text-sm">暂无火药桶监控币</p>'
+                    + '<p class="text-text-muted text-xs mt-2 leading-relaxed">条件：收筹池内 OI 激增 + 费率极端 + 横盘。<br/>'
+                    + '维护面板可手动「火药桶扫描」；或等待每 15 分钟定时任务。</p></div>';
+            } else {
+                const cards = items.map((it) => {
+                    const det = it.detail || {};
+                    const fr = Number(it.funding_rate_pct);
+                    const frAbs = it.funding_rate_abs_pct != null
+                        ? Number(it.funding_rate_abs_pct)
+                        : Math.abs(fr);
+                    const signLab = it.funding_sign_label || (fr < 0 ? '负费率' : fr > 0 ? '正费率' : '');
+                    const oi1 = Number(it.oi_delta_1h_pct);
+                    const oi6 = Number(it.oi_delta_6h_pct);
+                    const px = Number(it.px_chg_24h_pct);
+                    const rng = Number(it.range_6h_pct);
+                    const poolSc = det.pool_score != null ? Number(det.pool_score) : null;
+                    const swDays = det.sideways_days != null ? Number(det.sideways_days) : null;
+                    const sym = it.symbol || '';
+                    const pair = perpSymToPairLabel(sym);
+                    const pairAttr = pair
+                        ? pair.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                        : '';
+                    const headClick = pairAttr
+                        ? ' role="button" tabindex="0" class="oi-radar-pick cursor-pointer hover:text-accent" data-perp-pair="'
+                            + pairAttr + '"'
+                        : '';
+
+                    return '<article class="powder-keg-card rounded-xl p-4 flex flex-col gap-3 min-w-0">'
+                        + '<div class="flex flex-wrap items-start justify-between gap-2">'
+                        + '<div class="min-w-0">'
+                        + '<div class="flex flex-wrap items-center gap-2">'
+                        + '<span class="text-warn font-mono text-xs">#' + escHtml(String(it.rank != null ? it.rank : '—')) + '</span>'
+                        + '<span class="text-lg font-bold text-text-primary"' + headClick + '>' + escHtml(it.coin || sym) + '</span>'
+                        + '<span class="text-text-muted text-[10px] font-mono">' + escHtml(sym) + '</span>'
+                        + '</div>'
+                        + '<p class="text-text-muted text-[11px] mt-1 leading-snug">' + escHtml(it.summary_line || '') + '</p>'
+                        + '</div>'
+                        + '<div class="text-right shrink-0">'
+                        + '<div class="text-[10px] text-text-muted uppercase tracking-wide">综合分</div>'
+                        + '<div class="text-xl font-bold text-warn font-mono">' + escHtml(Number(it.score || 0).toFixed(1)) + '</div>'
+                        + '</div></div>'
+                        + '<div class="flex flex-wrap gap-2">' + powderKegSideBadge(it)
+                        + (signLab
+                            ? '<span class="text-[10px] text-text-muted px-2 py-0.5 rounded border border-border/60">'
+                                + escHtml(signLab) + ' ' + pctSigned(fr, 3)
+                                + ' <span class="opacity-70">|</span> |' + frAbs.toFixed(3) + '%|</span>'
+                            : '')
+                        + '</div>'
+                        + '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[11px]">'
+                        + powderKegMetricCell('OI 1h', pctSigned(oi1, 2), oi1 >= 0 ? 'text-neon-green' : 'text-neon-red')
+                        + powderKegMetricCell('OI 6h', pctSigned(oi6, 2), oi6 >= 0 ? 'text-neon-green' : 'text-neon-red')
+                        + powderKegMetricCell('OI 规模', formatMcapUsd(it.oi_usd), 'text-text-secondary')
+                        + powderKegMetricCell('24h 涨跌', pctSigned(px, 2), pxClass(px))
+                        + powderKegMetricCell('6h 振幅', (rng != null && !Number.isNaN(rng) ? rng.toFixed(2) + '%' : '--'), 'text-text-secondary')
+                        + powderKegMetricCell('24h 成交额', formatMcapUsd(it.vol_24h_usd), 'text-text-secondary')
+                        + powderKegMetricCell('现价', it.price != null ? '$' + Number(it.price).toPrecision(4) : '--', 'text-text-primary font-mono')
+                        + powderKegMetricCell('收筹分', poolSc != null ? poolSc.toFixed(1) : '--', 'text-accent')
+                        + '</div>'
+                        + '<div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-text-muted border-t border-border/40 pt-2">'
+                        + '<span>更新 ' + escHtml(String(it.run_cst || '').replace(' CST', '')) + '</span>'
+                        + (swDays != null && !Number.isNaN(swDays) ? '<span>横盘 ' + escHtml(String(swDays)) + ' 天</span>' : '')
+                        + '<span>run ' + escHtml(String(it.run_id || '').slice(0, 16)) + '</span>'
+                        + '</div></article>';
+                }).join('');
+                root.innerHTML = '<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">' + cards + '</div>';
+                bindOiRadarPickHandlers(root);
+            }
+
+            const audit = Array.isArray(data.run_audit) ? data.run_audit : [];
+            if (auditWrap && auditEl) {
+                if (audit.length) {
+                    auditWrap.classList.remove('hidden');
+                    const rows = audit.slice(0, 10).map((r) => '<tr class="border-b border-border/30">'
+                        + '<td class="py-1 pr-3 whitespace-nowrap">' + escHtml(String(r.run_cst || '').replace(' CST', '')) + '</td>'
+                        + '<td class="py-1 pr-3">' + escHtml(String(r.scanned_pre != null ? r.scanned_pre : '—')) + '</td>'
+                        + '<td class="py-1 pr-3">' + escHtml(String(r.matched != null ? r.matched : '—')) + '</td>'
+                        + '<td class="py-1 pr-3">' + escHtml(String(r.inserted != null ? r.inserted : '—')) + '</td>'
+                        + '<td class="py-1 pr-3 text-text-muted">' + escHtml(String(r.api_mode || '')) + '</td>'
+                        + '</tr>').join('');
+                    auditEl.innerHTML = '<table class="w-full text-left"><thead><tr class="text-text-muted">'
+                        + '<th class="py-1 pr-3">时间</th><th class="py-1 pr-3">预筛</th><th class="py-1 pr-3">matched</th>'
+                        + '<th class="py-1 pr-3">入库</th><th class="py-1 pr-3">API</th></tr></thead><tbody>'
+                        + rows + '</tbody></table>';
+                } else {
+                    auditWrap.classList.add('hidden');
+                }
+            }
+        }
+
+        function powderKegMetricCell(label, value, valueClass) {
+            const vc = valueClass || 'text-text-secondary';
+            return '<div class="rounded-lg bg-background/40 border border-border/50 px-2.5 py-2">'
+                + '<div class="text-text-muted text-[10px] mb-0.5">' + escHtml(label) + '</div>'
+                + '<div class="' + vc + ' font-mono font-medium">' + escHtml(String(value)) + '</div></div>';
+        }
+
+        async function loadPowderKegBoard() {
+            const root = document.getElementById('powder-keg-root');
+            const btn = document.getElementById('powder-keg-refresh');
+            if (!root) return;
+            if (btn) btn.disabled = true;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载火药桶…</div>';
+            try {
+                const data = await API.powderKegWatchlist();
+                renderPowderKegBoard(data);
+            } catch (e) {
+                console.error(e);
+                root.innerHTML = '<p class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</p>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         function oiRadarHotTags(d) {
@@ -2274,6 +2481,8 @@
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
+            void loadPowderKegBoard();
+            document.getElementById('powder-keg-refresh')?.addEventListener('click', () => void loadPowderKegBoard());
             void hydrateZctVwapBoard();
             void loadZctEquityCharts();
             document.getElementById('zct-vwap-refresh')?.addEventListener('click', () => void hydrateZctVwapBoard());
