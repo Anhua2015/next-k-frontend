@@ -287,11 +287,12 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP、<strong class="text-text-secondary font-normal">触轨池 6h 回测</strong>（后台，与每 2h 定时相同）等。同步试跑见「触轨池试跑」。均需先在上方保存维护令牌。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、<strong class="text-text-secondary font-normal">火药桶</strong>、ZCT VWAP、<strong class="text-text-secondary font-normal">触轨池 6h 回测</strong>（后台，与定时相同）等。同步试跑见「触轨池试跑」。均需先在上方保存维护令牌。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
                         <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                        <button type="button" data-maint-cron="powder_keg" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-warn/35 text-warn text-xs font-medium hover:border-warn/55 hover:bg-warn/10" title="trigger-cron powder_keg：收筹池 OI+费率+横盘扫描，Top5 入库（与每 15 分钟定时相同，后台线程）">火药桶扫描</button>
                         <button type="button" data-maint-cron="touch_pool_4h" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs font-medium hover:border-accent/55 hover:bg-accent/10" title="trigger-cron touch_pool_4h：6h walk-forward 全宇宙筛选并写入 touch_pool（后台子进程，与定时任务相同）">触轨池回测</button>
                         <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
@@ -2014,6 +2015,7 @@
             });
 
             const MAINT_CRON_LABELS = {
+                powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
             };
 
