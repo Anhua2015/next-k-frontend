@@ -287,7 +287,7 @@
                 <div class="min-w-0 space-y-3 md:pl-1">
                     <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">手动触发定时任务（与 Cron 相同）</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP、<strong class="text-text-secondary font-normal">触轨池 6h 回测</strong>（后台，与每 4h 定时相同）等。同步试跑见「触轨池试跑」。均需先在上方保存维护令牌。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与后端 <code class="text-[10px]">/api/accumulation/maintenance/trigger-cron</code> 对齐：pool、oi、S2、ZCT VWAP、<strong class="text-text-secondary font-normal">触轨池 6h 回测</strong>（后台，与每 2h 定时相同）等。同步试跑见「触轨池试跑」。均需先在上方保存维护令牌。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
@@ -2037,9 +2037,10 @@
             const ZCT_TOUCH_POOL_SCAN_DEFAULTS = {
                 symbols_source: 'worth_watch_plus_default_22',
                 days: 6 / 24,
-                min_touch_win_rate: 0.82,
+                min_touch_win_rate: 0.8,
                 min_total_trades: 10,
                 min_win_loss_abs: 10,
+                max_win_loss_abs: 35,
                 min_touch_trades: 10,
                 min_profit_factor: 1.3,
                 max_consecutive_losses_at_end: 1,
