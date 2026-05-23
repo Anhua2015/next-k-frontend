@@ -185,6 +185,40 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="Supertrend 纸面" id="st-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">📈</span> Supertrend
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">🔥⚡ 热度+OI 标的 · 5m 反转平仓 · 表 <code class="text-[10px]">st_signals</code> / <code class="text-[10px]">st_settlements</code></p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="st-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="st-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="st-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="st-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="st-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 shrink-0"></div>
+                <div class="px-4 pb-2 shrink-0">
+                    <p id="st-equity-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 累计曲线</p>
+                    <div class="relative min-h-[160px] h-[180px] w-full">
+                        <canvas id="st-equity-canvas"></canvas>
+                    </div>
+                </div>
+                <div id="st-root" class="p-4 pt-2 overflow-x-auto border-t border-border/40">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Supertrend…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6 section-accent-powder-keg" aria-label="火药桶宏观雷达">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -328,6 +362,7 @@
                         <button type="button" data-maint-cron="touch_pool_4h" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs font-medium hover:border-accent/55 hover:bg-accent/10" title="trigger-cron touch_pool_4h：6h walk-forward 全宇宙筛选并写入 touch_pool（后台子进程，与定时任务相同）">触轨池回测</button>
                         <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 全量扫描</button>
                         <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
+                        <button type="button" data-maint-cron="st_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-green/35 text-neon-green text-xs hover:border-neon-green/55 hover:bg-neon-green/10" title="Supertrend 扫描（worth_watch_hot_oi）">ST 扫描</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
@@ -566,6 +601,37 @@
                 const res = await fetch(`${API_BASE}/api/zct-vwap/summary`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            async stSummary() {
+                const res = await fetch(`${API_BASE}/api/supertrend/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async stSignals() {
+                const res = await fetch(`${API_BASE}/api/supertrend/signals`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async stSettlements(limit) {
+                const q = limit != null ? `?limit=${encodeURIComponent(String(limit))}` : '';
+                const res = await fetch(`${API_BASE}/api/supertrend/settlements${q}`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async stScan() {
+                const res = await fetch(`${API_BASE}/api/supertrend/scan`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             async zctVwapEquityCurve() {
                 const res = await fetch(`${API_BASE}/api/zct-vwap/equity-curve`);
@@ -1840,6 +1906,186 @@
             }
         }
 
+        let stEquityChart = null;
+        let stLastSignals = [];
+
+        function stDisplayStatus(row) {
+            const side = String(row.side || '').toUpperCase();
+            const outcome = row.outcome;
+            if (!outcome && (side === 'LONG' || side === 'SHORT')) return '持仓中';
+            if (outcome) return String(outcome);
+            if (side === 'FLAT') return '观望';
+            return '—';
+        }
+
+        function stStatusClass(status) {
+            const s = String(status || '');
+            if (s === '持仓中') return 'text-neon-green';
+            if (s === 'reverse') return 'text-accent';
+            if (s === 'win') return 'text-neon-green';
+            if (s === 'loss') return 'text-neon-red';
+            if (s === 'pruned') return 'text-text-muted';
+            return 'text-text-secondary';
+        }
+
+        function stFilterRows(items, status, symbolQ) {
+            const sym = (symbolQ || '').trim().toUpperCase();
+            return (items || []).filter((row) => {
+                const side = String(row.side || '').toUpperCase();
+                const open = !row.outcome && (side === 'LONG' || side === 'SHORT');
+                const settled = !!row.outcome;
+                if (status === 'open' && !open) return false;
+                if (status === 'settled' && !settled) return false;
+                if (sym && !String(row.symbol || '').toUpperCase().includes(sym)) return false;
+                return true;
+            });
+        }
+
+        function renderStSummary(sum) {
+            const el = document.getElementById('st-summary');
+            if (!el) return;
+            if (!sum || !sum.ok) {
+                el.innerHTML = '';
+                return;
+            }
+            const pnl = Number(sum.total_pnl_usdt) || 0;
+            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const wr = sum.win_rate != null ? (Number(sum.win_rate) * 100).toFixed(1) + '%' : '—';
+            const params = `${escHtml(String(sum.timeframe || '5m'))} · ATR ${escHtml(String(sum.st_period ?? 10))} × ${escHtml(String(sum.st_multiplier ?? 3))}`;
+            const lastRun = sum.last_run_utc
+                ? escHtml(String(sum.last_run_utc).replace('T', ' ').replace('Z', ''))
+                : '—';
+            el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓中</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">结算笔数</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.settled_count ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">累计盈亏 U</div>
+                    <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 2)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] tracking-wide">胜率 W/L</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(wr)}</div>
+                    <div class="text-[10px] text-text-muted">${escHtml(String(sum.wins ?? 0))} / ${escHtml(String(sum.losses ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2 col-span-2 sm:col-span-1">
+                    <div class="text-text-muted text-[10px] tracking-wide">参数</div>
+                    <div class="text-[11px] text-text-secondary font-mono">${params}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2 col-span-2 sm:col-span-1">
+                    <div class="text-text-muted text-[10px] tracking-wide">最近扫描 UTC</div>
+                    <div class="text-[11px] text-text-secondary font-mono">${lastRun}</div>
+                </div>`;
+        }
+
+        function renderStEquityChart(points) {
+            const ev = document.getElementById('st-equity-empty');
+            destroyZctEquityChart(stEquityChart);
+            stEquityChart = null;
+            const padded = buildZctEquityChartSeriesFromMay11(points || []);
+            if (ev) ev.classList.toggle('hidden', padded.labels.length > 0);
+            if (padded.labels.length) {
+                stEquityChart = makeZctEquityLineChart(
+                    'st-equity-canvas',
+                    padded.labels,
+                    padded.values,
+                    '#5ee0a8',
+                    'rgba(94,224,168,0.12)',
+                );
+            }
+        }
+
+        function renderStTable(items, totalHint) {
+            const root = document.getElementById('st-root');
+            if (!root) return;
+            stLastSignals = items || [];
+            const head = `
+                <table class="w-full text-left text-xs border-collapse min-w-[1200px]">
+                    <thead>
+                        <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
+                            <th class="py-2 pr-2 font-medium">#</th>
+                            <th class="py-2 pr-2 font-medium whitespace-nowrap">记录 UTC</th>
+                            <th class="py-2 pr-2 font-medium">标的</th>
+                            <th class="py-2 pr-2 font-medium">信号</th>
+                            <th class="py-2 pr-2 font-medium">方向</th>
+                            <th class="py-2 pr-2 font-medium text-right">trend</th>
+                            <th class="py-2 pr-2 font-medium text-right">入场</th>
+                            <th class="py-2 pr-2 font-medium text-right">ST up</th>
+                            <th class="py-2 pr-2 font-medium text-right">ST dn</th>
+                            <th class="py-2 pr-2 font-medium text-right">名义U</th>
+                            <th class="py-2 pr-2 font-medium">状态</th>
+                            <th class="py-2 pr-2 font-medium text-right">平仓价</th>
+                            <th class="py-2 pr-2 font-medium text-right">盈亏U</th>
+                            <th class="py-2 pr-2 font-medium">平仓规则</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            if (!items || !items.length) {
+                root.innerHTML = head + '</tbody></table>'
+                    + `<p class="text-text-muted text-xs mt-2">${escHtml(totalHint || '暂无记录；请先跑 oi 雷达再 ST 扫描')}</p>`;
+                return;
+            }
+            const rows = items.map((row) => {
+                const st = stDisplayStatus(row);
+                const pnl = row.pnl_usdt;
+                const pnlCls = pxClass(Number(pnl));
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
+                    <td class="py-2 pr-2 font-mono">${escHtml(String(row.id))}</td>
+                    <td class="py-2 pr-2 font-mono text-[11px] whitespace-nowrap">${escHtml(String(row.recorded_at_utc || '').replace('T', ' ').replace('Z', ''))}</td>
+                    <td class="py-2 pr-2 font-mono whitespace-nowrap">${escHtml(row.symbol)}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap">${escHtml(row.signal_type || '—')}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap ${zctSideClass(row.side)}">${escHtml(row.side || '—')}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${escHtml(row.trend != null ? String(row.trend) : '—')}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.entry_price, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.st_up, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.st_dn, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.virtual_notional_usdt, 0)}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap ${stStatusClass(st)}">${escHtml(st)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.exit_price, 6)}</td>
+                    <td class="py-2 pr-2 font-mono text-right ${pnlCls}">${fmtZctPx(row.pnl_usdt, 2)}</td>
+                    <td class="py-2 pr-2 text-[11px] text-text-muted">${escHtml(row.exit_rule || '—')}</td>
+                </tr>`;
+            }).join('');
+            root.innerHTML = head + rows + '</tbody></table>'
+                + `<p class="text-text-muted text-[11px] mt-2">显示 ${escHtml(String(items.length))} 条`
+                + (totalHint ? ` / 共 ${escHtml(String(totalHint))} 条` : '')
+                + '</p>';
+        }
+
+        async function hydrateStBoard() {
+            const root = document.getElementById('st-root');
+            const tsEl = document.getElementById('st-ts');
+            if (!root) return;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Supertrend…</div>';
+            try {
+                const sum = await API.stSummary();
+                renderStSummary(sum);
+                renderStEquityChart(sum.equity_points || []);
+                const sig = await API.stSignals();
+                const all = sig.signals || [];
+                const stEl = document.getElementById('st-filter-status');
+                const symEl = document.getElementById('st-filter-symbol');
+                const filtered = stFilterRows(
+                    all,
+                    stEl ? stEl.value : 'all',
+                    symEl ? symEl.value : '',
+                );
+                renderStTable(filtered, all.length);
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } catch (e) {
+                console.error('supertrend:', e);
+                renderStSummary(null);
+                renderStEquityChart([]);
+                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
         async function zctVwapEditManual(id) {
             const row = zctVwapLastItems.find((r) => Number(r.id) === Number(id));
             if (!row) {
@@ -2224,6 +2470,8 @@
             const MAINT_CRON_LABELS = {
                 powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
+                st_scan: 'Supertrend 扫描（热度+OI）',
+                st_supertrend: 'Supertrend 扫描（热度+OI）',
             };
 
             document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
@@ -2496,6 +2744,12 @@
                 ev.preventDefault();
                 const sid = btn.getAttribute('data-zct-manual');
                 if (sid) void zctVwapEditManual(sid);
+            });
+            void hydrateStBoard();
+            document.getElementById('st-refresh')?.addEventListener('click', () => void hydrateStBoard());
+            document.getElementById('st-filter-status')?.addEventListener('change', () => void hydrateStBoard());
+            document.getElementById('st-filter-symbol')?.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') void hydrateStBoard();
             });
             // loadS6AutonomousAlpha(); // 与上方 S6 区块 hidden 同步恢复
         }
