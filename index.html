@@ -153,16 +153,6 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="ZCT 资金盈利曲线">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover p-3 min-w-0 flex flex-col">
-                <div class="text-text-secondary text-xs font-semibold mb-2 shrink-0">ZCT（统一：zct_vwap_*）</div>
-                <p id="zct-equity-unified-empty" class="hidden text-text-muted text-[11px] mb-1">暂无 settlements 日汇总数据</p>
-                <div class="relative flex-1 min-h-[200px] h-[220px] w-full">
-                    <canvas id="zct-equity-canvas-unified"></canvas>
-                </div>
-            </div>
-        </section>
-
         <section class="mb-6" aria-label="ZCT 量化" id="zct-lane-section">
             <div id="zct-lane-wrap" class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -1762,8 +1752,6 @@
             root.innerHTML = head + rows + '</tbody></table>' + foot;
         }
 
-        let zctEquityChartUnified = null;
-
         function destroyZctEquityChart(ch) {
             if (ch && typeof ch.destroy === 'function') {
                 try {
@@ -1851,34 +1839,6 @@
                     },
                 },
             });
-        }
-
-        async function loadZctEquityCharts() {
-            const ev = document.getElementById('zct-equity-unified-empty');
-            try {
-                const vw = await API.zctVwapEquityCurve();
-                const pw = (vw && vw.points) || [];
-                destroyZctEquityChart(zctEquityChartUnified);
-                zctEquityChartUnified = null;
-                const vwPad = buildZctEquityChartSeriesFromMay11(pw);
-                if (ev) {
-                    ev.textContent = '暂无 settlements 日汇总数据';
-                    ev.classList.toggle('hidden', vwPad.labels.length > 0);
-                }
-                zctEquityChartUnified = makeZctEquityLineChart(
-                    'zct-equity-canvas-unified',
-                    vwPad.labels,
-                    vwPad.values,
-                    '#8ab4f8',
-                    'rgba(138,180,248,0.14)',
-                );
-            } catch (e) {
-                console.error('zct equity charts:', e);
-                if (ev) {
-                    ev.textContent = '曲线加载失败（见控制台）';
-                    ev.classList.remove('hidden');
-                }
-            }
         }
 
         async function hydrateZctVwapBoard() {
@@ -2637,7 +2597,6 @@
                     const nt = out.deleted_zct_vwap_settlements != null ? out.deleted_zct_vwap_settlements : '?';
                     msg.innerHTML = '<span class="text-neon-green">ZCT 已清库 · signals=' + escHtml(String(ns)) + ' · settlements=' + escHtml(String(nt)) + '</span>';
                     void hydrateZctVwapBoard();
-                    void loadZctEquityCharts();
                 } catch (e) {
                     console.error(e);
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
@@ -2732,7 +2691,6 @@
             void loadPowderKegBoard();
             document.getElementById('powder-keg-refresh')?.addEventListener('click', () => void loadPowderKegBoard());
             void hydrateZctVwapBoard();
-            void loadZctEquityCharts();
             document.getElementById('zct-vwap-refresh')?.addEventListener('click', () => void hydrateZctVwapBoard());
             document.getElementById('zct-vwap-filter-status')?.addEventListener('change', () => void hydrateZctVwapBoard());
             document.getElementById('zct-vwap-filter-symbol')?.addEventListener('keydown', (ev) => {
