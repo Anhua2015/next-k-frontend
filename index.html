@@ -299,6 +299,7 @@
                         <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
                         <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
                         <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT 库</button>
+                        <button type="button" id="maint-st-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-green/30 text-neon-green text-xs font-medium hover:bg-neon-green/10 hover:border-neon-green/45" title="POST /api/supertrend/maintenance/clear-db">清理 ST 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -563,6 +564,21 @@
                 const res = await fetch(`${API_BASE}/api/supertrend/settlements${q}`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            async stClearDb() {
+                const res = await fetch(`${API_BASE}/api/supertrend/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             async stScan() {
                 const res = await fetch(`${API_BASE}/api/supertrend/scan`, {
@@ -2271,6 +2287,38 @@
                     const nt = out.deleted_zct_vwap_settlements != null ? out.deleted_zct_vwap_settlements : '?';
                     msg.innerHTML = '<span class="text-neon-green">ZCT 已清库 · signals=' + escHtml(String(ns)) + ' · settlements=' + escHtml(String(nt)) + '</span>';
                     void hydrateZctVwapBoard();
+                } catch (e) {
+                    console.error(e);
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                } finally {
+                    if (b) b.disabled = false;
+                }
+            });
+
+            document.getElementById('maint-st-clear-db')?.addEventListener('click', async () => {
+                if (
+                    !confirm(
+                        '确定清空 Supertrend 数据库？\n'
+                            + '将删除 st_signals、st_settlements、st_indicator_state、st_runs、st_symbol_cooldown 全部行，不可撤销。',
+                    )
+                ) {
+                    return;
+                }
+                const b = document.getElementById('maint-st-clear-db');
+                if (!msg) return;
+                if (b) b.disabled = true;
+                msg.textContent = 'ST 清库请求中…';
+                try {
+                    const out = await API.stClearDb();
+                    const sig = out.deleted_st_signals != null ? out.deleted_st_signals : '?';
+                    const stl = out.deleted_st_settlements != null ? out.deleted_st_settlements : '?';
+                    msg.innerHTML =
+                        '<span class="text-neon-green">ST 已清库 · signals='
+                        + escHtml(String(sig))
+                        + ' · settlements='
+                        + escHtml(String(stl))
+                        + '</span>';
+                    void hydrateStBoard();
                 } catch (e) {
                     console.error(e);
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
