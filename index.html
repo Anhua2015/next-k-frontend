@@ -294,7 +294,7 @@
                 <!-- 左栏：清理 -->
                 <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
                     <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、ZCT 信号库分步操作；清盘后请在上方点「刷新」拉快照。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、ZCT / 动量纸面库分步操作；清盘后请在上方点「刷新」拉快照。</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
                         <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
@@ -1396,10 +1396,18 @@
             const uCls = u >= 0 ? 'text-neon-green' : 'text-neon-red';
             const wr = sum.win_rate != null ? (Number(sum.win_rate) * 100).toFixed(1) + '%' : '—';
             const tgt = `${escHtml(sum.last_long_target || '—')} / ${escHtml(sum.last_short_target || '—')}`;
+            const lev = sum.leverage != null ? Number(sum.leverage) : null;
+            const notional = sum.notional_usdt != null ? Number(sum.notional_usdt) : null;
+            const levTxt = lev != null && Number.isFinite(lev) ? String(lev) : '—';
+            const notionalTxt = notional != null && Number.isFinite(notional) ? fmtZctPx(notional, 2) : '—';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓腿</div>
                     <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">系数 / 名义U</div>
+                    <div class="text-sm font-semibold font-mono text-text-primary">${escHtml(levTxt)} · ${escHtml(notionalTxt)}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase tracking-wide">结算笔数</div>
@@ -2262,7 +2270,8 @@
                     const out = await API.momClearDb();
                     msg.innerHTML = '<span class="text-neon-green">动量已清库 · signals='
                         + escHtml(String(out.deleted_mom_signals ?? '?')) + ' · settlements='
-                        + escHtml(String(out.deleted_mom_settlements ?? '?')) + '</span>';
+                        + escHtml(String(out.deleted_mom_settlements ?? '?')) + ' · runs='
+                        + escHtml(String(out.deleted_mom_runs ?? '?')) + '</span>';
                     void hydrateMomBoard();
                 } catch (e) {
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
