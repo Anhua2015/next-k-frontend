@@ -4,30 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>收筹池 · OI 监控 · ZCT Trading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
+                        sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
+                    },
                     colors: {
-                        /* 基底：偏冷灰蓝，对比略柔化，长时间看不刺眼 */
-                        background: '#0d1219',
-                        surface: '#141b24',
-                        'surface-light': '#1c2530',
-                        border: '#2a3544',
-                        /* 主交互色：软件蓝，替代高亮紫边 */
-                        accent: '#8ab4f8',
-                        /* 沿用原名，数值改为低饱和，表格里大量引用无需改类名 */
-                        'neon-green': '#52c49a',
-                        'neon-red': '#e07884',
-                        'neon-purple': '#9b93ea',
-                        'neon-blue': '#73b5ee',
-                        'neon-yellow': '#d4b878',
-                        /* 提示 / 等待 / 警告区块（替代刺眼纯黄） */
-                        warn: '#c9a66b',
-                        'text-primary': '#e8edf4',
-                        'text-secondary': '#94a3b8',
-                        'text-muted': '#647891',
+                        /* 暖色禅意：奶油底 · 白卡片 · 赤陶主色 */
+                        background: '#F9F8F6',
+                        surface: '#FFFFFF',
+                        'surface-light': '#F5F1EB',
+                        border: '#E8E4D8',
+                        accent: '#8E4A49',
+                        'neon-green': '#8A9A5B',
+                        'neon-red': '#B2665E',
+                        'neon-purple': '#C5A059',
+                        'neon-blue': '#778899',
+                        'neon-yellow': '#C5A059',
+                        warn: '#C5A059',
+                        'text-primary': '#4A4A4A',
+                        'text-secondary': '#706B67',
+                        'text-muted': '#9A928C',
                     },
                 }
             }
@@ -35,73 +39,87 @@
     </script>
     <style>
         body {
-            color: #e8edf4;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background-color: #0d1219;
+            color: #4A4A4A;
+            font-family: "Source Sans 3", system-ui, sans-serif;
+            background-color: #F9F8F6;
             background-image:
-                radial-gradient(ellipse 90% 55% at 50% -15%, rgba(138, 180, 248, 0.07), transparent 52%),
-                radial-gradient(ellipse 70% 45% at 100% 40%, rgba(82, 196, 154, 0.04), transparent 48%),
-                linear-gradient(180deg, #0e141c 0%, #0d1219 28%);
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(197, 160, 89, 0.08), transparent 55%),
+                radial-gradient(ellipse 60% 40% at 100% 20%, rgba(142, 74, 73, 0.05), transparent 50%),
+                linear-gradient(180deg, #FAF9F7 0%, #F9F8F6 40%);
             background-attachment: fixed;
         }
+        h1, h2, h3, .hl-title {
+            font-family: "Noto Serif SC", Georgia, serif;
+        }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0d1219; }
-        ::-webkit-scrollbar-thumb { background: #3d4a5c; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #647891; }
-        ::selection { background: rgba(138, 180, 248, 0.28); }
+        ::-webkit-scrollbar-track { background: #F5F1EB; }
+        ::-webkit-scrollbar-thumb { background: #D4CCC0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #BDB5A8; }
+        ::selection { background: rgba(142, 74, 73, 0.18); color: #4A4A4A; }
         .card-hover {
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+            box-shadow: 0 4px 20px -6px rgba(74, 74, 74, 0.08), 0 1px 3px rgba(74, 74, 74, 0.04);
         }
         .card-hover:hover {
-            border-color: rgba(138, 180, 248, 0.28);
-            box-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(138, 180, 248, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            border-color: rgba(142, 74, 73, 0.22);
+            box-shadow: 0 10px 28px -8px rgba(74, 74, 74, 0.12), 0 0 0 1px rgba(142, 74, 73, 0.08);
         }
-        /* 值得关注：柔和渐变 + 弱光晕 */
         .highlights-hero {
-            background: linear-gradient(
-                145deg,
-                rgba(65, 95, 140, 0.14) 0%,
-                rgba(20, 27, 36, 0.97) 48%,
-                rgba(55, 105, 125, 0.1) 100%
-            );
-            border: 1px solid rgba(138, 180, 248, 0.22);
-            box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.05),
-                0 12px 40px -16px rgba(0, 0, 0, 0.55);
+            background: linear-gradient(145deg, #FDFCFA 0%, #F5F0E8 48%, #EDE8DF 100%);
+            border: 1px solid #E8E4D8;
+            box-shadow: 0 8px 32px -12px rgba(74, 74, 74, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
         }
         .highlights-hero .hl-title {
-            background: linear-gradient(90deg, #f1f5f9 0%, #c9d8f0 38%, #8ab4f8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #4A4A4A;
+            background: none;
+            -webkit-text-fill-color: #4A4A4A;
         }
         .section-accent-heat {
-            border-top: 1px solid rgba(82, 196, 154, 0.22);
+            border-top: 1px solid rgba(138, 154, 91, 0.35);
         }
         .section-accent-ambush {
-            border-top: 1px solid rgba(212, 184, 120, 0.22);
+            border-top: 1px solid rgba(197, 160, 89, 0.4);
         }
         .section-accent-patrick {
-            border-top: 1px solid rgba(138, 180, 248, 0.22);
+            border-top: 1px solid rgba(142, 74, 73, 0.28);
         }
         .btn-secondary {
             transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
         }
+        .btn-secondary:hover {
+            background-color: #FAF7F4;
+        }
+        .oi-radar-pick:hover {
+            background-color: #F5F1EB !important;
+        }
+        #worth-history-tab-bar button[aria-selected="true"] {
+            color: #8E4A49;
+            border-color: #8E4A49;
+        }
+        table tbody tr:hover {
+            background-color: rgba(245, 241, 235, 0.65);
+        }
+        code {
+            background: #F5F1EB;
+            color: #706B67;
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    <header class="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
+    <header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(232,228,216,0.9)_inset]">
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/90 to-neon-blue/75 shadow-[0_4px_14px_-4px_rgba(138,180,248,0.35)] flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-[0_4px_14px_-4px_rgba(142,74,73,0.28)] flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-text-primary tracking-tight">
+                        <h1 class="text-xl font-bold text-text-primary tracking-tight font-serif">
                             Next <span class="text-accent">K</span>
                         </h1>
                     </div>
@@ -121,7 +139,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6" data-layout-rev="3">
+    <main class="max-w-7xl mx-auto px-4 py-6" data-layout-rev="4" data-theme="zen-warm">
         <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -132,7 +150,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
                         <p class="text-text-muted text-xs mt-0.5">近 2 日 </p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -172,7 +190,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
@@ -189,7 +207,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">📌</span> 接针策略
                         </h2>
                         <p class="text-text-muted text-xs mt-0.5">热度+OI 标的池 · EMA+ATR 触价 · 纸面 <code class="text-[10px]">jz_signals</code>（独立策略 lane）</p>
@@ -219,7 +237,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2 tracking-tight">
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">⚡</span> 动量多一空一
                         </h2>
                         <p class="text-text-muted text-xs mt-0.5">topMovers · 多 PULLBACK / 空 RALLY · 纸面 <code class="text-[10px]">mom_signals</code></p>
@@ -247,7 +265,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold flex items-center gap-2">💡 值得关注 · 历史记录</h2>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2">💡 值得关注 · 历史记录</h2>
                     </div>
                 </div>
                 <div id="worth-watch-boards-root" class="flex flex-col min-w-0">
@@ -322,7 +340,7 @@
     </footer>
 
     <!-- 隐藏维护：地址栏 ?maint=1 或快速在页脚「Next K」上连点 5 次（1 秒内）打开 -->
-    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-warn/25 bg-background/95 backdrop-blur-md shadow-[0_-12px_40px_rgba(0,0,0,0.45)] max-h-[min(70vh,620px)] overflow-y-auto">
+    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-border bg-surface/98 backdrop-blur-md shadow-[0_-12px_40px_rgba(74,74,74,0.12)] max-h-[min(70vh,620px)] overflow-y-auto">
         <div class="max-w-7xl mx-auto px-4 py-3 pb-6">
             <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
@@ -795,7 +813,7 @@
 
         function oiRadarCard(title, emoji, innerHtml) {
             return `
-                <div class="bg-surface-light/25 rounded-xl border border-border/80 p-3 min-h-[120px] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                <div class="bg-surface-light rounded-xl border border-border p-3 min-h-[120px] shadow-[0_2px_8px_rgba(74,74,74,0.05)]">
                     <div class="text-text-secondary text-xs font-medium tracking-wide mb-2 flex items-center gap-1.5">${emoji} ${escHtml(title)}</div>
                     <div class="space-y-1.5 text-sm">${innerHtml}</div>
                 </div>`;
