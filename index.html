@@ -351,7 +351,7 @@
             </div>
             <div class="mb-3 p-3 rounded-lg border border-border/60 bg-surface-light/40 space-y-2">
                 <div class="text-text-secondary text-xs font-semibold">维护令牌</div>
-                <p class="text-text-muted text-[10px] leading-relaxed">与 Railway 环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库、手动 Cron 与数据卷导出。</p>
+                <p class="text-text-muted text-[10px] leading-relaxed">与服务端环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库、手动 Cron 与数据卷导出。</p>
                 <div class="flex flex-wrap items-center gap-2">
                     <input type="password" id="maint-token-input" autocomplete="off" spellcheck="false" placeholder="粘贴维护令牌" class="flex-1 min-w-[12rem] max-w-md px-2.5 py-1.5 rounded-lg bg-background/80 border border-border/90 text-text-primary text-xs font-mono placeholder:text-text-muted/70 focus:border-accent/50 focus:outline-none" />
                     <button type="button" id="maint-token-save" class="btn-secondary px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/35 text-accent text-xs font-medium hover:bg-accent/15">保存</button>
@@ -405,7 +405,7 @@
             </div>
             <div class="mt-4 pt-3 border-t border-border/50 space-y-2">
                 <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据备份</div>
-                <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（Railway Volume）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
+                <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（持久化数据卷）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
                 <div class="flex flex-wrap gap-2">
                     <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需维护令牌与 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
                 </div>
@@ -462,7 +462,7 @@
         function apiErrorDetail(data, text, res) {
             const d = data && data.detail;
             if (d === 'maintenance_token_required') {
-                return '需要维护令牌：在维护面板上方粘贴并保存，或与 Railway 的 NEXT_K_MAINTENANCE_TOKEN 一致';
+                return '需要维护令牌：在维护面板上方粘贴并保存，或服务端的 NEXT_K_MAINTENANCE_TOKEN 一致';
             }
             if (d === 'export_volume_disabled_set_NEXT_K_EXPORT_VOLUME_ENABLED=1') {
                 return '服务端未开启卷导出：请设置 NEXT_K_EXPORT_VOLUME_ENABLED=1 并重新部署';
@@ -2219,7 +2219,7 @@
                 if (refreshBtn) refreshBtn.disabled = true;
                 const out = await API.clearWatchlistPool();
                 const n = out.cleared_rows && out.cleared_rows.watchlist != null ? out.cleared_rows.watchlist : '?';
-                alert(`已清空收筹池（删除 ${n} 条）。请先运行 pool 后再点「刷新」。`);
+                alert(`已清空收筹池（删除 ${n} 条）。请先运行 pool 再点「刷新」。`);
                 await loadAccumulationOiRadar({ forceRefresh: false });
             } catch (e) {
                 console.error(e);
@@ -2282,7 +2282,7 @@
                 tsEl.textContent = '';
                 const msg = e && e.message ? String(e.message) : '加载失败';
                 const hint = /fail(ed)? to fetch|networkerror|load failed/i.test(msg)
-                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连 Railway；本机可加 <code class="text-accent font-mono text-[11px]">?api=http://127.0.0.1:8000</code>）。</p>'
+                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连线上 API；本机可加 <code class="text-accent font-mono text-[11px]">?api=http://127.0.0.1:8000</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
                 if (hl) {
@@ -2649,7 +2649,7 @@
                                 + '路径：' + dir + '\n'
                                 + '文件数：' + files + '\n'
                                 + '未压缩合计：约 ' + sizeStr + '\n\n'
-                                + '服务端将打包为 zip（可能需数分钟）。浏览器会开始下载；若长时间无响应，请查看 Railway 日志或代理超时。\n\n'
+                                + '服务端将打包为 zip（可能需数分钟）。浏览器会开始下载；若长时间无响应，请查看服务端日志或代理超时。\n\n'
                                 + '下载完成后请关闭 NEXT_K_EXPORT_VOLUME_ENABLED 并重新部署。\n\n'
                                 + '确定继续？',
                         )
