@@ -279,6 +279,24 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="大户多空 Taker" id="top-trader-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📈 5m 趋势 · 大户 Taker</h2>
+                        <p class="text-text-muted text-[11px] mt-0.5">池: hot_oi + focus + chase_fire · PosLSR + Taker + OI/价 · <span class="text-warn/90">非 Smart Money 盈利/均价</span></p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="top-trader-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" id="top-trader-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="top-trader-body" class="p-4 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="接针策略纸面" id="jz-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -461,6 +479,7 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                        <button type="button" data-maint-cron="top_trader" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="大户多空+Taker（公开 fapi）">大户多空</button>
                         <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                         <button type="button" data-maint-cron="powder_keg" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-warn/35 text-warn text-xs font-medium hover:border-warn/55 hover:bg-warn/10" title="火药桶扫描">火药桶扫描</button>
                         <button type="button" data-maint-cron="touch_pool_4h" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs font-medium hover:border-accent/55 hover:bg-accent/10" title="触轨池 6h 回测">触轨池回测</button>
@@ -563,6 +582,23 @@
             },
             async accumulationOiRadarRefresh() {
                 const res = await fetch(`${API_BASE}/api/accumulation/oi-radar/refresh`, { method: 'POST' });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async topTraderSnapshot() {
+                const res = await fetch(`${API_BASE}/api/accumulation/top-trader`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async topTraderRefresh() {
+                const res = await fetch(`${API_BASE}/api/accumulation/top-trader/refresh`, { method: 'POST' });
                 const text = await res.text();
                 let data;
                 try {
@@ -2379,6 +2415,145 @@
             }
         }
 
+        function renderTopTraderTrendRow(it) {
+            const sym = it.symbol || '';
+            const coin = it.coin || sym.replace('USDT', '');
+            const score = Number(it.trend_score);
+            const src = Array.isArray(it.pool_sources) ? it.pool_sources.join('+') : '';
+            const reasons = Array.isArray(it.trend_reasons) ? it.trend_reasons.join(' · ') : '';
+            const posLsr = Number(it.top_position_lsr);
+            const taker = Number(it.taker_bsr);
+            return oiRadarRowClickable(sym,
+                `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(coin)}</span>`
+                + (Number.isFinite(score) && score > 0 ? ` <span class="text-accent font-mono text-[11px]">${score}分</span>` : '')
+                + ` <span class="font-mono text-[11px] text-text-secondary">Pos ${Number.isFinite(posLsr) ? posLsr.toFixed(2) : '—'} Taker ${Number.isFinite(taker) ? taker.toFixed(2) : '—'}</span>`
+                + (src ? ` <span class="text-text-muted text-[10px]">${escHtml(src)}</span>` : '')
+                + (reasons ? ` <span class="text-text-muted">| ${escHtml(reasons)}</span>` : '')
+            );
+        }
+
+        function topTraderTrendBlock(title, emoji, items, emptyText, toneClass) {
+            const rows = (items || []).map(renderTopTraderTrendRow).join('')
+                || `<div class="text-text-muted text-xs py-1">${escHtml(emptyText)}</div>`;
+            return `<div class="rounded-lg border border-border/70 p-3 ${toneClass || ''}">
+                <div class="text-xs font-semibold text-text-secondary mb-2">${emoji} ${escHtml(title)} <span class="text-text-muted font-normal">(${(items || []).length})</span></div>
+                <div class="space-y-0.5">${rows}</div>
+            </div>`;
+        }
+
+        function fillTopTraderFromPayload(data, body, tsEl) {
+            if (!body) return;
+            const items = Array.isArray(data.items) ? data.items : [];
+            const reqN = data.requested != null ? Number(data.requested) : null;
+            const capN = data.captured != null ? Number(data.captured) : items.length;
+            const meta = [
+                data.universe ? `池: ${data.universe}` : '',
+                data.period ? `周期: ${data.period}` : '',
+                reqN != null && Number.isFinite(reqN) ? `${capN}/${reqN}` : (capN != null ? `${capN} 条` : ''),
+                data.missed > 0 ? `失败 ${data.missed}` : '',
+            ].filter(Boolean).join(' · ');
+            if (tsEl) {
+                tsEl.textContent = (data.run_cst || data.generated_date || '--') + (meta ? ` · ${meta}` : '');
+            }
+
+            const trendLong = Array.isArray(data.trend_long) ? data.trend_long : items.filter((x) => x.trend_verdict === 'long');
+            const trendShort = Array.isArray(data.trend_short) ? data.trend_short : items.filter((x) => x.trend_verdict === 'short');
+            const trendAvoid = Array.isArray(data.trend_avoid) ? data.trend_avoid : items.filter((x) => x.trend_verdict === 'avoid');
+
+            if (!items.length) {
+                body.innerHTML = `<div class="text-text-muted text-sm">${escHtml(data.message || '暂无快照')}</div>`;
+                return;
+            }
+
+            const boards = `<div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+                ${topTraderTrendBlock('5m 趋势做多', '🟢', trendLong, '暂无做多候选', 'bg-neon-green/[0.04]')}
+                ${topTraderTrendBlock('5m 趋势做空', '🔴', trendShort, '暂无做空候选', 'bg-neon-red/[0.04]')}
+                ${topTraderTrendBlock('规避', '⚠️', trendAvoid, '暂无规避项', 'bg-warn/[0.05]')}
+            </div>`;
+
+            const neutral = items.filter((x) => {
+                const v = x.trend_verdict;
+                return !v || v === 'neutral';
+            });
+            const neutralRows = neutral.map(renderTopTraderTrendRow).join('');
+            const neutralBlock = neutral.length
+                ? `<details class="mt-2"><summary class="text-text-muted text-xs cursor-pointer">其余 ${neutral.length} 条（未达趋势门槛）</summary><div class="space-y-0.5 mt-2">${neutralRows}</div></details>`
+                : '';
+
+            body.innerHTML = boards + neutralBlock
+                + `<p class="text-text-muted text-[10px] mt-3 leading-relaxed">${escHtml(data.note || '')}</p>`;
+            bindOiRadarPickHandlers(body);
+        }
+
+        async function runTopTraderBackgroundPoll(body, tsEl) {
+            const maxRounds = 60;
+            for (let i = 0; i < maxRounds; i++) {
+                body.innerHTML = `<div class="text-text-muted text-sm py-3">后台扫描中… ${i + 1}/${maxRounds}</div>`;
+                await new Promise((r) => setTimeout(r, 2000));
+                let data;
+                try {
+                    data = await API.topTraderSnapshot();
+                } catch (e) {
+                    continue;
+                }
+                if (data && data.ok) {
+                    fillTopTraderFromPayload(data, body, tsEl);
+                    return;
+                }
+                if (data && (data.error === 'empty_universe' || data.error === 'fetch_failed')) {
+                    body.innerHTML = `<div class="text-warn text-sm">${escHtml(data.message || data.error)}</div>`;
+                    return;
+                }
+            }
+            body.innerHTML = '<div class="text-warn text-sm">扫描较久仍未就绪，请稍后再试。</div>';
+        }
+
+        async function loadTopTraderPanel(options = {}) {
+            const forceRefresh = options.forceRefresh === true;
+            const body = document.getElementById('top-trader-body');
+            const tsEl = document.getElementById('top-trader-ts');
+            const btn = document.getElementById('top-trader-refresh');
+            if (!body) return;
+            if (btn) btn.disabled = true;
+            try {
+                if (forceRefresh) {
+                    if (tsEl) tsEl.textContent = '…';
+                    body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">正在刷新大户多空…</div>';
+                    let j;
+                    try {
+                        j = await API.topTraderRefresh();
+                    } catch (e) {
+                        body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(e && e.message ? String(e.message) : '刷新失败')}</div>`;
+                        return;
+                    }
+                    if (!j.accepted) {
+                        body.innerHTML = `<div class="text-warn text-sm">${escHtml(j.message || '已有扫描在运行')}</div>`;
+                        return;
+                    }
+                    await runTopTraderBackgroundPoll(body, tsEl);
+                    return;
+                }
+                if (tsEl) tsEl.textContent = '…';
+                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载快照…</div>';
+                const data = await API.topTraderSnapshot();
+                if (data.ok) {
+                    fillTopTraderFromPayload(data, body, tsEl);
+                    return;
+                }
+                if (data.error === 'no_snapshot') {
+                    body.innerHTML = `<div class="text-warn text-sm">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">点击「刷新」启动后台扫描。</p>`;
+                    return;
+                }
+                body.innerHTML = `<div class="text-warn text-sm">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+            } catch (e) {
+                console.error('top trader:', e);
+                if (tsEl) tsEl.textContent = '';
+                body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(e && e.message ? String(e.message) : '加载失败')}</div>`;
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         function openMaintPanel() {
             const panel = document.getElementById('maint-panel');
             if (!panel) return;
@@ -2799,6 +2974,7 @@
             initWorthHistoryTabDelegationOnce();
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
+            loadTopTraderPanel();
             loadS2FundingSignals();
             /* ZCT VWAP 主看板已隐藏；维护面板仍可清库/触轨池 */
             void hydrateMomBoard();
@@ -2814,6 +2990,7 @@
                 if (ev.key === 'Enter') void hydrateJzBoard();
             });
             document.getElementById('jz-universe-btn')?.addEventListener('click', () => void showJzUniverse());
+            document.getElementById('top-trader-refresh')?.addEventListener('click', () => void loadTopTraderPanel({ forceRefresh: true }));
             document.getElementById('zct-vwap-root')?.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
                 if (!btn) return;
