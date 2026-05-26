@@ -15,47 +15,89 @@
                         sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
                     },
                     colors: {
-                        background: '#F9F8F6',
-                        surface: '#FFFFFF',
-                        'surface-light': '#F5F1EB',
-                        border: '#E8E4D8',
-                        accent: '#8E4A49',
-                        'neon-green': '#8A9A5B',
-                        'neon-red': '#B2665E',
-                        'neon-purple': '#C5A059',
-                        'neon-blue': '#778899',
-                        'neon-yellow': '#C5A059',
-                        warn: '#C5A059',
-                        'text-primary': '#4A4A4A',
-                        'text-secondary': '#706B67',
-                        'text-muted': '#9A928C',
+                        background: 'var(--bg)',
+                        surface: 'var(--surface)',
+                        'surface-light': 'var(--surface-light)',
+                        border: 'var(--border)',
+                        accent: 'var(--accent)',
+                        'neon-green': 'var(--neon-green)',
+                        'neon-red': 'var(--neon-red)',
+                        'neon-purple': 'var(--neon-purple)',
+                        'neon-blue': 'var(--neon-blue)',
+                        'neon-yellow': 'var(--neon-yellow)',
+                        warn: 'var(--warn)',
+                        'text-primary': 'var(--text-primary)',
+                        'text-secondary': 'var(--text-secondary)',
+                        'text-muted': 'var(--text-muted)',
                     },
                 }
             }
         }
     </script>
     <style>
+        :root {
+            --bg: #F9F8F6;
+            --surface: #FFFFFF;
+            --surface-light: #F5F1EB;
+            --border: #E8E4D8;
+            --accent: #8E4A49;
+            --neon-green: #8A9A5B;
+            --neon-red: #B2665E;
+            --neon-purple: #C5A059;
+            --neon-blue: #778899;
+            --neon-yellow: #C5A059;
+            --warn: #C5A059;
+            --text-primary: #4A4A4A;
+            --text-secondary: #706B67;
+            --text-muted: #9A928C;
+            --scrollbar-track: #F5F1EB;
+            --scrollbar-thumb: #D4CCC0;
+            --shadow-color: rgba(74, 74, 74, 0.08);
+            --hover-bg: rgba(245, 241, 235, 0.7);
+            --card-glow: rgba(197, 160, 89, 0.08);
+        }
+        .dark {
+            --bg: #161618;
+            --surface: #1E1E20;
+            --surface-light: #27272A;
+            --border: #3A3A3E;
+            --accent: #C56B6A;
+            --neon-green: #9CB56A;
+            --neon-red: #D4807A;
+            --neon-purple: #D4B46A;
+            --neon-blue: #8899A5;
+            --neon-yellow: #D4B46A;
+            --warn: #D4B46A;
+            --text-primary: #E4E4E6;
+            --text-secondary: #A0A0A4;
+            --text-muted: #707074;
+            --scrollbar-track: #2D2D30;
+            --scrollbar-thumb: #555558;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --hover-bg: rgba(45, 45, 48, 0.7);
+            --card-glow: rgba(197, 160, 89, 0.03);
+        }
         body {
-            color: #4A4A4A;
+            color: var(--text-primary);
             font-family: "Source Sans 3", system-ui, sans-serif;
-            background-color: #F9F8F6;
+            background-color: var(--bg);
             background-image:
-                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(197, 160, 89, 0.08), transparent 55%),
-                linear-gradient(180deg, #FAF9F7 0%, #F9F8F6 40%);
+                radial-gradient(ellipse 80% 50% at 50% -10%, var(--card-glow), transparent 55%),
+                linear-gradient(180deg, var(--surface) 0%, var(--bg) 40%);
             background-attachment: fixed;
         }
         h1, h2 { font-family: "Noto Serif SC", Georgia, serif; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #F5F1EB; }
-        ::-webkit-scrollbar-thumb { background: #D4CCC0; border-radius: 4px; }
-        ::selection { background: rgba(142, 74, 73, 0.18); }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
         .card {
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 20px -6px rgba(74, 74, 74, 0.08);
+            box-shadow: 0 4px 20px -6px var(--shadow-color);
         }
         .btn-secondary { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease; }
-        .pnl-pos { color: #8A9A5B; }
-        .pnl-neg { color: #B2665E; }
+        .pnl-pos { color: var(--neon-green); }
+        .pnl-neg { color: var(--neon-red); }
         .badge {
             display: inline-flex;
             align-items: center;
@@ -65,37 +107,37 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
-        .badge-open    { background: rgba(138, 154, 91, 0.15); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.28); }
-        .badge-closed  { background: rgba(154, 146, 140, 0.12); color: #706B67; border: 1px solid rgba(154, 146, 140, 0.22); }
-        .badge-long    { background: rgba(138, 154, 91, 0.12); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.25); }
-        .badge-short   { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
-        .badge-tp      { background: rgba(138, 154, 91, 0.12); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.25); }
-        .badge-sl      { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
-        .badge-expired { background: rgba(197, 160, 89, 0.12); color: #C5A059; border: 1px solid rgba(197, 160, 89, 0.25); }
-        .badge-manual  { background: rgba(142, 74, 73, 0.1); color: #8E4A49; border: 1px solid rgba(142, 74, 73, 0.22); }
-        .badge-unknown { background: rgba(154, 146, 140, 0.1); color: #9A928C; border: 1px solid rgba(154, 146, 140, 0.2); }
-        .badge-enabled  { background: rgba(138, 154, 91, 0.15); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.28); }
-        .badge-disabled { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
-        .badge-testnet  { background: rgba(197, 160, 89, 0.12); color: #C5A059; border: 1px solid rgba(197, 160, 89, 0.25); }
+        .badge-open    { background: color-mix(in srgb, var(--neon-green) 15%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 28%, transparent); }
+        .badge-closed  { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-secondary); border: 1px solid color-mix(in srgb, var(--text-muted) 22%, transparent); }
+        .badge-long    { background: color-mix(in srgb, var(--neon-green) 12%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 25%, transparent); }
+        .badge-short   { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
+        .badge-tp      { background: color-mix(in srgb, var(--neon-green) 12%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 25%, transparent); }
+        .badge-sl      { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
+        .badge-expired { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent); }
+        .badge-manual  { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+        .badge-unknown { background: color-mix(in srgb, var(--text-muted) 10%, transparent); color: var(--text-muted); border: 1px solid color-mix(in srgb, var(--text-muted) 20%, transparent); }
+        .badge-enabled  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 28%, transparent); }
+        .badge-disabled { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
+        .badge-testnet  { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent); }
         table { border-collapse: collapse; width: 100%; }
-        th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600; color: #9A928C; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #E8E4D8; white-space: nowrap; }
-        td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid rgba(232, 228, 216, 0.9); white-space: nowrap; }
+        th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 90%, transparent); white-space: nowrap; }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(245, 241, 235, 0.7); }
+        tr:hover td { background: var(--hover-bg); }
         input.config-input {
-            background: #FFFFFF;
-            border: 1px solid #E8E4D8;
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 0.5rem;
             padding: 0.35rem 0.6rem;
             font-size: 0.78rem;
-            color: #4A4A4A;
+            color: var(--text-primary);
             outline: none;
             transition: border-color 0.15s;
         }
-        input.config-input:focus { border-color: rgba(142, 74, 73, 0.45); }
+        input.config-input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
         .tab-btn { transition: color 0.15s, border-color 0.15s; }
-        .tab-btn.active { color: #8E4A49; border-bottom: 2px solid #8E4A49; }
-        .tab-btn:not(.active) { color: #9A928C; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .tab-btn:not(.active) { color: var(--text-muted); border-bottom: 2px solid transparent; }
         .toast {
             position: fixed;
             bottom: 1.5rem;
@@ -107,15 +149,29 @@
             z-index: 999;
             animation: fadein 0.2s ease;
         }
-        .toast-ok  { background: rgba(138, 154, 91, 0.15); border: 1px solid rgba(138, 154, 91, 0.3); color: #8A9A5B; }
-        .toast-err { background: rgba(178, 102, 94, 0.15); border: 1px solid rgba(178, 102, 94, 0.3); color: #B2665E; }
+        .toast-ok  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 30%, transparent); color: var(--neon-green); }
+        .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
         @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(232,228,216,0.9)_inset]">
+<header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border ">
     <div class="max-w-7xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -128,6 +184,7 @@
                     <span class="text-xl font-bold text-text-primary tracking-tight group-hover:text-accent transition-colors">Next <span class="text-accent">K</span></span>
                 </a>
                 <span class="text-text-muted text-sm">/</span>
+                <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
                 <span class="text-text-secondary text-sm font-medium">实盘看板</span>
             </div>
             <div class="flex items-center gap-2">
@@ -147,7 +204,7 @@
             <label class="text-text-muted text-xs mb-1 block">Maintenance Token</label>
             <input id="cfg-token" type="password" class="config-input w-full" placeholder="输入鉴权 Token"/>
         </div>
-        <div id="settings-error" class="hidden mt-3 text-xs" style="color:#e07884"></div>
+        <div id="settings-error" class="hidden mt-3 text-xs" style="color:var(--neon-red)"></div>
         <div class="flex justify-end gap-2 mt-4">
             <button type="button" id="settings-save-btn" onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-accent/15 border border-accent/30 text-accent text-sm font-medium hover:bg-accent/25">连接并验证</button>
         </div>
@@ -178,6 +235,12 @@
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-text-primary font-semibold text-sm">交易配置</h2>
                 <button type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25">保存配置</button>
+            </div>
+            <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
+                <button type="button" class="tab-btn active px-3 py-1.5 text-xs font-medium" data-tab="global" onclick="switchConfigTab('global')">全局</button>
+                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="zct_vwap" onclick="switchConfigTab('zct_vwap')">ZCT VWAP</button>
+                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="momentum" onclick="switchConfigTab('momentum')">动量</button>
+                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="jiezhen" onclick="switchConfigTab('jiezhen')">接针</button>
             </div>
             <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
@@ -355,7 +418,7 @@ function fmtNum(v, decimals) {
 
 function pnlColor(v) {
     if (v == null) return '';
-    return Number(v) >= 0 ? 'color:#52c49a' : 'color:#e07884';
+    return Number(v) >= 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
 }
 
 function sideBadge(side) {
@@ -366,8 +429,25 @@ function sideBadge(side) {
 
 function reasonBadge(r) {
     if (!r) return '—';
-    var labels = { tp: '止盈', sl: '止损', expired: '到期', manual: '手动', unknown: '未知' };
-    return '<span class="badge badge-' + r + '">' + (labels[r] || r) + '</span>';
+    var labels = {
+        tp: '止盈', sl: '止损', expired: '到期', manual: '手动', unknown: '未知',
+        paper_close: '纸面平仓', external: '外部平仓',
+        momentum_scan: '动量调仓', momentum_trail: '动量移动止盈',
+        jiezhen_scan: '接针调仓', jiezhen_trail: '接针移动止盈',
+    };
+    // 解析 "momentum_scan/trail_tier1" 格式
+    var parts = String(r).split('/');
+    var sourcePart = parts[0] || '';
+    var rulePart = parts[1] || '';
+    var ruleLabels = {
+        trail_tier1: '止盈一档', trail_tier2: '止盈二档',
+        trail_low: '低档保护', trail_stop: '硬止损',
+        rotate: '换仓', expired: '到期',
+    };
+    var sourceLabel = labels[sourcePart] || sourcePart;
+    var ruleLabel = ruleLabels[rulePart] || rulePart;
+    var display = ruleLabel ? sourceLabel + '/' + ruleLabel : sourceLabel;
+    return '<span class="badge badge-' + (rulePart || sourcePart) + '">' + display + '</span>';
 }
 
 function signalStatusBadge(s) {
@@ -389,13 +469,22 @@ async function loadStatus() {
         badge.className = 'badge ' + (enabled ? 'badge-enabled' : 'badge-disabled');
         badge.textContent = enabled ? (testnet ? 'TESTNET' : '实盘') : '已禁用';
 
+        var sp = d.strategy_positions || {};
+        var spHtml = '';
+        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针'};
+        for (var k in labels) {
+            if (labels.hasOwnProperty(k)) {
+                spHtml += '<span class="text-text-muted text-[10px] mr-1">' + labels[k] + '</span>'
+                    + '<span class="text-text-primary font-mono text-xs mr-2">' + (sp[k] != null ? sp[k] : '—') + '</span>';
+            }
+        }
         var items = [
             ['状态',     enabled ? '<span class="badge badge-enabled">启用</span>' : '<span class="badge badge-disabled">禁用</span>'],
             ['网络',     testnet  ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
             ['最大持仓', '<span class="text-text-primary font-mono">' + (d.max_positions || '—') + '</span>'],
-            ['过期时限', '<span class="text-text-primary font-mono">' + (d.position_expire_hours || '—') + 'h</span>'],
-            ['API Key',  d.api_key_set ? '<span style="color:#52c49a" class="text-xs">已设置</span>' : '<span style="color:#e07884" class="text-xs">未设置</span>'],
+            ['策略持仓', spHtml || '<span class="text-text-muted text-xs">—</span>'],
+            ['API Key',  d.api_key_set ? '<span style="color:var(--neon-green)" class="text-xs">已设置</span>' : '<span style="color:var(--neon-red)" class="text-xs">未设置</span>'],
         ];
 
         document.getElementById('status-body').innerHTML = items.map(function(item) {
@@ -406,7 +495,7 @@ async function loadStatus() {
         }).join('');
     } catch(e) {
         document.getElementById('status-body').innerHTML =
-            '<div class="col-span-3" style="color:#e07884;font-size:0.75rem">无法连接：' + e.message + '</div>';
+            '<div class="col-span-3" style="color:var(--neon-red);font-size:0.75rem">无法连接：' + e.message + '</div>';
         var badge = document.getElementById('status-badge');
         badge.className = 'badge badge-disabled';
         badge.textContent = '离线';
@@ -415,50 +504,97 @@ async function loadStatus() {
 
 // ── Config editor ─────────────────────────────────────────────────────────────
 
-var EDITABLE_KEYS = [
-    { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
-    { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
-    { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
-    { key: 'testnet',               label: 'Testnet',         hint: 'true / false' },
-    { key: 'margin_usdt',           label: '单笔保证金 (USDT)',  hint: '100' },
-    { key: 'leverage',              label: '杠杆',            hint: '10' },
-    { key: 'max_positions',         label: '最大持仓(总)',     hint: '8 (≤8)' },
-    { key: 'max_positions_play01',  label: 'PLAY01 最大持仓',  hint: '5 (≤5)' },
-    { key: 'max_positions_play02',  label: 'PLAY02 最大持仓',  hint: '5 (≤5)' },
-    { key: 'max_positions_play03',  label: 'PLAY03 最大持仓',  hint: '5 (≤5)' },
-    { key: 'position_expire_hours', label: '过期时限(全局h)',  hint: '4' },
-    { key: 'expire_hours_play01',   label: 'PLAY01 过期(h)',   hint: '5' },
-    { key: 'expire_hours_play02',   label: 'PLAY02 过期(h)',   hint: '4' },
-    { key: 'expire_hours_play03',   label: 'PLAY03 过期(h)',   hint: '3' },
-];
+var _configTab = 'global';
+var EDITABLE_KEYS = {
+    global: [
+        { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
+        { key: 'testnet',               label: '测试网',          hint: 'true / false' },
+        { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
+        { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
+        { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
+    ],
+    zct_vwap: [
+        { key: 'src_zct_vwap_enabled',  label: '启用策略',        hint: 'true / false' },
+        { key: 'margin_usdt',           label: '单笔保证金(USDT)', hint: '100' },
+        { key: 'leverage',              label: '杠杆',            hint: '10' },
+        { key: 'max_positions_play01',  label: 'PLAY01 最大持仓',  hint: '5' },
+        { key: 'max_positions_play02',  label: 'PLAY02 最大持仓',  hint: '5' },
+        { key: 'max_positions_play03',  label: 'PLAY03 最大持仓',  hint: '5' },
+        { key: 'expire_hours_play01',   label: 'PLAY01 过期(h)',   hint: '5' },
+        { key: 'expire_hours_play02',   label: 'PLAY02 过期(h)',   hint: '4' },
+        { key: 'expire_hours_play03',   label: 'PLAY03 过期(h)',   hint: '3' },
+    ],
+    momentum: [
+        { key: 'src_momentum_enabled',        label: '启用策略',        hint: 'true / false' },
+        { key: 'src_momentum_margin_usdt',    label: '单笔保证金(USDT)', hint: '100' },
+        { key: 'src_momentum_leverage',       label: '杠杆',            hint: '10' },
+        { key: 'src_momentum_max_positions',  label: '最大持仓',        hint: '2' },
+        { key: 'src_momentum_expire_hours',   label: '过期时限(h)',      hint: '4' },
+    ],
+    jiezhen: [
+        { key: 'src_jiezhen_enabled',        label: '启用策略',        hint: 'true / false' },
+        { key: 'src_jiezhen_margin_usdt',    label: '单笔保证金(USDT)', hint: '100' },
+        { key: 'src_jiezhen_leverage',       label: '杠杆',            hint: '10' },
+        { key: 'src_jiezhen_max_positions',  label: '最大持仓',        hint: '3' },
+        { key: 'src_jiezhen_expire_hours',   label: '过期时限(h)',      hint: '4' },
+    ],
+};
+
+function switchConfigTab(tab) {
+    _configTab = tab;
+    var btns = document.querySelectorAll('#config-tabs .tab-btn');
+    btns.forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+    for (var k in EDITABLE_KEYS) {
+        if (!EDITABLE_KEYS.hasOwnProperty(k)) continue;
+        var el = document.getElementById('config-section-' + k);
+        if (el) el.style.display = (k === tab) ? '' : 'none';
+    }
+}
+
+function _allConfigKeys() {
+    var all = [];
+    for (var k in EDITABLE_KEYS) {
+        if (EDITABLE_KEYS.hasOwnProperty(k)) {
+            all = all.concat(EDITABLE_KEYS[k]);
+        }
+    }
+    return all;
+}
 
 async function loadConfig() {
     try {
         var cfg = await apiFetch('/api/binance/config');
-        var html = EDITABLE_KEYS.map(function(item) {
-            var raw = cfg[item.key] != null ? cfg[item.key] : '';
-            // Don't prefill masked values — user must re-enter to change
-            var val = (item.password && raw === '****') ? '' : raw;
-            var inputType = item.password ? 'password' : 'text';
-            return '<div class="flex flex-col gap-0.5">'
-                + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + item.label + '</label>'
-                + '<input id="cfg-' + item.key + '" type="' + inputType + '" value="' + val + '" placeholder="' + item.hint + '" class="config-input"/>'
-                + '</div>';
-        }).join('');
-        document.getElementById('config-body').innerHTML = html;
+        var sections = [];
+        for (var tab in EDITABLE_KEYS) {
+            if (!EDITABLE_KEYS.hasOwnProperty(tab)) continue;
+            var keys = EDITABLE_KEYS[tab];
+            var display = (tab === _configTab) ? '' : 'display:none';
+            var items = keys.map(function(item) {
+                var raw = cfg[item.key] != null ? cfg[item.key] : '';
+                var val = (item.password && raw === '****') ? '' : raw;
+                var inputType = item.password ? 'password' : 'text';
+                return '<div class="flex flex-col gap-0.5">'
+                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + item.label + '</label>'
+                    + '<input id="cfg-' + item.key + '" type="' + inputType + '" value="' + val + '" placeholder="' + item.hint + '" class="config-input"/>'
+                    + '</div>';
+            }).join('');
+            sections.push('<div id="config-section-' + tab + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
+        }
+        document.getElementById('config-body').innerHTML = sections.join('');
     } catch(e) {
         document.getElementById('config-body').innerHTML =
-            '<div class="col-span-2" style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+            '<div class="col-span-2" style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
 
 async function saveConfig() {
     var pairs = {};
-    EDITABLE_KEYS.forEach(function(item) {
+    _allConfigKeys().forEach(function(item) {
         var el = document.getElementById('cfg-' + item.key);
         if (!el) return;
         var v = el.value.trim();
-        // Skip empty password fields — blank means "leave unchanged"
         if (item.password && !v) return;
         pairs[item.key] = v;
     });
@@ -483,8 +619,8 @@ async function loadPnlSummary() {
         var winRate = d.total > 0 ? ((d.wins / d.total) * 100).toFixed(1) + '%' : '—';
         var stats = [
             ['总交易', String(d.total)],
-            ['盈利', '<span style="color:#52c49a">' + d.wins + '</span>'],
-            ['亏损', '<span style="color:#e07884">' + d.losses + '</span>'],
+            ['盈利', '<span style="color:var(--neon-green)">' + d.wins + '</span>'],
+            ['亏损', '<span style="color:var(--neon-red)">' + d.losses + '</span>'],
             ['胜率', winRate],
             ['累计 PnL', '<span style="' + pnlColor(d.total_pnl) + '">' + fmtNum(d.total_pnl, 2) + ' USDT</span>'],
             ['平均 PnL', '<span style="' + pnlColor(d.avg_pnl) + '">' + fmtNum(d.avg_pnl, 2) + ' USDT</span>'],
@@ -515,7 +651,7 @@ async function loadPnlSummary() {
         }
     } catch(e) {
         document.getElementById('pnl-summary-body').innerHTML =
-            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
 
@@ -534,13 +670,13 @@ async function loadOpenPositions() {
 
         var trs = rows.map(function(p) {
             return '<tr>'
-                + '<td style="font-weight:500;color:#e8edf4">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:#e07884">' + fmtNum(p.sl_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:#52c49a">' + fmtNum(p.tp_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(p.sl_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(p.tp_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
-                + '<td data-expire="' + (p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:#94a3b8">—</td>'
+                + '<td data-expire="' + (p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
                 + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -552,7 +688,7 @@ async function loadOpenPositions() {
         startCountdowns();
     } catch(e) {
         document.getElementById('open-positions-body').innerHTML =
-            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
 
@@ -582,7 +718,7 @@ async function loadClosedPositions() {
             var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
             var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
             return '<tr>'
-                + '<td style="font-weight:500;color:#e8edf4">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + (p.close_price != null ? fmtNum(p.close_price, 6) : '—') + '</td>'
@@ -600,7 +736,7 @@ async function loadClosedPositions() {
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('closed-positions-body').innerHTML =
-            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
 
@@ -619,11 +755,11 @@ async function loadSignals() {
         var trs = rows.map(function(s) {
             return '<tr>'
                 + '<td class="text-text-secondary">' + (s.source || '—') + '</td>'
-                + '<td style="font-weight:500;color:#e8edf4">' + (s.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + (s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:#e07884">' + fmtNum(s.sl_price, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:#52c49a">' + fmtNum(s.tp_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(s.sl_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(s.tp_price, 4) + '</td>'
                 + '<td>' + signalStatusBadge(s.status) + '</td>'
                 + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + (s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + (s.skip_reason || '—') + '</td>'
                 + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
@@ -636,7 +772,7 @@ async function loadSignals() {
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('signals-body').innerHTML =
-            '<div style="color:#e07884;font-size:0.75rem">' + e.message + '</div>';
+            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
 
@@ -667,6 +803,21 @@ async function tryAuth() {
         return false;
     }
 }
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+function toggleTheme() {
+    var isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    document.getElementById('theme-btn').textContent = isDark ? '\u2600' : '\u263D';
+}
+
+(function initTheme() {
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-btn') && (document.getElementById('theme-btn').textContent = '\u2600');
+    }
+})();
 
 document.addEventListener('DOMContentLoaded', async function() {
     const ok = await tryAuth();
