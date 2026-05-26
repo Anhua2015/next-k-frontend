@@ -4,26 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>实盘看板 · Next K</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
+                        sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
+                    },
                     colors: {
-                        background: '#0d1219',
-                        surface: '#141b24',
-                        'surface-light': '#1c2530',
-                        border: '#2a3544',
-                        accent: '#8ab4f8',
-                        'neon-green': '#52c49a',
-                        'neon-red': '#e07884',
-                        'neon-purple': '#9b93ea',
-                        'neon-blue': '#73b5ee',
-                        'neon-yellow': '#d4b878',
-                        warn: '#c9a66b',
-                        'text-primary': '#e8edf4',
-                        'text-secondary': '#94a3b8',
-                        'text-muted': '#647891',
+                        background: '#F9F8F6',
+                        surface: '#FFFFFF',
+                        'surface-light': '#F5F1EB',
+                        border: '#E8E4D8',
+                        accent: '#8E4A49',
+                        'neon-green': '#8A9A5B',
+                        'neon-red': '#B2665E',
+                        'neon-purple': '#C5A059',
+                        'neon-blue': '#778899',
+                        'neon-yellow': '#C5A059',
+                        warn: '#C5A059',
+                        'text-primary': '#4A4A4A',
+                        'text-secondary': '#706B67',
+                        'text-muted': '#9A928C',
                     },
                 }
             }
@@ -31,29 +36,26 @@
     </script>
     <style>
         body {
-            color: #e8edf4;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background-color: #0d1219;
+            color: #4A4A4A;
+            font-family: "Source Sans 3", system-ui, sans-serif;
+            background-color: #F9F8F6;
             background-image:
-                radial-gradient(ellipse 90% 55% at 50% -15%, rgba(138, 180, 248, 0.07), transparent 52%),
-                radial-gradient(ellipse 70% 45% at 100% 40%, rgba(82, 196, 154, 0.04), transparent 48%),
-                linear-gradient(180deg, #0e141c 0%, #0d1219 28%);
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(197, 160, 89, 0.08), transparent 55%),
+                linear-gradient(180deg, #FAF9F7 0%, #F9F8F6 40%);
             background-attachment: fixed;
         }
+        h1, h2 { font-family: "Noto Serif SC", Georgia, serif; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0d1219; }
-        ::-webkit-scrollbar-thumb { background: #3d4a5c; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #647891; }
-        ::selection { background: rgba(138, 180, 248, 0.28); }
+        ::-webkit-scrollbar-track { background: #F5F1EB; }
+        ::-webkit-scrollbar-thumb { background: #D4CCC0; border-radius: 4px; }
+        ::selection { background: rgba(142, 74, 73, 0.18); }
         .card {
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+            box-shadow: 0 4px 20px -6px rgba(74, 74, 74, 0.08);
         }
-        .btn-secondary {
-            transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-        }
-        .pnl-pos { color: #52c49a; }
-        .pnl-neg { color: #e07884; }
+        .btn-secondary { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease; }
+        .pnl-pos { color: #8A9A5B; }
+        .pnl-neg { color: #B2665E; }
         .badge {
             display: inline-flex;
             align-items: center;
@@ -63,37 +65,37 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
-        .badge-open    { background: rgba(82, 196, 154, 0.12); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.2); }
-        .badge-closed  { background: rgba(100, 120, 145, 0.12); color: #94a3b8; border: 1px solid rgba(100, 120, 145, 0.2); }
-        .badge-long    { background: rgba(82, 196, 154, 0.1); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.18); }
-        .badge-short   { background: rgba(224, 120, 132, 0.1); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.18); }
-        .badge-tp      { background: rgba(82, 196, 154, 0.1); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.18); }
-        .badge-sl      { background: rgba(224, 120, 132, 0.1); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.18); }
-        .badge-expired { background: rgba(196, 150, 107, 0.1); color: #c9a66b; border: 1px solid rgba(196, 150, 107, 0.18); }
-        .badge-manual  { background: rgba(155, 147, 234, 0.1); color: #9b93ea; border: 1px solid rgba(155, 147, 234, 0.18); }
-        .badge-unknown { background: rgba(100, 120, 145, 0.1); color: #647891; border: 1px solid rgba(100, 120, 145, 0.18); }
-        .badge-enabled  { background: rgba(82, 196, 154, 0.12); color: #52c49a; border: 1px solid rgba(82, 196, 154, 0.2); }
-        .badge-disabled { background: rgba(224, 120, 132, 0.12); color: #e07884; border: 1px solid rgba(224, 120, 132, 0.2); }
-        .badge-testnet  { background: rgba(196, 150, 107, 0.12); color: #c9a66b; border: 1px solid rgba(196, 150, 107, 0.2); }
+        .badge-open    { background: rgba(138, 154, 91, 0.15); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.28); }
+        .badge-closed  { background: rgba(154, 146, 140, 0.12); color: #706B67; border: 1px solid rgba(154, 146, 140, 0.22); }
+        .badge-long    { background: rgba(138, 154, 91, 0.12); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.25); }
+        .badge-short   { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
+        .badge-tp      { background: rgba(138, 154, 91, 0.12); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.25); }
+        .badge-sl      { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
+        .badge-expired { background: rgba(197, 160, 89, 0.12); color: #C5A059; border: 1px solid rgba(197, 160, 89, 0.25); }
+        .badge-manual  { background: rgba(142, 74, 73, 0.1); color: #8E4A49; border: 1px solid rgba(142, 74, 73, 0.22); }
+        .badge-unknown { background: rgba(154, 146, 140, 0.1); color: #9A928C; border: 1px solid rgba(154, 146, 140, 0.2); }
+        .badge-enabled  { background: rgba(138, 154, 91, 0.15); color: #8A9A5B; border: 1px solid rgba(138, 154, 91, 0.28); }
+        .badge-disabled { background: rgba(178, 102, 94, 0.12); color: #B2665E; border: 1px solid rgba(178, 102, 94, 0.25); }
+        .badge-testnet  { background: rgba(197, 160, 89, 0.12); color: #C5A059; border: 1px solid rgba(197, 160, 89, 0.25); }
         table { border-collapse: collapse; width: 100%; }
-        th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600; color: #647891; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #2a3544; white-space: nowrap; }
-        td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid rgba(42, 53, 68, 0.6); white-space: nowrap; }
+        th { text-align: left; padding: 0.5rem 0.75rem; font-size: 0.7rem; font-weight: 600; color: #9A928C; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #E8E4D8; white-space: nowrap; }
+        td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid rgba(232, 228, 216, 0.9); white-space: nowrap; }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background: rgba(28, 37, 48, 0.6); }
+        tr:hover td { background: rgba(245, 241, 235, 0.7); }
         input.config-input {
-            background: #1c2530;
-            border: 1px solid #2a3544;
+            background: #FFFFFF;
+            border: 1px solid #E8E4D8;
             border-radius: 0.5rem;
             padding: 0.35rem 0.6rem;
             font-size: 0.78rem;
-            color: #e8edf4;
+            color: #4A4A4A;
             outline: none;
             transition: border-color 0.15s;
         }
-        input.config-input:focus { border-color: rgba(138, 180, 248, 0.5); }
+        input.config-input:focus { border-color: rgba(142, 74, 73, 0.45); }
         .tab-btn { transition: color 0.15s, border-color 0.15s; }
-        .tab-btn.active { color: #8ab4f8; border-bottom: 2px solid #8ab4f8; }
-        .tab-btn:not(.active) { color: #647891; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: #8E4A49; border-bottom: 2px solid #8E4A49; }
+        .tab-btn:not(.active) { color: #9A928C; border-bottom: 2px solid transparent; }
         .toast {
             position: fixed;
             bottom: 1.5rem;
@@ -105,20 +107,20 @@
             z-index: 999;
             animation: fadein 0.2s ease;
         }
-        .toast-ok  { background: rgba(82, 196, 154, 0.18); border: 1px solid rgba(82, 196, 154, 0.3); color: #52c49a; }
-        .toast-err { background: rgba(224, 120, 132, 0.18); border: 1px solid rgba(224, 120, 132, 0.3); color: #e07884; }
+        .toast-ok  { background: rgba(138, 154, 91, 0.15); border: 1px solid rgba(138, 154, 91, 0.3); color: #8A9A5B; }
+        .toast-err { background: rgba(178, 102, 94, 0.15); border: 1px solid rgba(178, 102, 94, 0.3); color: #B2665E; }
         @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border/80 shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
+<header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(232,228,216,0.9)_inset]">
     <div class="max-w-7xl mx-auto px-4 py-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <a href="index.html" class="flex items-center gap-2 group">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent/90 to-neon-blue/75 shadow-[0_4px_14px_-4px_rgba(138,180,248,0.35)] flex items-center justify-center">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-[0_4px_14px_-4px_rgba(142,74,73,0.28)] flex items-center justify-center">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
