@@ -286,7 +286,7 @@
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">📌</span> Pin insertion strategy
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">热度+OI 标的池 · EMA+ATR 触价 · 纸面 <code class="text-[10px]">Signals</code>（独立策略 lane）</p>
+                        <p class="text-text-muted text-xs mt-0.5">严选 <code class="text-[10px]">jz_universe</code>（Patrick+收筹）· EMA+ATR · <code class="text-[10px]">jz_signals</code></p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <select id="jz-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-blue/50">
@@ -296,7 +296,7 @@
                         </select>
                         <input type="text" id="jz-filter-symbol" placeholder="筛选标的" autocomplete="off"
                             class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-neon-blue/50" />
-                        <button type="button" id="jz-universe-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40 hover:text-neon-blue" title="查看当前 hot_oi 标的池">标的池</button>
+                        <button type="button" id="jz-universe-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40 hover:text-neon-blue" title="查看严选 jz_universe">严选池</button>
                         <span id="jz-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                         <button type="button" id="jz-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-blue/40 hover:text-neon-blue">刷新</button>
                     </div>
@@ -1869,8 +1869,17 @@
                 const syms = (data.symbols || []).join(', ');
                 const meta = data.meta || {};
                 const warn = meta.warning ? ' · ' + meta.warning : '';
-                hint.innerHTML = '<span class="text-neon-blue">hot_oi ×' + escHtml(String((data.symbols || []).length))
-                    + '</span> ' + escHtml(syms || '(空，请先跑 oi)') + escHtml(warn);
+                const src = meta.source || meta.mode || 'jz_universe';
+                const entries = meta.entries || [];
+                let detail = '';
+                if (entries.length) {
+                    detail = entries.slice(0, 8).map((e) =>
+                        escHtml(String(e.symbol)) + '(' + escHtml(String(Math.round(Number(e.score) || 0))) + ')'
+                    ).join(' ');
+                    if (entries.length > 8) detail += '…';
+                }
+                hint.innerHTML = '<span class="text-neon-blue">' + escHtml(src) + ' ×' + escHtml(String((data.symbols || []).length))
+                    + '</span> ' + escHtml(syms || '(空，请先跑 oi 刷新严选)') + (detail ? ' · ' + detail : '') + escHtml(warn);
             } catch (e) {
                 hint.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '加载失败') + '</span>';
             }
