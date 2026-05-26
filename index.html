@@ -283,7 +283,7 @@
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📈 5m 趋势 · 大户 Taker</h2>
+                        <h2 id="top-trader-heading" class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📈 15m 趋势 · 大户 Taker</h2>
                         <p class="text-text-muted text-[11px] mt-0.5">池: hot_oi + focus + chase_fire · PosLSR + Taker + OI/价 · <span class="text-warn/90">非 Smart Money 盈利/均价</span></p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -457,11 +457,12 @@
                 <!-- 左栏：清理 -->
                 <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
                     <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、ZCT 纸面库；<strong class="text-text-secondary font-normal">动量 / 接针</strong>为两套独立策略 lane，清库在下方分组。清盘后请在主界面点「刷新」。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、大户多空快照、ZCT 纸面库；<strong class="text-text-secondary font-normal">动量 / 接针</strong>为两套独立策略 lane，清库在下方分组。清盘后请在主界面点「刷新」。</p>
                     <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
                         <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
+                        <button type="button" id="maint-top-trader-clear" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="POST /api/accumulation/maintenance/clear-top-trader">清理大户多空</button>
                         <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT 库</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">纸面策略（独立 lane）</div>
@@ -751,6 +752,17 @@
                 const res = await fetch(`${API_BASE}/api/momentum/signals`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            async topTraderClear() {
+                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/clear-top-trader`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             async momClearDb() {
                 const res = await fetch(`${API_BASE}/api/momentum/maintenance/clear-db`, {
@@ -1707,6 +1719,40 @@
             root.innerHTML = head + rows + '</tbody></table>' + laneBoardScrollHint(total);
         }
 
+        async function clearTopTraderData() {
+            const maintMsg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-top-trader-clear');
+            if (!getMaintenanceToken()) {
+                const hint = '请先在维护面板保存维护令牌（与 NEXT_K_MAINTENANCE_TOKEN 一致）';
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-warn">' + escHtml(hint) + '</span>';
+                else alert(hint);
+                return;
+            }
+            if (!confirm(
+                '确定清空大户多空快照？\n'
+                    + '将删除 top_trader_snapshots 表与 top_trader_snapshot.json，不可撤销。',
+            )) {
+                return;
+            }
+            if (btn) btn.disabled = true;
+            if (maintMsg) maintMsg.textContent = '大户多空清库请求中…';
+            try {
+                const out = await API.topTraderClear();
+                const line = '大户多空已清库 · rows='
+                    + escHtml(String(out.deleted_top_trader_rows ?? 0))
+                    + ' · disk='
+                    + escHtml(out.disk_snapshot_removed ? '已删' : '无');
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + line + '</span>';
+                await loadTopTraderPanel();
+            } catch (e) {
+                console.error(e);
+                const err = escHtml(e && e.message ? String(e.message) : '清库失败');
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + err + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         async function clearMomLaneData() {
             const maintMsg = document.getElementById('maint-msg');
             const btn = document.getElementById('maint-mom-clear-db');
@@ -2441,8 +2487,15 @@
             </div>`;
         }
 
+        function updateTopTraderHeading(period) {
+            const titleEl = document.getElementById('top-trader-heading');
+            if (titleEl) titleEl.textContent = `📈 ${period || '15m'} 趋势 · 大户 Taker`;
+        }
+
         function fillTopTraderFromPayload(data, body, tsEl) {
             if (!body) return;
+            const period = data.period || '15m';
+            updateTopTraderHeading(period);
             const items = Array.isArray(data.items) ? data.items : [];
             const reqN = data.requested != null ? Number(data.requested) : null;
             const capN = data.captured != null ? Number(data.captured) : items.length;
@@ -2461,13 +2514,14 @@
             const trendAvoid = Array.isArray(data.trend_avoid) ? data.trend_avoid : items.filter((x) => x.trend_verdict === 'avoid');
 
             if (!items.length) {
-                body.innerHTML = `<div class="text-text-muted text-sm">${escHtml(data.message || '暂无快照')}</div>`;
+                body.innerHTML = `<div class="text-text-muted text-sm">${escHtml(data.message || '暂无快照数据')}</div>`
+                    + (data.note ? `<p class="text-text-muted text-[10px] mt-2 leading-relaxed">${escHtml(data.note)}</p>` : '');
                 return;
             }
 
             const boards = `<div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
-                ${topTraderTrendBlock('5m 趋势做多', '🟢', trendLong, '暂无做多候选', 'bg-neon-green/[0.04]')}
-                ${topTraderTrendBlock('5m 趋势做空', '🔴', trendShort, '暂无做空候选', 'bg-neon-red/[0.04]')}
+                ${topTraderTrendBlock(`${period} 趋势做多`, '🟢', trendLong, '暂无做多候选', 'bg-neon-green/[0.04]')}
+                ${topTraderTrendBlock(`${period} 趋势做空`, '🔴', trendShort, '暂无做空候选', 'bg-neon-red/[0.04]')}
                 ${topTraderTrendBlock('规避', '⚠️', trendAvoid, '暂无规避项', 'bg-warn/[0.05]')}
             </div>`;
 
@@ -2541,6 +2595,8 @@
                     return;
                 }
                 if (data.error === 'no_snapshot') {
+                    updateTopTraderHeading('15m');
+                    if (tsEl) tsEl.textContent = '--';
                     body.innerHTML = `<div class="text-warn text-sm">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">点击「刷新」启动后台扫描。</p>`;
                     return;
                 }
@@ -2870,6 +2926,7 @@
             });
 
 
+            document.getElementById('maint-top-trader-clear')?.addEventListener('click', () => void clearTopTraderData());
             document.getElementById('maint-mom-clear-db')?.addEventListener('click', () => void clearMomLaneData());
             document.getElementById('maint-jz-clear-db')?.addEventListener('click', () => void clearJzLaneData());
 
