@@ -378,10 +378,28 @@
                     <pre id="mq-scan-status" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">加载最近一次扫描…</pre>
                     <div id="mq-regime-guide" class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2" aria-label="Regime 策略推荐"></div>
                 </div>
+                <div id="mq-daily-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">每日全市场寻优</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5"><span id="mq-daily-enabled-badge" class="text-neon-green">每日寻优已默认开启</span> · UTC <span id="mq-daily-schedule" class="font-mono">06:30</span> · 同步 <span class="font-mono text-neon-yellow">daily-*</span> Profile</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                            <button type="button" id="mq-daily-run"
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15"
+                                title="后台执行，约 10–20 分钟，请勿重复点击">
+                                立即全量寻优
+                            </button>
+                        </div>
+                    </div>
+                    <p id="mq-daily-msg" class="text-[11px] font-mono min-h-[1rem] mb-2"></p>
+                    <div id="mq-daily-table" class="text-text-muted text-xs overflow-auto max-h-64">加载寻优结果…</div>
+                </div>
                 <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile</h3>
-                        <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/5</span>
+                        <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/23</span>
                     </div>
                     <div id="mq-profiles-list" class="text-text-muted text-xs mb-3">加载 Profile…</div>
                     <div class="rounded-lg border border-border/80 bg-surface/60 p-3 space-y-2">
@@ -1054,6 +1072,14 @@
             },
             async mqOptimize(body) {
                 return API._mqPost('/api/moss-quant/optimize', body || {});
+            },
+            async mqDailyOptimizeLatest() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/daily-optimize/latest`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqDailyOptimizeRun(body) {
+                return API._mqPost('/api/moss-quant/daily-optimize/run', body || {});
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -2266,6 +2292,19 @@
                 const lim = sum.kline_limit != null ? ' · ' + sum.kline_limit + ' bars' : '';
                 dsEl.textContent = lbl + lim;
             }
+            if (sum.max_active_profiles != null) {
+                MQ_MAX_ENABLED = Number(sum.max_active_profiles) || 23;
+            }
+            const schedEl = document.getElementById('mq-daily-schedule');
+            if (schedEl && sum.daily_optimize_utc) {
+                schedEl.textContent = String(sum.daily_optimize_utc);
+            }
+            const dailyBadge = document.getElementById('mq-daily-enabled-badge');
+            if (dailyBadge) {
+                const on = sum.daily_optimize_enabled !== false;
+                dailyBadge.textContent = on ? '每日寻优已默认开启' : '每日寻优已关闭';
+                dailyBadge.className = on ? 'text-neon-green' : 'text-warn';
+            }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             el.innerHTML = `
@@ -2291,7 +2330,7 @@
                 </div>`;
         }
 
-        const MQ_MAX_ENABLED = 5;
+        let MQ_MAX_ENABLED = 23;
         const MQ_TEMPLATE_LABELS = {
             balanced: '均衡 balanced',
             momentum: '动量 momentum',
@@ -2483,7 +2522,7 @@
             updateMqCreateFormState(profiles);
             const regimeMap = mqRegimeMapFromScan(scan || _mqLastPaperScan);
             if (!profiles || !profiles.length) {
-                list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile，请在下方创建（最多同时启用 5 个，每币一个）。</p>';
+                list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile。可点「立即全量寻优」自动生成 23 个 daily-*，或手动在下方创建（每币一个）。</p>';
                 return;
             }
             const rows = profiles.map((p) => {
@@ -2491,6 +2530,9 @@
                 const sym = escHtml(p.symbol || '');
                 const tplKey = (p.template || 'balanced').toLowerCase();
                 const tpl = escHtml(MQ_TEMPLATE_LABELS[tplKey] || tplKey);
+                const srcBadge = (p.profile_source === 'daily_auto')
+                    ? '<span class="text-[9px] font-mono text-neon-yellow border border-neon-yellow/30 rounded px-1 ml-1">daily</span>'
+                    : '';
                 const eq = p.virtual_equity_usdt != null ? fmtZctPx(p.virtual_equity_usdt, 0) : '—';
                 const regime = regimeMap.get(Number(p.id)) || '';
                 const fit = mqTemplateFit(tplKey, regime);
@@ -2498,7 +2540,7 @@
                 const recCls = fit === 'warn' ? 'text-warn/95' : fit === 'match' ? 'text-neon-green/90' : 'text-text-muted';
                 return `<tr class="border-b border-border/50 hover:bg-surface-light/25">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">#${escHtml(String(p.id))}</td>
-                    <td class="py-1.5 pr-2">${escHtml(p.name || '')}</td>
+                    <td class="py-1.5 pr-2">${escHtml(p.name || '')}${srcBadge}</td>
                     <td class="py-1.5 pr-2 font-mono">${sym}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${tpl}</td>
                     <td class="py-1.5 pr-2 min-w-[7rem]">
@@ -2552,6 +2594,122 @@
             pre.textContent = lines.length ? lines.join('\n') : '（本次扫描无明细）';
             pre.className = 'text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]';
             if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan);
+        }
+
+        let _mqDailyPollTimer = null;
+
+        function mqStopDailyPoll() {
+            if (_mqDailyPollTimer) {
+                clearInterval(_mqDailyPollTimer);
+                _mqDailyPollTimer = null;
+            }
+        }
+
+        function mqStartDailyPoll() {
+            mqStopDailyPoll();
+            _mqDailyPollTimer = setInterval(() => void loadMqDailyPanel(true), 30000);
+        }
+
+        function renderMqDailyPanel(data, sum) {
+            const root = document.getElementById('mq-daily-table');
+            const meta = document.getElementById('mq-daily-meta');
+            const runBtn = document.getElementById('mq-daily-run');
+            const running = !!(sum && sum.daily_optimize_running) || (data && data.batch && data.batch.status === 'running');
+            if (runBtn) {
+                runBtn.disabled = running;
+                runBtn.textContent = running ? '寻优进行中…' : '立即全量寻优';
+            }
+            if (!data || !data.has_batch || !data.batch) {
+                if (meta) meta.textContent = running ? '运行中…' : '尚无批次';
+                if (root) root.innerHTML = '<p class="text-text-muted text-xs">' + (running ? '全市场寻优进行中，约 10–20 分钟…' : '尚无每日寻优记录。') + '</p>';
+                if (running) mqStartDailyPoll();
+                else mqStopDailyPoll();
+                return;
+            }
+            const b = data.batch;
+            const st = String(b.status || '');
+            const ts = (b.finished_at_utc || b.ran_at_utc || '').slice(0, 19).replace('T', ' ');
+            if (meta) {
+                meta.textContent = '#' + b.id + ' · ' + st + ' · ' + (b.symbols_ok ?? 0) + '/' + (b.symbols_total ?? 0)
+                    + (ts ? ' · ' + ts + ' UTC' : '');
+            }
+            const items = b.items || [];
+            if (!items.length) {
+                if (root) root.innerHTML = '<p class="text-text-muted text-xs">批次无明细。</p>';
+                return;
+            }
+            const rows = items.map((it) => {
+                const sym = escHtml(it.symbol || '');
+                const tpl = escHtml(MQ_TEMPLATE_LABELS[(it.template || '').toLowerCase()] || it.template || '—');
+                const s = it.summary || {};
+                const err = s.error || it.error;
+                if (err) {
+                    return `<tr class="border-b border-border/40 text-warn/90">
+                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="5" class="py-1">${escHtml(String(err))}</td></tr>`;
+                }
+                const ret = Number(s.total_return);
+                const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(2) + '%' : '—';
+                const retCls = ret > 0 ? 'text-neon-green' : ret < 0 ? 'text-neon-red' : 'text-text-muted';
+                const trades = s.total_trades != null ? String(s.total_trades) : '—';
+                const score = it.score != null ? Number(it.score).toFixed(4) : '—';
+                const pid = it.profile_id ? '#' + it.profile_id : '—';
+                return `<tr class="border-b border-border/40 hover:bg-surface-light/20">
+                    <td class="py-1 pr-2 font-mono">${sym}</td>
+                    <td class="py-1 pr-2 text-[10px]">${tpl}</td>
+                    <td class="py-1 pr-2 text-right font-mono ${retCls}">${escHtml(retPct)}</td>
+                    <td class="py-1 pr-2 text-right font-mono">${escHtml(trades)}</td>
+                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(score)}</td>
+                    <td class="py-1 pr-2 font-mono text-[10px]">${escHtml(pid)}</td>
+                </tr>`;
+            }).join('');
+            if (root) {
+                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[520px]">
+                    <thead><tr class="text-text-muted text-[10px] uppercase">
+                        <th class="py-1 pr-2">标的</th><th class="py-1 pr-2">最优模板</th>
+                        <th class="py-1 pr-2 text-right">收益</th><th class="py-1 pr-2 text-right">回合</th>
+                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">Profile</th>
+                    </tr></thead><tbody>${rows}</tbody></table>`;
+            }
+            if (st === 'running' || running) mqStartDailyPoll();
+            else mqStopDailyPoll();
+        }
+
+        async function loadMqDailyPanel(quiet) {
+            const root = document.getElementById('mq-daily-table');
+            if (!root) return;
+            if (!quiet) root.innerHTML = '<span class="animate-pulse">加载寻优结果…</span>';
+            try {
+                const [data, sum] = await Promise.all([
+                    API.mqDailyOptimizeLatest(),
+                    API.mqSummary().catch(() => null),
+                ]);
+                renderMqDailyPanel(data, sum);
+            } catch (e) {
+                console.warn('mq daily:', e);
+                if (root) root.innerHTML = '<span class="text-neon-red text-xs">' + escHtml(e.message || '加载失败') + '</span>';
+            }
+        }
+
+        async function runMqDailyOptimize() {
+            const msg = document.getElementById('mq-daily-msg');
+            const btn = document.getElementById('mq-daily-run');
+            if (btn && btn.disabled) return;
+            if (!confirm('将对 23 个标的依次网格寻优（约 10–20 分钟），完成后自动创建/更新 daily-* Profile。确定？')) return;
+            if (msg) msg.textContent = '提交后台任务…';
+            try {
+                const out = await API.mqDailyOptimizeRun({});
+                if (out.already_running) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">已有寻优任务在运行</span>';
+                } else if (out.started) {
+                    if (msg) msg.innerHTML = '<span class="text-neon-green">已启动，请稍后刷新或等待自动轮询</span>';
+                } else {
+                    if (msg) msg.textContent = out.message || '—';
+                }
+                mqStartDailyPoll();
+                await loadMqDailyPanel(true);
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '启动失败') + '</span>';
+            }
         }
 
         async function deleteMqProfile(profileId) {
@@ -3005,7 +3163,7 @@
             try {
                 const sum = await API.mqSummary();
                 renderMqSummary(sum);
-                await loadMqProfilesPanel();
+                await Promise.all([loadMqProfilesPanel(), loadMqDailyPanel(true)]);
                 const [sig, scan] = await Promise.all([
                     API.mqSignals(),
                     API.mqPaperScanLatest().catch((err) => {
@@ -3032,6 +3190,7 @@
             initMqProfilesPanelOnce._done = true;
             document.getElementById('mq-create-template')?.addEventListener('change', updateMqTemplateHint);
             document.getElementById('mq-create-btn')?.addEventListener('click', () => void submitMqCreateProfile());
+            document.getElementById('mq-daily-run')?.addEventListener('click', () => void runMqDailyOptimize());
             document.getElementById('mq-bt-backtest')?.addEventListener('click', () => void runMqResearch('backtest'));
             document.getElementById('mq-bt-baseline')?.addEventListener('click', () => void runMqResearch('baseline'));
             document.getElementById('mq-bt-reflect')?.addEventListener('click', () => void runMqResearch('reflect'));
