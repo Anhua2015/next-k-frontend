@@ -451,6 +451,11 @@
                             <button type="button" id="mq-bt-baseline" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">② baseline</button>
                             <button type="button" id="mq-bt-reflect" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="需 Railway 配置 GROQ_API_KEY">③ reflect</button>
                             <button type="button" id="mq-bt-evolve-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">④ evolve run</button>
+                            <button type="button" id="mq-bt-apply-params" disabled
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="将最近一次 baseline/evolve 的 final_params 写入所选 Profile 战术参数（纸面下一扫描生效）">
+                                应用 final_params → Profile
+                            </button>
                         </div>
                         <pre id="mq-research-out" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">选择 Profile 后点击按钮；结果摘要显示于此。</pre>
                     </div>
@@ -1007,6 +1012,12 @@
                 const res = await fetch(`${API_BASE}/api/moss-quant/backtests/${encodeURIComponent(runId)}`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
+            },
+            async mqApplyFinalParams(profileId, body) {
+                return API._mqPost(
+                    '/api/moss-quant/profiles/' + encodeURIComponent(profileId) + '/apply-final-params',
+                    body || {},
+                );
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -2329,6 +2340,29 @@
         }
 
         let _mqProfilesCache = [];
+        let _mqLastFinalParams = null;
+        let _mqLastFinalParamsRunId = null;
+
+        function mqCacheFinalParams(data) {
+            if (data && data.final_params && typeof data.final_params === 'object') {
+                _mqLastFinalParams = data.final_params;
+                _mqLastFinalParamsRunId = data.run_id != null ? data.run_id : _mqLastFinalParamsRunId;
+                const btn = document.getElementById('mq-bt-apply-params');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function mqTacticalPreview(params) {
+            if (!params) return '';
+            const keys = [
+                'entry_threshold', 'exit_threshold', 'sl_atr_mult', 'tp_rr_ratio',
+                'regime_sensitivity', 'trailing_enabled',
+            ];
+            return keys
+                .filter((k) => params[k] != null)
+                .map((k) => k + '=' + params[k])
+                .join(', ');
+        }
 
         function syncMqResearchProfileSelect(profiles) {
             _mqProfilesCache = profiles || [];
@@ -2425,6 +2459,7 @@
                     body.refresh_klines = true;
                     data = await API.mqEvolveBaseline(body);
                     if (data.run_id != null && runEl) runEl.value = String(data.run_id);
+                    mqCacheFinalParams(data);
                     setMqResearchOut(formatMqResearchResult('baseline', data), false);
                 } else if (action === 'reflect') {
                     const rid = runEl && runEl.value ? parseInt(runEl.value, 10) : NaN;
@@ -2441,6 +2476,7 @@
                         return;
                     }
                     data = await API.mqEvolveRun(rid);
+                    mqCacheFinalParams(data);
                     setMqResearchOut(formatMqResearchResult('evolve run', data), false);
                 }
             } catch (e) {
@@ -2450,6 +2486,43 @@
                     const b = document.getElementById(id);
                     if (b) b.disabled = false;
                 });
+            }
+        }
+
+        async function applyMqFinalParamsToProfile() {
+            const pid = mqResearchProfileId();
+            if (!pid) {
+                setMqResearchOut('请先选择要写入的 Profile', true);
+                return;
+            }
+            const btn = document.getElementById('mq-bt-apply-params');
+            const body = {};
+            if (_mqLastFinalParams) body.params = _mqLastFinalParams;
+            else {
+                const runEl = document.getElementById('mq-baseline-run-id');
+                const rid = runEl && runEl.value ? parseInt(runEl.value, 10) : NaN;
+                if (Number.isFinite(rid) && rid > 0) body.run_id = rid;
+                else if (_mqLastFinalParamsRunId) body.run_id = _mqLastFinalParamsRunId;
+            }
+            if (!body.params && !body.run_id) {
+                setMqResearchOut('请先完成 ② baseline 或 ④ evolve run（含 final_params）', true);
+                return;
+            }
+            if (!confirm('将 final_params 战术字段写入 Profile #' + pid + '？\n性格权重不变，纸面下一扫描起生效。')) return;
+            if (btn) btn.disabled = true;
+            setMqResearchOut('写入 Profile 中…', false);
+            try {
+                const out = await API.mqApplyFinalParams(pid, body);
+                const tact = out.tactical_params || {};
+                const line = '已应用 → Profile #' + pid
+                    + '\nentry_threshold=' + (out.entry_threshold != null ? out.entry_threshold : tact.entry_threshold)
+                    + '\n' + mqTacticalPreview(tact);
+                setMqResearchOut(line, false);
+                await loadMqProfilesPanel();
+            } catch (e) {
+                setMqResearchOut((e && e.message) || String(e), true);
+            } finally {
+                if (btn) btn.disabled = !_mqLastFinalParams;
             }
         }
 
@@ -2604,6 +2677,7 @@
             document.getElementById('mq-bt-baseline')?.addEventListener('click', () => void runMqResearch('baseline'));
             document.getElementById('mq-bt-reflect')?.addEventListener('click', () => void runMqResearch('reflect'));
             document.getElementById('mq-bt-evolve-run')?.addEventListener('click', () => void runMqResearch('evolve_run'));
+            document.getElementById('mq-bt-apply-params')?.addEventListener('click', () => void applyMqFinalParamsToProfile());
             document.getElementById('mq-profiles-list')?.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-mq-toggle]');
                 if (!btn) return;
