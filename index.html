@@ -2818,30 +2818,45 @@
                 const err = s.error || it.error;
                 if (err) {
                     return `<tr class="border-b border-border/40 text-warn/90">
-                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="5" class="py-1">${escHtml(String(err))}</td></tr>`;
+                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="8" class="py-1">${escHtml(String(err))}</td></tr>`;
                 }
                 const ret = Number(s.total_return);
                 const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(2) + '%' : '—';
                 const retCls = ret > 0 ? 'text-neon-green' : ret < 0 ? 'text-neon-red' : 'text-text-muted';
                 const trades = s.total_trades != null ? String(s.total_trades) : '—';
+                const wr = s.win_rate != null ? (Number(s.win_rate) * 100).toFixed(0) + '%' : '—';
                 const score = it.score != null ? Number(it.score).toFixed(4) : '—';
                 const pid = it.profile_id ? '#' + it.profile_id : '—';
+                const autoOn = s.auto_enabled === true;
+                const autoLabel = s.auto_enable_label || (autoOn ? '开' : '关');
+                const autoReason = String(s.auto_enable_reason || '');
+                const autoCls = autoOn
+                    ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
+                    : 'text-text-muted border-border/70 bg-surface-light/50';
+                const autoBadge = '<span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border '
+                    + autoCls + '" title="' + escHtml(autoReason) + '">' + escHtml(autoLabel) + '</span>';
                 return `<tr class="border-b border-border/40 hover:bg-surface-light/20">
                     <td class="py-1 pr-2 font-mono">${sym}</td>
                     <td class="py-1 pr-2 text-[10px]">${tpl}</td>
                     <td class="py-1 pr-2 text-right font-mono ${retCls}">${escHtml(retPct)}</td>
                     <td class="py-1 pr-2 text-right font-mono">${escHtml(trades)}</td>
+                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(wr)}</td>
+                    <td class="py-1 pr-2">${autoBadge}</td>
+                    <td class="py-1 pr-2 text-[10px] text-text-muted max-w-[10rem] truncate" title="${escHtml(autoReason)}">${escHtml(autoReason)}</td>
                     <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(score)}</td>
                     <td class="py-1 pr-2 font-mono text-[10px]">${escHtml(pid)}</td>
                 </tr>`;
             }).join('');
             if (root) {
-                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[520px]">
+                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
                     <thead><tr class="text-text-muted text-[10px] uppercase">
                         <th class="py-1 pr-2">标的</th><th class="py-1 pr-2">最优模板</th>
                         <th class="py-1 pr-2 text-right">收益</th><th class="py-1 pr-2 text-right">回合</th>
+                        <th class="py-1 pr-2 text-right">胜率</th><th class="py-1 pr-2">纸面</th>
+                        <th class="py-1 pr-2">开关原因</th>
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">Profile</th>
-                    </tr></thead><tbody>${rows}</tbody></table>`;
+                    </tr></thead><tbody>${rows}</tbody></table>
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">寻优 apply 后自动设纸面开关：<b>开</b>=收益&gt;0、回合≥8、回撤≤45%、无爆仓；否则<b>关</b>（内置规则，无需配置）。仍可手动改启用。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
