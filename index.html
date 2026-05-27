@@ -432,56 +432,79 @@
                         </div>
                         <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem]"></p>
                     </div>
-                    <div class="rounded-lg border border-neon-purple/25 bg-surface/60 p-3 mt-3 space-y-2">
-                        <div class="text-text-muted text-[10px] font-medium uppercase tracking-wide">回测 / 进化</div>
-                        <p class="text-[10px] text-text-muted leading-relaxed">顺序：① 全量回测（可选）→ ② 分段 baseline → ③ LLM reflect → ④ 进化 run。耗时可 1–3 分钟，请勿重复点击。</p>
-                        <div class="flex flex-wrap gap-2 items-end">
-                            <label class="block min-w-[10rem]">
-                                <span class="text-[10px] text-text-muted">绑定 Profile</span>
-                                <select id="mq-research-profile"
-                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50">
-                                    <option value="">— 请先创建 Profile —</option>
-                                </select>
-                            </label>
-                            <label class="block w-24">
-                                <span class="text-[10px] text-text-muted">资金 U</span>
-                                <input type="number" id="mq-research-capital" min="100" step="100" placeholder="10000"
-                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
-                            </label>
-                            <label class="block w-28">
-                                <span class="text-[10px] text-text-muted">段长 bars</span>
-                                <input type="number" id="mq-research-segment-bars" min="96" step="96" placeholder="672"
-                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" title="15m 约 672=7天/段" />
-                            </label>
-                            <label class="block w-28">
-                                <span class="text-[10px] text-text-muted">baseline run_id</span>
-                                <input type="number" id="mq-baseline-run-id" min="1" step="1" placeholder="自动填入"
-                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
-                            </label>
+                    <details id="mq-research-panel" class="mt-3 rounded-lg border border-neon-purple/25 bg-surface/60 group">
+                        <summary class="cursor-pointer select-none px-3 py-2 text-text-muted text-[10px] font-medium uppercase tracking-wide list-none flex items-center justify-between gap-2 hover:text-text-secondary">
+                            <span>回测 / 进化</span>
+                            <span class="text-[9px] font-normal normal-case text-text-muted group-open:hidden">展开</span>
+                            <span class="text-[9px] font-normal normal-case text-neon-purple hidden group-open:inline">收起</span>
+                        </summary>
+                        <div class="px-3 pb-3 pt-1 space-y-2 border-t border-border/50">
+                            <p class="text-[10px] text-text-muted leading-relaxed">顺序：① 全量回测（可选）→ ② 分段 baseline → ③ LLM reflect → ④ 进化 run。耗时可 1–3 分钟，请勿重复点击。可直接输入<b class="text-text-secondary">任意 Moss 宇宙标的</b>；选 Profile 时用其模板与战术参数。</p>
+                            <div class="flex flex-wrap gap-2 items-end">
+                                <label class="block min-w-[9rem] flex-1">
+                                    <span class="text-[10px] text-text-muted">标的（USDT 永续）</span>
+                                    <input type="text" id="mq-research-symbol" list="mq-symbol-datalist" placeholder="HYPEUSDT" autocomplete="off"
+                                        class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                                </label>
+                                <label class="block min-w-[8rem]">
+                                    <span class="text-[10px] text-text-muted">策略模板</span>
+                                    <select id="mq-research-template"
+                                        class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50"
+                                        title="未选 Profile 时用于回测/寻优的默认性格">
+                                        <option value="balanced">均衡 balanced</option>
+                                        <option value="momentum">动量 momentum</option>
+                                        <option value="trend">趋势 trend</option>
+                                        <option value="mean_revert">均值回归 mean_revert</option>
+                                    </select>
+                                </label>
+                                <label class="block min-w-[10rem]">
+                                    <span class="text-[10px] text-text-muted">Profile（可选）</span>
+                                    <select id="mq-research-profile"
+                                        class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50"
+                                        title="选中后回测使用该 Profile 的参数；并用于「应用到 Profile」">
+                                        <option value="">— 仅按标的 —</option>
+                                    </select>
+                                </label>
+                                <label class="block w-24">
+                                    <span class="text-[10px] text-text-muted">资金 U</span>
+                                    <input type="number" id="mq-research-capital" min="100" step="100" placeholder="10000"
+                                        class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                                </label>
+                                <label class="block w-28">
+                                    <span class="text-[10px] text-text-muted">段长 bars</span>
+                                    <input type="number" id="mq-research-segment-bars" min="96" step="96" placeholder="672"
+                                        class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" title="15m 约 672=7天/段" />
+                                </label>
+                                <label class="block w-28">
+                                    <span class="text-[10px] text-text-muted">baseline run_id</span>
+                                    <input type="number" id="mq-baseline-run-id" min="1" step="1" placeholder="自动填入"
+                                        class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                                </label>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" id="mq-bt-backtest" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/40 hover:text-neon-purple">全量回测</button>
+                                <button type="button" id="mq-bt-baseline" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">② baseline</button>
+                                <button type="button" id="mq-bt-reflect" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="需 Railway 配置 GROQ_API_KEY">③ reflect</button>
+                                <button type="button" id="mq-bt-evolve-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">④ evolve run</button>
+                                <button type="button" id="mq-bt-apply-params" disabled
+                                    class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title="将最近一次 baseline/evolve 的 final_params 写入下方所选 Profile">
+                                    应用 final_params → Profile
+                                </button>
+                                <button type="button" id="mq-bt-optimize"
+                                    class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15"
+                                    title="网格搜索 4 模板 × 战术参数（约 96 组），按回测收益排序，耗时 1–3 分钟">
+                                    自动寻优
+                                </button>
+                                <button type="button" id="mq-bt-apply-optimize" disabled
+                                    class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-yellow/35 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title="将寻优最优战术参数写入下方所选 Profile（不换模板）">
+                                    应用寻优战术 → Profile
+                                </button>
+                            </div>
+                            <pre id="mq-research-out" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">填写标的或选择 Profile 后点击按钮；结果摘要显示于此。</pre>
                         </div>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" id="mq-bt-backtest" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/40 hover:text-neon-purple">全量回测</button>
-                            <button type="button" id="mq-bt-baseline" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">② baseline</button>
-                            <button type="button" id="mq-bt-reflect" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="需 Railway 配置 GROQ_API_KEY">③ reflect</button>
-                            <button type="button" id="mq-bt-evolve-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">④ evolve run</button>
-                            <button type="button" id="mq-bt-apply-params" disabled
-                                class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                                title="将最近一次 baseline/evolve 的 final_params 写入所选 Profile 战术参数（纸面下一扫描生效）">
-                                应用 final_params → Profile
-                            </button>
-                            <button type="button" id="mq-bt-optimize"
-                                class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15"
-                                title="网格搜索 4 模板 × 战术参数（约 96 组），按回测收益排序，耗时 1–3 分钟">
-                                自动寻优
-                            </button>
-                            <button type="button" id="mq-bt-apply-optimize" disabled
-                                class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-yellow/35 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/10 disabled:opacity-40 disabled:cursor-not-allowed"
-                                title="将寻优最优战术参数写入当前所选 Profile（不换模板）">
-                                应用寻优战术 → Profile
-                            </button>
-                        </div>
-                        <pre id="mq-research-out" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">选择 Profile 后点击按钮；结果摘要显示于此。</pre>
-                    </div>
+                    </details>
                 </div>
                 <div class="px-4 pt-2 pb-0 border-t border-border/30">
                     <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
@@ -2818,6 +2841,37 @@
             _mqDailyPollTimer = setInterval(() => void loadMqDailyPanel(true), 30000);
         }
 
+        /** 与后端 daily_auto_enable.py 一致；summary 无 auto_enabled 时用于展示 */
+        function mqEvaluateDailyGate(summary) {
+            const s = summary || {};
+            if (s.error) return { ok: false, reason: '寻优失败' };
+            const ret = Number(s.total_return) || 0;
+            const trades = Number(s.total_trades) || 0;
+            const mdd = Math.abs(Number(s.max_drawdown) || 0);
+            const blow = Number(s.blowup_count) || 0;
+            const wr = Number(s.win_rate) || 0;
+            const fails = [];
+            if (ret <= 0) fails.push('收益≤0%');
+            if (trades < 8) fails.push('回合<8');
+            if (mdd > 0.45) fails.push('回撤>45%');
+            if (blow > 0) fails.push('回测爆仓');
+            if (fails.length) return { ok: false, reason: fails.join('；') };
+            let detail = '收益' + (ret * 100).toFixed(1) + '%·' + trades + '笔';
+            if (trades > 0) detail += '·胜率' + (wr * 100).toFixed(0) + '%';
+            return { ok: true, reason: detail };
+        }
+
+        function mqDailyGateState(summary) {
+            const s = summary || {};
+            if (s.auto_enabled === true) {
+                return { ok: true, reason: String(s.auto_enable_reason || '') };
+            }
+            if (s.auto_enabled === false) {
+                return { ok: false, reason: String(s.auto_enable_reason || '') };
+            }
+            return mqEvaluateDailyGate(s);
+        }
+
         function renderMqDailyPanel(data, sum) {
             const root = document.getElementById('mq-daily-table');
             const meta = document.getElementById('mq-daily-meta');
@@ -2855,8 +2909,9 @@
             let failN = 0;
             items.forEach((it) => {
                 const s = it.summary || {};
-                if (s.auto_enabled === true) passN += 1;
-                else if (!s.error && !it.error) failN += 1;
+                if (s.error || it.error) return;
+                if (mqDailyGateState(s).ok) passN += 1;
+                else failN += 1;
             });
             if (chipsEl) {
                 chipsEl.innerHTML = [
@@ -2867,8 +2922,8 @@
                     + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>').join('');
             }
             items.sort((a, b) => {
-                const pa = (a.summary || {}).auto_enabled === true ? 0 : 1;
-                const pb = (b.summary || {}).auto_enabled === true ? 0 : 1;
+                const pa = mqDailyGateState(a.summary || {}).ok ? 0 : 1;
+                const pb = mqDailyGateState(b.summary || {}).ok ? 0 : 1;
                 if (pa !== pb) return pa - pb;
                 return Number(b.score || 0) - Number(a.score || 0);
             });
@@ -2889,12 +2944,13 @@
                 const trades = s.total_trades != null ? String(s.total_trades) : '—';
                 const wr = s.win_rate != null ? (Number(s.win_rate) * 100).toFixed(0) + '%' : '—';
                 const score = it.score != null ? Number(it.score).toFixed(4) : '—';
-                const autoOn = s.auto_enabled === true;
+                const gate = mqDailyGateState(s);
+                const autoOn = gate.ok;
                 const gateLabel = autoOn ? '达标' : '不达标';
                 const gateCls = autoOn
                     ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
                     : 'text-warn/90 border-warn/35 bg-warn/10';
-                const autoReason = String(s.auto_enable_reason || '');
+                const autoReason = gate.reason || '';
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
                 const addBtn = profileSyms.has(symRaw)
                     ? '<span class="text-[10px] text-text-muted">已在纸面</span>'
@@ -3030,12 +3086,24 @@
                 .join(', ');
         }
 
+        function mqNormalizeResearchSymbol(raw) {
+            let s = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+            if (!s) return '';
+            if (!s.endsWith('USDT')) s += 'USDT';
+            return s;
+        }
+
+        function mqResearchSymbol() {
+            const el = document.getElementById('mq-research-symbol');
+            return mqNormalizeResearchSymbol(el && el.value);
+        }
+
         function syncMqResearchProfileSelect(profiles) {
             _mqProfilesCache = profiles || [];
             const sel = document.getElementById('mq-research-profile');
             if (!sel) return;
             const prev = sel.value;
-            const opts = ['<option value="">— 选择 Profile —</option>'];
+            const opts = ['<option value="">— 仅按标的 —</option>'];
             _mqProfilesCache.forEach((p) => {
                 const label = '#' + p.id + ' ' + escHtml(p.symbol) + ' · ' + escHtml(p.template || '');
                 opts.push('<option value="' + escHtml(String(p.id)) + '">' + label + '</option>');
@@ -3048,6 +3116,30 @@
             const sel = document.getElementById('mq-research-profile');
             const v = sel && sel.value ? parseInt(sel.value, 10) : NaN;
             return Number.isFinite(v) && v > 0 ? v : null;
+        }
+
+        function mqResearchTemplate() {
+            const sel = document.getElementById('mq-research-template');
+            return sel && sel.value ? String(sel.value) : 'balanced';
+        }
+
+        /** 回测/寻优请求体：优先 Profile；否则任意 Moss 宇宙标的 + 模板 */
+        function mqResearchBodyBase() {
+            const pid = mqResearchProfileId();
+            const sym = mqResearchSymbol();
+            if (pid) return { profile_id: pid };
+            if (sym) return { symbol: sym, template: mqResearchTemplate() };
+            return null;
+        }
+
+        function mqResearchTargetLabel() {
+            const pid = mqResearchProfileId();
+            if (pid) {
+                const p = (_mqProfilesCache || []).find((x) => Number(x.id) === Number(pid));
+                return p ? ('Profile #' + pid + ' ' + (p.symbol || '')) : ('Profile #' + pid);
+            }
+            const sym = mqResearchSymbol();
+            return sym ? sym : '';
         }
 
         function setMqResearchOut(text, isErr) {
@@ -3132,14 +3224,14 @@
         }
 
         async function runMqOptimize() {
-            const pid = mqResearchProfileId();
-            if (!pid) {
-                setMqResearchOut('请先选择 Profile（用于确定标的）', true);
+            const base = mqResearchBodyBase();
+            if (!base) {
+                setMqResearchOut('请填写标的（如 HYPEUSDT）或选择 Profile', true);
                 return;
             }
             const capEl = document.getElementById('mq-research-capital');
             const capital = capEl && capEl.value ? parseFloat(capEl.value) : undefined;
-            const body = { profile_id: pid, refresh_klines: true, top_n: 15 };
+            const body = { ...base, refresh_klines: true, top_n: 15 };
             if (capital != null && Number.isFinite(capital)) body.capital = capital;
 
             const btns = ['mq-bt-optimize', 'mq-bt-backtest', 'mq-bt-baseline', 'mq-bt-reflect', 'mq-bt-evolve-run'];
@@ -3207,17 +3299,20 @@
         }
 
         async function runMqResearch(action) {
-            const pid = mqResearchProfileId();
-            if (!pid && action !== 'reflect' && action !== 'evolve_run') {
-                setMqResearchOut('请先选择 Profile', true);
-                return;
+            let body = null;
+            if (action !== 'reflect' && action !== 'evolve_run') {
+                body = mqResearchBodyBase();
+                if (!body) {
+                    setMqResearchOut('请填写标的（如 HYPEUSDT）或选择 Profile', true);
+                    return;
+                }
             }
             const capEl = document.getElementById('mq-research-capital');
             const segEl = document.getElementById('mq-research-segment-bars');
             const runEl = document.getElementById('mq-baseline-run-id');
             const capital = capEl && capEl.value ? parseFloat(capEl.value) : undefined;
             const segment_bars = segEl && segEl.value ? parseInt(segEl.value, 10) : undefined;
-            const body = { profile_id: pid };
+            if (!body) body = {};
             if (capital != null && Number.isFinite(capital)) body.capital = capital;
             if (segment_bars != null && Number.isFinite(segment_bars)) body.segment_bars = segment_bars;
 
@@ -3226,7 +3321,12 @@
                 const b = document.getElementById(id);
                 if (b) b.disabled = true;
             });
-            setMqResearchOut(action + ' 运行中… 拉取 K 线 + 回测可能需要 1–3 分钟，请稍候。', false);
+            const targetHint = mqResearchTargetLabel();
+            setMqResearchOut(
+                action + ' 运行中…' + (targetHint ? ' · ' + targetHint : '')
+                    + ' 拉取 K 线 + 回测可能需要 1–3 分钟，请稍候。',
+                false,
+            );
 
             try {
                 let data;
@@ -3485,6 +3585,23 @@
             document.getElementById('mq-bt-apply-params')?.addEventListener('click', () => void applyMqFinalParamsToProfile());
             document.getElementById('mq-bt-optimize')?.addEventListener('click', () => void runMqOptimize());
             document.getElementById('mq-bt-apply-optimize')?.addEventListener('click', () => void applyMqOptimizeToProfile());
+            document.getElementById('mq-research-profile')?.addEventListener('change', () => {
+                const pid = mqResearchProfileId();
+                if (!pid) return;
+                const p = (_mqProfilesCache || []).find((x) => Number(x.id) === Number(pid));
+                if (!p) return;
+                const symEl = document.getElementById('mq-research-symbol');
+                const tplEl = document.getElementById('mq-research-template');
+                if (symEl) symEl.value = p.symbol || '';
+                if (tplEl && p.template) tplEl.value = String(p.template).toLowerCase();
+            });
+            document.getElementById('mq-research-symbol')?.addEventListener('blur', (ev) => {
+                const n = mqNormalizeResearchSymbol(ev.target && ev.target.value);
+                if (n && ev.target) ev.target.value = n;
+            });
+            document.getElementById('mq-research-panel')?.addEventListener('toggle', (ev) => {
+                if (ev.target && ev.target.open) void ensureMqUniverseDatalist();
+            });
             document.getElementById('mq-daily-table')?.addEventListener('click', (ev) => {
                 const addBtn = ev.target.closest('[data-mq-from-daily]');
                 if (addBtn) {
