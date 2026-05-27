@@ -355,6 +355,27 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="Moss量化纸面" id="mq-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">🧬</span> Moss Quant (Paper)
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 每 profile 单币 · <code class="text-[10px]">moss_signals</code> · 回测/进化见 API</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="mq-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-purple/40 hover:text-neon-purple">刷新</button>
+                    </div>
+                </div>
+                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="mq-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[36rem] border-t border-border/40 lane-board-scroll">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注与重点关注归档" id="worth-history-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -417,6 +438,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('jz-lane-section', '接针策略纸面'),
                 pick('mom-lane-section', '动量多一空一纸面'),
+                pick('mq-lane-section', 'Moss量化纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ];
@@ -469,6 +491,7 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-mom-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/momentum/maintenance/clear-db">清理动量库</button>
                         <button type="button" id="maint-jz-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/jiezhen/maintenance/clear-db">清理接针库</button>
+                        <button type="button" id="maint-mq-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-purple/30 text-neon-purple text-xs font-medium hover:bg-neon-purple/10 hover:border-neon-purple/45" title="POST /api/moss-quant/maintenance/clear-db">清理 Moss 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -493,6 +516,7 @@
                         <button type="button" data-maint-cron="mom_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="动量移动止盈检查">动量止盈</button>
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
+                        <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化纸面扫描">Moss 纸面</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
@@ -803,6 +827,27 @@
             },
             async jzClearDb() {
                 const res = await fetch(`${API_BASE}/api/jiezhen/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async mqSummary() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqSignals() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/signals`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqClearDb() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/maintenance/clear-db`, {
                     method: 'POST',
                     headers: maintenanceHeaders(),
                 });
@@ -2013,6 +2058,106 @@
             }
         }
 
+        function renderMqSummary(sum) {
+            const el = document.getElementById('mq-summary');
+            if (!el) return;
+            if (!sum || !sum.ok) { el.innerHTML = ''; return; }
+            const pnl = Number(sum.total_pnl_usdt) || 0;
+            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">启用 Profile</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">持仓</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">已结算</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.settled_count ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">已实现 U</div>
+                    <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 4)}</div>
+                </div>`;
+        }
+
+        function renderMqTable(items) {
+            const root = document.getElementById('mq-root');
+            if (!root) return;
+            if (!items || !items.length) {
+                root.innerHTML = '<p class="text-text-muted text-sm">暂无纸面记录。请 POST /api/moss-quant/profiles 创建并 enabled=1，再 MOSS_QUANT_PAPER_ENABLED=1 或维护面板「Moss 纸面」。</p>';
+                return;
+            }
+            const rows = items.map((row) => {
+                const open = !row.outcome;
+                const pnl = open ? row.unrealized_pnl_usdt : row.pnl_usdt;
+                const pnlCls = pxClass(Number(pnl));
+                return `<tr class="border-b border-border/60">
+                    <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml(String(row.id))}</td>
+                    <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml((row.recorded_at_utc || '').slice(0, 19))}</td>
+                    <td class="py-1.5 pr-2 font-mono">${escHtml(row.symbol)}</td>
+                    <td class="py-1.5 pr-2">${escHtml(row.side)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${fmtZctPx(row.entry_price, 4)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${open ? fmtZctPx(row.mark_price, 4) : '—'}</td>
+                    <td class="py-1.5 pr-2">${open ? '持仓' : escHtml(row.outcome || '')}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-[10px]">${escHtml(row.exit_rule || row.regime || '')}</td>
+                </tr>`;
+            }).join('');
+            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[900px]">
+                <thead><tr class="border-b border-border/80 text-text-muted text-[10px] uppercase">
+                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">UTC</th><th class="py-2 pr-2">标的</th>
+                    <th class="py-2 pr-2">方向</th><th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2 text-right">标记</th>
+                    <th class="py-2 pr-2">状态</th><th class="py-2 pr-2 text-right">盈亏U</th><th class="py-2 pr-2">备注</th>
+                </tr></thead><tbody>${rows}</tbody></table>` + laneBoardScrollHint(items.length);
+        }
+
+        async function hydrateMqBoard() {
+            const root = document.getElementById('mq-root');
+            const tsEl = document.getElementById('mq-ts');
+            if (!root) return;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>';
+            try {
+                const sum = await API.mqSummary();
+                renderMqSummary(sum);
+                const sig = await API.mqSignals();
+                renderMqTable(sig.signals || []);
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } catch (e) {
+                console.error('moss_quant:', e);
+                renderMqSummary(null);
+                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e.message || '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
+        async function clearMqLaneData() {
+            const maintMsg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-mq-clear-db');
+            if (!getMaintenanceToken()) {
+                const hint = '请先在维护面板保存维护令牌';
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-warn">' + escHtml(hint) + '</span>';
+                else alert(hint);
+                return;
+            }
+            if (!confirm('确定清空 Moss 量化全部纸面/回测/profile 数据？不可撤销。')) return;
+            if (btn) btn.disabled = true;
+            if (maintMsg) maintMsg.textContent = 'Moss 清库请求中…';
+            try {
+                const out = await API.mqClearDb();
+                const line = 'Moss 已清库 · signals=' + escHtml(String(out.deleted_moss_signals ?? 0))
+                    + ' · profiles=' + escHtml(String(out.deleted_moss_profiles ?? 0));
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + line + '</span>';
+                await hydrateMqBoard();
+            } catch (e) {
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         function zctSideClass(side) {
             if (side === 'LONG') return 'text-neon-green font-medium';
             if (side === 'SHORT') return 'text-neon-red font-medium';
@@ -2750,6 +2895,8 @@
                 jz_scan: '接针 hot_oi 纸面扫描',
                 jiezhen_trail: '接针移动止盈检查',
                 jz_trail: '接针移动止盈检查',
+                moss_quant_scan: 'Moss 量化纸面扫描',
+                mq_paper: 'Moss 量化纸面扫描',
                 powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
             };
@@ -2929,6 +3076,7 @@
             document.getElementById('maint-top-trader-clear')?.addEventListener('click', () => void clearTopTraderData());
             document.getElementById('maint-mom-clear-db')?.addEventListener('click', () => void clearMomLaneData());
             document.getElementById('maint-jz-clear-db')?.addEventListener('click', () => void clearJzLaneData());
+            document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
@@ -3009,6 +3157,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('jz-lane-section', '接针策略纸面'),
                 pick('mom-lane-section', '动量多一空一纸面'),
+                pick('mq-lane-section', 'Moss量化纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ].forEach((el) => {
@@ -3036,7 +3185,9 @@
             /* ZCT VWAP 主看板已隐藏；维护面板仍可清库/触轨池 */
             void hydrateMomBoard();
             void hydrateJzBoard();
+            void hydrateMqBoard();
             document.getElementById('mom-refresh')?.addEventListener('click', () => void hydrateMomBoard());
+            document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
             document.getElementById('mom-filter-status')?.addEventListener('change', () => void hydrateMomBoard());
             document.getElementById('mom-filter-symbol')?.addEventListener('keydown', (ev) => {
                 if (ev.key === 'Enter') void hydrateMomBoard();
