@@ -370,7 +370,60 @@
                     </div>
                 </div>
                 <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
-                <div id="mq-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[36rem] border-t border-border/40 lane-board-scroll">
+                <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile</h3>
+                        <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/5</span>
+                    </div>
+                    <div id="mq-profiles-list" class="text-text-muted text-xs mb-3">加载 Profile…</div>
+                    <div class="rounded-lg border border-border/80 bg-surface/60 p-3 space-y-2">
+                        <div class="text-text-muted text-[10px] font-medium uppercase tracking-wide">新建 Profile</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                            <label class="block min-w-0">
+                                <span class="text-[10px] text-text-muted">名称</span>
+                                <input type="text" id="mq-create-name" maxlength="64" placeholder="如 btc-balanced" autocomplete="off"
+                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                            </label>
+                            <label class="block min-w-0">
+                                <span class="text-[10px] text-text-muted">标的（币安 USDT 永续）</span>
+                                <input type="text" id="mq-create-symbol" list="mq-symbol-datalist" placeholder="BTCUSDT" autocomplete="off"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                                <datalist id="mq-symbol-datalist"></datalist>
+                            </label>
+                            <label class="block min-w-0">
+                                <span class="text-[10px] text-text-muted">策略模板</span>
+                                <select id="mq-create-template"
+                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50">
+                                    <option value="balanced">均衡 balanced</option>
+                                    <option value="momentum">动量 momentum</option>
+                                    <option value="trend">趋势 trend</option>
+                                    <option value="mean_revert">均值回归 mean_revert</option>
+                                </select>
+                            </label>
+                            <label class="block min-w-0">
+                                <span class="text-[10px] text-text-muted">纸面权益 U</span>
+                                <input type="number" id="mq-create-equity" min="100" step="100" placeholder="10000"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                            </label>
+                        </div>
+                        <p id="mq-template-hint" class="text-[10px] text-text-muted leading-relaxed">均衡：五维权重均衡，适合多数币种。</p>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label class="inline-flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                                <input type="checkbox" id="mq-create-enabled" checked class="rounded border-border text-neon-purple focus:ring-neon-purple/30" />
+                                创建后立即启用（参与 15m 纸面扫描）
+                            </label>
+                            <button type="button" id="mq-create-btn"
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">
+                                创建 Profile
+                            </button>
+                        </div>
+                        <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem]"></p>
+                    </div>
+                </div>
+                <div class="px-4 pt-2 pb-0 border-t border-border/30">
+                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
+                </div>
+                <div id="mq-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[28rem] border-t border-border/40 lane-board-scroll">
                     <div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>
                 </div>
             </div>
@@ -850,6 +903,40 @@
                 const res = await fetch(`${API_BASE}/api/moss-quant/maintenance/clear-db`, {
                     method: 'POST',
                     headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async mqProfiles() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/profiles`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqUniverse() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/universe`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqCreateProfile(body) {
+                const res = await fetch(`${API_BASE}/api/moss-quant/profiles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async mqPatchProfile(profileId, body) {
+                const res = await fetch(`${API_BASE}/api/moss-quant/profiles/${encodeURIComponent(profileId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
                 });
                 const text = await res.text();
                 let data;
@@ -2083,11 +2170,191 @@
                 </div>`;
         }
 
+        const MQ_MAX_ENABLED = 5;
+        const MQ_TEMPLATE_HINTS = {
+            balanced: '均衡 balanced：趋势30%·动量25%·均值回归15%·成交量15%·波动15%，通用默认。',
+            momentum: '动量 momentum：动量权重50%，顺势波段，震荡市可能假信号偏多。',
+            trend: '趋势 trend：趋势权重50%，适合单边行情，震荡市易磨损。',
+            mean_revert: '均值回归 mean_revert：均值回归45%，适合箱体震荡，强趋势市慎用。',
+        };
+        let _mqUniverseSymbols = null;
+
+        function mqEnabledCount(profiles) {
+            return (profiles || []).filter((p) => p.enabled).length;
+        }
+
+        function mqTakenSymbols(profiles, excludeId) {
+            const out = new Set();
+            (profiles || []).forEach((p) => {
+                if (!p.enabled) return;
+                if (excludeId != null && Number(p.id) === Number(excludeId)) return;
+                if (p.symbol) out.add(String(p.symbol).toUpperCase());
+            });
+            return out;
+        }
+
+        function updateMqTemplateHint() {
+            const sel = document.getElementById('mq-create-template');
+            const hint = document.getElementById('mq-template-hint');
+            if (!sel || !hint) return;
+            hint.textContent = MQ_TEMPLATE_HINTS[sel.value] || MQ_TEMPLATE_HINTS.balanced;
+        }
+
+        function updateMqCreateFormState(profiles) {
+            const enabledN = mqEnabledCount(profiles);
+            const countEl = document.getElementById('mq-profiles-count');
+            if (countEl) countEl.textContent = '启用 ' + enabledN + '/' + MQ_MAX_ENABLED;
+            const chk = document.getElementById('mq-create-enabled');
+            const btn = document.getElementById('mq-create-btn');
+            const atCap = enabledN >= MQ_MAX_ENABLED;
+            if (chk) {
+                chk.disabled = atCap;
+                if (atCap) chk.checked = false;
+            }
+            if (btn) btn.disabled = false;
+        }
+
+        async function ensureMqUniverseDatalist() {
+            if (_mqUniverseSymbols && _mqUniverseSymbols.length) return _mqUniverseSymbols;
+            try {
+                const data = await API.mqUniverse();
+                _mqUniverseSymbols = (data.symbols || []).map((s) => String(s.symbol || '').toUpperCase()).filter(Boolean);
+            } catch (e) {
+                console.warn('mq universe:', e);
+                _mqUniverseSymbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT', 'XRPUSDT'];
+            }
+            const dl = document.getElementById('mq-symbol-datalist');
+            if (dl) {
+                dl.innerHTML = _mqUniverseSymbols.slice(0, 120).map((s) => '<option value="' + escHtml(s) + '"></option>').join('');
+            }
+            return _mqUniverseSymbols;
+        }
+
+        function renderMqProfilesList(profiles) {
+            const list = document.getElementById('mq-profiles-list');
+            if (!list) return;
+            updateMqCreateFormState(profiles);
+            if (!profiles || !profiles.length) {
+                list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile，请在下方创建（最多同时启用 5 个，每币一个）。</p>';
+                return;
+            }
+            const rows = profiles.map((p) => {
+                const on = !!p.enabled;
+                const sym = escHtml(p.symbol || '');
+                const tpl = escHtml(p.template || 'balanced');
+                const eq = p.virtual_equity_usdt != null ? fmtZctPx(p.virtual_equity_usdt, 0) : '—';
+                return `<tr class="border-b border-border/50 hover:bg-surface-light/25">
+                    <td class="py-1.5 pr-2 font-mono text-[10px]">#${escHtml(String(p.id))}</td>
+                    <td class="py-1.5 pr-2">${escHtml(p.name || '')}</td>
+                    <td class="py-1.5 pr-2 font-mono">${sym}</td>
+                    <td class="py-1.5 pr-2 text-[10px]">${tpl}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${escHtml(eq)}</td>
+                    <td class="py-1.5 pr-2">
+                        <button type="button" data-mq-toggle="${escHtml(String(p.id))}" data-mq-enabled="${on ? '0' : '1'}"
+                            class="text-[10px] px-2 py-0.5 rounded border ${on ? 'border-neon-purple/40 text-neon-purple bg-neon-purple/10' : 'border-border text-text-muted hover:border-neon-purple/30'}">
+                            ${on ? '已启用' : '启用'}
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+            list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[520px]">
+                <thead><tr class="text-text-muted text-[10px] uppercase">
+                    <th class="py-1 pr-2">ID</th><th class="py-1 pr-2">名称</th><th class="py-1 pr-2">标的</th>
+                    <th class="py-1 pr-2">策略</th><th class="py-1 pr-2 text-right">权益U</th><th class="py-1 pr-2">纸面</th>
+                </tr></thead><tbody>${rows}</tbody></table>`;
+        }
+
+        async function loadMqProfilesPanel() {
+            await ensureMqUniverseDatalist();
+            const data = await API.mqProfiles();
+            renderMqProfilesList(data.profiles || []);
+            return data.profiles || [];
+        }
+
+        async function submitMqCreateProfile() {
+            const msg = document.getElementById('mq-profiles-msg');
+            const btn = document.getElementById('mq-create-btn');
+            const nameEl = document.getElementById('mq-create-name');
+            const symEl = document.getElementById('mq-create-symbol');
+            const tplEl = document.getElementById('mq-create-template');
+            const eqEl = document.getElementById('mq-create-equity');
+            const enEl = document.getElementById('mq-create-enabled');
+            const name = (nameEl && nameEl.value || '').trim();
+            const symbol = (symEl && symEl.value || '').trim().toUpperCase();
+            const template = (tplEl && tplEl.value) || 'balanced';
+            const enabled = !!(enEl && enEl.checked);
+            if (!name) {
+                if (msg) msg.innerHTML = '<span class="text-warn">请填写名称</span>';
+                return;
+            }
+            if (!symbol) {
+                if (msg) msg.innerHTML = '<span class="text-warn">请填写标的，如 BTCUSDT</span>';
+                return;
+            }
+            let profiles = [];
+            try {
+                const prev = await API.mqProfiles();
+                profiles = prev.profiles || [];
+            } catch (e) { /* ignore */ }
+            if (enabled) {
+                if (mqEnabledCount(profiles) >= MQ_MAX_ENABLED) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">已启用 ' + MQ_MAX_ENABLED + ' 个，请先关闭其它 Profile</span>';
+                    return;
+                }
+                if (mqTakenSymbols(profiles).has(symbol)) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">该标的已被其它启用 Profile 占用</span>';
+                    return;
+                }
+            }
+            const body = { name, symbol, template, enabled };
+            const eqRaw = eqEl && eqEl.value ? String(eqEl.value).trim() : '';
+            if (eqRaw) body.virtual_equity_usdt = parseFloat(eqRaw);
+            if (btn) btn.disabled = true;
+            if (msg) msg.textContent = '创建中…';
+            try {
+                const out = await API.mqCreateProfile(body);
+                if (msg) msg.innerHTML = '<span class="text-neon-green">已创建 #' + escHtml(String(out.profile && out.profile.id)) + ' · ' + escHtml(symbol) + ' · ' + escHtml(template) + '</span>';
+                if (nameEl) nameEl.value = '';
+                if (symEl) symEl.value = '';
+                await hydrateMqBoard();
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function toggleMqProfileEnabled(profileId, enable) {
+            const msg = document.getElementById('mq-profiles-msg');
+            if (msg) msg.textContent = '更新中…';
+            try {
+                const prev = await API.mqProfiles();
+                const profiles = prev.profiles || [];
+                if (enable) {
+                    if (mqEnabledCount(profiles) >= MQ_MAX_ENABLED) {
+                        if (msg) msg.innerHTML = '<span class="text-warn">最多启用 ' + MQ_MAX_ENABLED + ' 个</span>';
+                        return;
+                    }
+                    const prof = profiles.find((p) => Number(p.id) === Number(profileId));
+                    const sym = prof && String(prof.symbol || '').toUpperCase();
+                    if (sym && mqTakenSymbols(profiles, profileId).has(sym)) {
+                        if (msg) msg.innerHTML = '<span class="text-warn">标的 ' + escHtml(sym) + ' 已被占用</span>';
+                        return;
+                    }
+                }
+                await API.mqPatchProfile(profileId, { enabled: !!enable });
+                if (msg) msg.innerHTML = '<span class="text-neon-green">Profile #' + escHtml(String(profileId)) + (enable ? ' 已启用' : ' 已停用') + '</span>';
+                await hydrateMqBoard();
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            }
+        }
+
         function renderMqTable(items) {
-            const root = document.getElementById('mq-root');
+            const root = document.getElementById('mq-signals-root');
             if (!root) return;
             if (!items || !items.length) {
-                root.innerHTML = '<p class="text-text-muted text-sm">暂无纸面记录。请 POST /api/moss-quant/profiles 创建并 enabled=1，再 MOSS_QUANT_PAPER_ENABLED=1 或维护面板「Moss 纸面」。</p>';
+                root.innerHTML = '<p class="text-text-muted text-sm">暂无纸面信号。请在上方创建并启用 Profile，等待 15m 扫描或维护面板「Moss 纸面」。</p>';
                 return;
             }
             const rows = items.map((row) => {
@@ -2115,22 +2382,43 @@
         }
 
         async function hydrateMqBoard() {
-            const root = document.getElementById('mq-root');
+            const sigRoot = document.getElementById('mq-signals-root');
             const tsEl = document.getElementById('mq-ts');
-            if (!root) return;
-            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>';
+            if (!sigRoot) return;
+            sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>';
+            const listEl = document.getElementById('mq-profiles-list');
+            if (listEl) listEl.innerHTML = '<span class="animate-pulse">加载 Profile…</span>';
             try {
                 const sum = await API.mqSummary();
                 renderMqSummary(sum);
+                await loadMqProfilesPanel();
                 const sig = await API.mqSignals();
                 renderMqTable(sig.signals || []);
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('moss_quant:', e);
                 renderMqSummary(null);
-                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e.message || '加载失败') + '</div>';
+                sigRoot.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e.message || '加载失败') + '</div>';
+                if (listEl) listEl.innerHTML = '<span class="text-neon-red text-xs">' + escHtml(e.message || '加载失败') + '</span>';
                 if (tsEl) tsEl.textContent = '--';
             }
+        }
+
+        function initMqProfilesPanelOnce() {
+            if (initMqProfilesPanelOnce._done) return;
+            initMqProfilesPanelOnce._done = true;
+            document.getElementById('mq-create-template')?.addEventListener('change', updateMqTemplateHint);
+            document.getElementById('mq-create-btn')?.addEventListener('click', () => void submitMqCreateProfile());
+            document.getElementById('mq-profiles-list')?.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('[data-mq-toggle]');
+                if (!btn) return;
+                ev.preventDefault();
+                const id = btn.getAttribute('data-mq-toggle');
+                const en = btn.getAttribute('data-mq-enabled') === '1';
+                if (id) void toggleMqProfileEnabled(id, en);
+            });
+            updateMqTemplateHint();
+            void ensureMqUniverseDatalist();
         }
 
         async function clearMqLaneData() {
@@ -3185,6 +3473,7 @@
             /* ZCT VWAP 主看板已隐藏；维护面板仍可清库/触轨池 */
             void hydrateMomBoard();
             void hydrateJzBoard();
+            initMqProfilesPanelOnce();
             void hydrateMqBoard();
             document.getElementById('mom-refresh')?.addEventListener('click', () => void hydrateMomBoard());
             document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
