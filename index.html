@@ -370,6 +370,14 @@
                     </div>
                 </div>
                 <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="mq-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 纸面扫描</h3>
+                        <span id="mq-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                    </div>
+                    <pre id="mq-scan-status" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">加载最近一次扫描…</pre>
+                    <div id="mq-regime-guide" class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2" aria-label="Regime 策略推荐"></div>
+                </div>
                 <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile</h3>
@@ -983,6 +991,21 @@
                 try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
+            },
+            async mqDeleteProfile(profileId) {
+                const res = await fetch(`${API_BASE}/api/moss-quant/profiles/${encodeURIComponent(profileId)}`, {
+                    method: 'DELETE',
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async mqPaperScanLatest() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/paper-scan/latest`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
             async _mqPost(path, body) {
                 const res = await fetch(`${API_BASE}${path}`, {
@@ -2246,13 +2269,136 @@
         }
 
         const MQ_MAX_ENABLED = 5;
+        const MQ_TEMPLATE_LABELS = {
+            balanced: '均衡 balanced',
+            momentum: '动量 momentum',
+            trend: '趋势 trend',
+            mean_revert: '均值回归 mean_revert',
+        };
         const MQ_TEMPLATE_HINTS = {
             balanced: '均衡 balanced：趋势30%·动量25%·均值回归15%·成交量15%·波动15%，通用默认。',
             momentum: '动量 momentum：动量权重50%，顺势波段，震荡市可能假信号偏多。',
             trend: '趋势 trend：趋势权重50%，适合单边行情，震荡市易磨损。',
             mean_revert: '均值回归 mean_revert：均值回归45%，适合箱体震荡，强趋势市慎用。',
         };
+        /** Regime → 推荐策略（与 Moss 决策逻辑一致，供前端展示） */
+        const MQ_REGIME_STRATEGY = {
+            BULL: {
+                title: 'BULL 多头趋势',
+                primary: ['trend', 'momentum'],
+                secondary: ['balanced'],
+                avoid: ['mean_revert'],
+                tip: '单边上涨：顺势 trend / momentum',
+            },
+            BEAR: {
+                title: 'BEAR 空头趋势',
+                primary: ['trend', 'momentum'],
+                secondary: ['balanced'],
+                avoid: ['mean_revert'],
+                tip: '单边下跌：顺势 trend / momentum',
+            },
+            SIDEWAYS: {
+                title: 'SIDEWAYS 震荡',
+                primary: ['mean_revert'],
+                secondary: ['balanced'],
+                avoid: ['trend', 'momentum'],
+                tip: '箱体震荡：mean_revert / balanced',
+            },
+        };
+        const MQ_TEMPLATE_REGIME_HINT = {
+            balanced: '行情：三种均可；震荡或不确定时首选。',
+            momentum: '行情：适合 BULL / BEAR 顺势波段。',
+            trend: '行情：适合 BULL / BEAR 强趋势。',
+            mean_revert: '行情：适合 SIDEWAYS 箱体；强趋势慎用。',
+        };
         let _mqUniverseSymbols = null;
+        let _mqLastPaperScan = null;
+
+        function mqNormRegime(r) {
+            const u = String(r || '').toUpperCase();
+            return MQ_REGIME_STRATEGY[u] ? u : '';
+        }
+
+        function mqRegimeMapFromScan(scan) {
+            const map = new Map();
+            const details = (scan && scan.details) || [];
+            details.forEach((d) => {
+                if (!d || d.profile_id == null) return;
+                const rg = mqNormRegime(d.regime);
+                if (rg) map.set(Number(d.profile_id), rg);
+            });
+            return map;
+        }
+
+        function mqTemplateFit(template, regime) {
+            const tpl = (template || 'balanced').toLowerCase();
+            const rg = mqNormRegime(regime);
+            if (!rg) return 'unknown';
+            const spec = MQ_REGIME_STRATEGY[rg];
+            if ((spec.primary || []).includes(tpl)) return 'match';
+            if ((spec.avoid || []).includes(tpl)) return 'warn';
+            return 'ok';
+        }
+
+        function mqFormatRecommend(regime) {
+            const rg = mqNormRegime(regime);
+            if (!rg) return '—';
+            const spec = MQ_REGIME_STRATEGY[rg];
+            const prim = (spec.primary || []).map((t) => MQ_TEMPLATE_LABELS[t] || t).join('、');
+            const sec = (spec.secondary || []).map((t) => MQ_TEMPLATE_LABELS[t] || t).join('、');
+            let s = '推荐 ' + prim;
+            if (sec) s += ' · 次选 ' + sec;
+            return s;
+        }
+
+        function mqRegimeBadgeHtml(regime) {
+            const rg = mqNormRegime(regime);
+            if (!rg) return '<span class="text-text-muted">—</span>';
+            const cls = rg === 'BULL'
+                ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
+                : rg === 'BEAR'
+                    ? 'text-neon-red border-neon-red/35 bg-neon-red/10'
+                    : 'text-text-secondary border-border/80 bg-surface-light/60';
+            return '<span class="inline-block text-[10px] font-mono px-1.5 py-0.5 rounded border ' + cls + '">' + escHtml(rg) + '</span>';
+        }
+
+        function mqFitBadgeHtml(fit) {
+            if (fit === 'match') {
+                return '<span class="text-[10px] text-neon-green">✓ 匹配</span>';
+            }
+            if (fit === 'warn') {
+                return '<span class="text-[10px] text-warn">⚠ 非最优</span>';
+            }
+            if (fit === 'ok') {
+                return '<span class="text-[10px] text-text-muted">○ 可用</span>';
+            }
+            return '';
+        }
+
+        function renderMqRegimeGuide() {
+            const root = document.getElementById('mq-regime-guide');
+            if (!root) return;
+            const cards = ['BULL', 'BEAR', 'SIDEWAYS'].map((rg) => {
+                const spec = MQ_REGIME_STRATEGY[rg];
+                const prim = (spec.primary || [])
+                    .map((t) => '<span class="text-neon-purple font-medium">' + escHtml(MQ_TEMPLATE_LABELS[t] || t) + '</span>')
+                    .join(' ');
+                const avoid = (spec.avoid || [])
+                    .map((t) => escHtml(MQ_TEMPLATE_LABELS[t] || t))
+                    .join('、');
+                const border = rg === 'BULL'
+                    ? 'border-neon-green/25'
+                    : rg === 'BEAR'
+                        ? 'border-neon-red/25'
+                        : 'border-border/80';
+                return `<div class="rounded-lg border ${border} bg-surface/50 px-2.5 py-2">
+                    <div class="text-[10px] font-semibold text-text-secondary mb-1">${escHtml(spec.title)}</div>
+                    <div class="text-[10px] text-text-muted leading-relaxed">首选 ${prim}</div>
+                    <div class="text-[10px] text-text-muted mt-0.5">慎用 ${escHtml(avoid || '—')}</div>
+                </div>`;
+            }).join('');
+            root.innerHTML = cards;
+        }
 
         function mqEnabledCount(profiles) {
             return (profiles || []).filter((p) => p.enabled).length;
@@ -2272,7 +2418,10 @@
             const sel = document.getElementById('mq-create-template');
             const hint = document.getElementById('mq-template-hint');
             if (!sel || !hint) return;
-            hint.textContent = MQ_TEMPLATE_HINTS[sel.value] || MQ_TEMPLATE_HINTS.balanced;
+            const key = sel.value || 'balanced';
+            const base = MQ_TEMPLATE_HINTS[key] || MQ_TEMPLATE_HINTS.balanced;
+            const regimeLine = MQ_TEMPLATE_REGIME_HINT[key] || '';
+            hint.textContent = base + (regimeLine ? ' ' + regimeLine : '');
         }
 
         function updateMqCreateFormState(profiles) {
@@ -2305,10 +2454,11 @@
             return _mqUniverseSymbols;
         }
 
-        function renderMqProfilesList(profiles) {
+        function renderMqProfilesList(profiles, scan) {
             const list = document.getElementById('mq-profiles-list');
             if (!list) return;
             updateMqCreateFormState(profiles);
+            const regimeMap = mqRegimeMapFromScan(scan || _mqLastPaperScan);
             if (!profiles || !profiles.length) {
                 list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile，请在下方创建（最多同时启用 5 个，每币一个）。</p>';
                 return;
@@ -2316,13 +2466,22 @@
             const rows = profiles.map((p) => {
                 const on = !!p.enabled;
                 const sym = escHtml(p.symbol || '');
-                const tpl = escHtml(p.template || 'balanced');
+                const tplKey = (p.template || 'balanced').toLowerCase();
+                const tpl = escHtml(MQ_TEMPLATE_LABELS[tplKey] || tplKey);
                 const eq = p.virtual_equity_usdt != null ? fmtZctPx(p.virtual_equity_usdt, 0) : '—';
+                const regime = regimeMap.get(Number(p.id)) || '';
+                const fit = mqTemplateFit(tplKey, regime);
+                const recShort = regime ? mqFormatRecommend(regime) : '待 15m 扫描';
+                const recCls = fit === 'warn' ? 'text-warn/95' : fit === 'match' ? 'text-neon-green/90' : 'text-text-muted';
                 return `<tr class="border-b border-border/50 hover:bg-surface-light/25">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">#${escHtml(String(p.id))}</td>
                     <td class="py-1.5 pr-2">${escHtml(p.name || '')}</td>
                     <td class="py-1.5 pr-2 font-mono">${sym}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${tpl}</td>
+                    <td class="py-1.5 pr-2 min-w-[7rem]">
+                        <div class="flex flex-wrap items-center gap-1">${mqRegimeBadgeHtml(regime)} ${mqFitBadgeHtml(fit)}</div>
+                        <div class="text-[10px] ${recCls} mt-0.5 leading-snug">${escHtml(recShort)}</div>
+                    </td>
                     <td class="py-1.5 pr-2 text-right font-mono">${escHtml(eq)}</td>
                     <td class="py-1.5 pr-2">
                         <button type="button" data-mq-toggle="${escHtml(String(p.id))}" data-mq-enabled="${on ? '0' : '1'}"
@@ -2330,13 +2489,66 @@
                             ${on ? '已启用' : '启用'}
                         </button>
                     </td>
+                    <td class="py-1.5 pr-2">
+                        <button type="button" data-mq-delete="${escHtml(String(p.id))}"
+                            class="text-[10px] px-2 py-0.5 rounded border border-warn/40 text-warn/90 hover:bg-warn/10">
+                            删除
+                        </button>
+                    </td>
                 </tr>`;
             }).join('');
-            list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[520px]">
+            list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
                 <thead><tr class="text-text-muted text-[10px] uppercase">
                     <th class="py-1 pr-2">ID</th><th class="py-1 pr-2">名称</th><th class="py-1 pr-2">标的</th>
-                    <th class="py-1 pr-2">策略</th><th class="py-1 pr-2 text-right">权益U</th><th class="py-1 pr-2">纸面</th>
-                </tr></thead><tbody>${rows}</tbody></table>`;
+                    <th class="py-1 pr-2">当前策略</th><th class="py-1 pr-2">行情 · 推荐</th><th class="py-1 pr-2 text-right">权益U</th>
+                    <th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
+                </tr></thead><tbody>${rows}</tbody></table>
+                <p class="text-[10px] text-text-muted mt-2">行情来自最近一次 15m 纸面扫描；✓ 匹配 / ○ 可用 / ⚠ 非最优 为当前策略与推荐对照。</p>`;
+        }
+
+        function renderMqPaperScan(scan) {
+            const pre = document.getElementById('mq-scan-status');
+            const meta = document.getElementById('mq-scan-meta');
+            if (!pre) return;
+            renderMqRegimeGuide();
+            if (!scan || !scan.has_run) {
+                if (meta) meta.textContent = '尚无扫描记录';
+                pre.textContent = '尚无 15m 纸面扫描记录。请启用 Profile 并等待定时任务，或在维护面板触发 Moss 纸面扫描。';
+                pre.className = 'text-[10px] font-mono text-text-muted bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]';
+                if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, null);
+                return;
+            }
+            const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
+            if (meta) {
+                meta.textContent = (ts ? ts + ' UTC · ' : '')
+                    + 'profiles=' + (scan.profiles_scanned ?? 0)
+                    + ' · opens=' + (scan.opens ?? 0)
+                    + ' · closes=' + (scan.closes ?? 0);
+            }
+            const lines = scan.lines && scan.lines.length ? scan.lines : (scan.details || []).map((d) => d.message).filter(Boolean);
+            pre.textContent = lines.length ? lines.join('\n') : '（本次扫描无明细）';
+            pre.className = 'text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]';
+            if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan);
+        }
+
+        async function deleteMqProfile(profileId) {
+            const msg = document.getElementById('mq-profiles-msg');
+            if (!confirm('确定删除 Profile #' + profileId + '？\n关联纸面信号与回测记录将一并删除；若有未平仓持仓则无法删除。')) return;
+            if (msg) msg.textContent = '删除中…';
+            try {
+                const out = await API.mqDeleteProfile(profileId);
+                const line = '已删除 #' + profileId
+                    + ' · signals=' + (out.signals ?? 0)
+                    + ' · backtests=' + (out.backtest_runs ?? 0);
+                if (msg) msg.innerHTML = '<span class="text-neon-green">' + escHtml(line) + '</span>';
+                await hydrateMqBoard();
+            } catch (e) {
+                const err = (e && e.message) || String(e);
+                const hint = err.indexOf('profile_has_open_position') >= 0
+                    ? '该 Profile 仍有持仓，请先等待平仓或清库后再删'
+                    : err;
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(hint) + '</span>';
+            }
         }
 
         let _mqProfilesCache = [];
@@ -2530,7 +2742,8 @@
             await ensureMqUniverseDatalist();
             const data = await API.mqProfiles();
             const profiles = data.profiles || [];
-            renderMqProfilesList(profiles);
+            _mqProfilesCache = profiles;
+            renderMqProfilesList(profiles, _mqLastPaperScan);
             syncMqResearchProfileSelect(profiles);
             return profiles;
         }
@@ -2656,8 +2869,17 @@
                 const sum = await API.mqSummary();
                 renderMqSummary(sum);
                 await loadMqProfilesPanel();
-                const sig = await API.mqSignals();
+                const [sig, scan] = await Promise.all([
+                    API.mqSignals(),
+                    API.mqPaperScanLatest().catch((err) => {
+                        console.warn('mq paper scan:', err);
+                        return null;
+                    }),
+                ]);
+                _mqLastPaperScan = scan;
+                renderMqRegimeGuide();
                 renderMqTable(sig.signals || []);
+                renderMqPaperScan(scan);
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('moss_quant:', e);
@@ -2679,6 +2901,13 @@
             document.getElementById('mq-bt-evolve-run')?.addEventListener('click', () => void runMqResearch('evolve_run'));
             document.getElementById('mq-bt-apply-params')?.addEventListener('click', () => void applyMqFinalParamsToProfile());
             document.getElementById('mq-profiles-list')?.addEventListener('click', (ev) => {
+                const delBtn = ev.target && ev.target.closest && ev.target.closest('[data-mq-delete]');
+                if (delBtn) {
+                    ev.preventDefault();
+                    const id = delBtn.getAttribute('data-mq-delete');
+                    if (id) void deleteMqProfile(id);
+                    return;
+                }
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-mq-toggle]');
                 if (!btn) return;
                 ev.preventDefault();
@@ -2687,6 +2916,7 @@
                 if (id) void toggleMqProfileEnabled(id, en);
             });
             updateMqTemplateHint();
+            renderMqRegimeGuide();
             void ensureMqUniverseDatalist();
         }
 
