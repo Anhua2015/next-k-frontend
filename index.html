@@ -362,7 +362,7 @@
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">🧬</span> Moss Quant (Paper)
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 每 profile 单币 · <code class="text-[10px]">moss_signals</code> · 回测/进化见 API</p>
+                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 纸面 Profile · 下方可回测 / 分段进化（需 Groq 做 reflect）</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
@@ -418,6 +418,41 @@
                             </button>
                         </div>
                         <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem]"></p>
+                    </div>
+                    <div class="rounded-lg border border-neon-purple/25 bg-surface/60 p-3 mt-3 space-y-2">
+                        <div class="text-text-muted text-[10px] font-medium uppercase tracking-wide">回测 / 进化</div>
+                        <p class="text-[10px] text-text-muted leading-relaxed">顺序：① 全量回测（可选）→ ② 分段 baseline → ③ LLM reflect → ④ 进化 run。耗时可 1–3 分钟，请勿重复点击。</p>
+                        <div class="flex flex-wrap gap-2 items-end">
+                            <label class="block min-w-[10rem]">
+                                <span class="text-[10px] text-text-muted">绑定 Profile</span>
+                                <select id="mq-research-profile"
+                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50">
+                                    <option value="">— 请先创建 Profile —</option>
+                                </select>
+                            </label>
+                            <label class="block w-24">
+                                <span class="text-[10px] text-text-muted">资金 U</span>
+                                <input type="number" id="mq-research-capital" min="100" step="100" placeholder="10000"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                            </label>
+                            <label class="block w-28">
+                                <span class="text-[10px] text-text-muted">段长 bars</span>
+                                <input type="number" id="mq-research-segment-bars" min="96" step="96" placeholder="672"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" title="15m 约 672=7天/段" />
+                            </label>
+                            <label class="block w-28">
+                                <span class="text-[10px] text-text-muted">baseline run_id</span>
+                                <input type="number" id="mq-baseline-run-id" min="1" step="1" placeholder="自动填入"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="mq-bt-backtest" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/40 hover:text-neon-purple">全量回测</button>
+                            <button type="button" id="mq-bt-baseline" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">② baseline</button>
+                            <button type="button" id="mq-bt-reflect" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="需 Railway 配置 GROQ_API_KEY">③ reflect</button>
+                            <button type="button" id="mq-bt-evolve-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">④ evolve run</button>
+                        </div>
+                        <pre id="mq-research-out" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">选择 Profile 后点击按钮；结果摘要显示于此。</pre>
                     </div>
                 </div>
                 <div class="px-4 pt-2 pb-0 border-t border-border/30">
@@ -943,6 +978,35 @@
                 try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
+            },
+            async _mqPost(path, body) {
+                const res = await fetch(`${API_BASE}${path}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async mqBacktest(body) {
+                return API._mqPost('/api/moss-quant/backtest', body);
+            },
+            async mqEvolveBaseline(body) {
+                return API._mqPost('/api/moss-quant/evolve/baseline', body);
+            },
+            async mqEvolveReflect(baselineRunId) {
+                return API._mqPost('/api/moss-quant/evolve/reflect', { baseline_run_id: baselineRunId });
+            },
+            async mqEvolveRun(baselineRunId) {
+                return API._mqPost('/api/moss-quant/evolve/run', { baseline_run_id: baselineRunId });
+            },
+            async mqGetBacktest(runId) {
+                const res = await fetch(`${API_BASE}/api/moss-quant/backtests/${encodeURIComponent(runId)}`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -2264,11 +2328,138 @@
                 </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
+        let _mqProfilesCache = [];
+
+        function syncMqResearchProfileSelect(profiles) {
+            _mqProfilesCache = profiles || [];
+            const sel = document.getElementById('mq-research-profile');
+            if (!sel) return;
+            const prev = sel.value;
+            const opts = ['<option value="">— 选择 Profile —</option>'];
+            _mqProfilesCache.forEach((p) => {
+                const label = '#' + p.id + ' ' + escHtml(p.symbol) + ' · ' + escHtml(p.template || '');
+                opts.push('<option value="' + escHtml(String(p.id)) + '">' + label + '</option>');
+            });
+            sel.innerHTML = opts.join('');
+            if (prev && _mqProfilesCache.some((p) => String(p.id) === prev)) sel.value = prev;
+        }
+
+        function mqResearchProfileId() {
+            const sel = document.getElementById('mq-research-profile');
+            const v = sel && sel.value ? parseInt(sel.value, 10) : NaN;
+            return Number.isFinite(v) && v > 0 ? v : null;
+        }
+
+        function setMqResearchOut(text, isErr) {
+            const el = document.getElementById('mq-research-out');
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'text-[10px] font-mono rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem] border '
+                + (isErr
+                    ? 'text-neon-red bg-warn/[0.06] border-warn/30'
+                    : 'text-text-secondary bg-surface-light/50 border-border/60');
+        }
+
+        function formatMqResearchResult(kind, data) {
+            const lines = [kind + ' 完成', 'run_id: ' + (data.run_id != null ? data.run_id : '—')];
+            const sum = data.summary || (data.backtest_result && data.backtest_result.total_return != null
+                ? {
+                    total_return: data.backtest_result.total_return,
+                    sharpe: data.backtest_result.sharpe_ratio,
+                    max_drawdown: data.backtest_result.max_drawdown,
+                    total_trades: data.backtest_result.total_trades,
+                    win_rate: data.backtest_result.win_rate,
+                }
+                : null);
+            if (sum) {
+                lines.push('— summary —');
+                if (sum.total_return != null) lines.push('total_return: ' + sum.total_return);
+                if (sum.sharpe != null) lines.push('sharpe: ' + sum.sharpe);
+                if (sum.max_drawdown != null) lines.push('max_drawdown: ' + sum.max_drawdown);
+                if (sum.total_trades != null) lines.push('total_trades: ' + sum.total_trades);
+                if (sum.win_rate != null) lines.push('win_rate: ' + sum.win_rate);
+                if (sum.segments != null) lines.push('segments: ' + sum.segments);
+            }
+            if (kind === 'reflect' && data.schedule) {
+                lines.push('schedule 段数: ' + data.schedule.length);
+            }
+            if (data.final_params && data.final_params.entry_threshold != null) {
+                lines.push('final entry_threshold: ' + data.final_params.entry_threshold);
+            }
+            if (data.evolution_log && data.evolution_log.length) {
+                lines.push('evolution_log 段数: ' + data.evolution_log.length);
+            }
+            lines.push('（完整 JSON 见浏览器 Network）');
+            return lines.join('\n');
+        }
+
+        async function runMqResearch(action) {
+            const pid = mqResearchProfileId();
+            if (!pid && action !== 'reflect' && action !== 'evolve_run') {
+                setMqResearchOut('请先选择 Profile', true);
+                return;
+            }
+            const capEl = document.getElementById('mq-research-capital');
+            const segEl = document.getElementById('mq-research-segment-bars');
+            const runEl = document.getElementById('mq-baseline-run-id');
+            const capital = capEl && capEl.value ? parseFloat(capEl.value) : undefined;
+            const segment_bars = segEl && segEl.value ? parseInt(segEl.value, 10) : undefined;
+            const body = { profile_id: pid };
+            if (capital != null && Number.isFinite(capital)) body.capital = capital;
+            if (segment_bars != null && Number.isFinite(segment_bars)) body.segment_bars = segment_bars;
+
+            const btns = ['mq-bt-backtest', 'mq-bt-baseline', 'mq-bt-reflect', 'mq-bt-evolve-run'];
+            btns.forEach((id) => {
+                const b = document.getElementById(id);
+                if (b) b.disabled = true;
+            });
+            setMqResearchOut(action + ' 运行中… 拉取 K 线 + 回测可能需要 1–3 分钟，请稍候。', false);
+
+            try {
+                let data;
+                if (action === 'backtest') {
+                    body.refresh_klines = true;
+                    data = await API.mqBacktest(body);
+                    setMqResearchOut(formatMqResearchResult('全量回测', data), false);
+                } else if (action === 'baseline') {
+                    body.refresh_klines = true;
+                    data = await API.mqEvolveBaseline(body);
+                    if (data.run_id != null && runEl) runEl.value = String(data.run_id);
+                    setMqResearchOut(formatMqResearchResult('baseline', data), false);
+                } else if (action === 'reflect') {
+                    const rid = runEl && runEl.value ? parseInt(runEl.value, 10) : NaN;
+                    if (!Number.isFinite(rid) || rid < 1) {
+                        setMqResearchOut('请填写 baseline run_id（先跑 ② baseline）', true);
+                        return;
+                    }
+                    data = await API.mqEvolveReflect(rid);
+                    setMqResearchOut(formatMqResearchResult('reflect', data), false);
+                } else if (action === 'evolve_run') {
+                    const rid = runEl && runEl.value ? parseInt(runEl.value, 10) : NaN;
+                    if (!Number.isFinite(rid) || rid < 1) {
+                        setMqResearchOut('请填写 baseline run_id', true);
+                        return;
+                    }
+                    data = await API.mqEvolveRun(rid);
+                    setMqResearchOut(formatMqResearchResult('evolve run', data), false);
+                }
+            } catch (e) {
+                setMqResearchOut((e && e.message) || String(e), true);
+            } finally {
+                btns.forEach((id) => {
+                    const b = document.getElementById(id);
+                    if (b) b.disabled = false;
+                });
+            }
+        }
+
         async function loadMqProfilesPanel() {
             await ensureMqUniverseDatalist();
             const data = await API.mqProfiles();
-            renderMqProfilesList(data.profiles || []);
-            return data.profiles || [];
+            const profiles = data.profiles || [];
+            renderMqProfilesList(profiles);
+            syncMqResearchProfileSelect(profiles);
+            return profiles;
         }
 
         async function submitMqCreateProfile() {
@@ -2409,6 +2600,10 @@
             initMqProfilesPanelOnce._done = true;
             document.getElementById('mq-create-template')?.addEventListener('change', updateMqTemplateHint);
             document.getElementById('mq-create-btn')?.addEventListener('click', () => void submitMqCreateProfile());
+            document.getElementById('mq-bt-backtest')?.addEventListener('click', () => void runMqResearch('backtest'));
+            document.getElementById('mq-bt-baseline')?.addEventListener('click', () => void runMqResearch('baseline'));
+            document.getElementById('mq-bt-reflect')?.addEventListener('click', () => void runMqResearch('reflect'));
+            document.getElementById('mq-bt-evolve-run')?.addEventListener('click', () => void runMqResearch('evolve_run'));
             document.getElementById('mq-profiles-list')?.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-mq-toggle]');
                 if (!btn) return;
