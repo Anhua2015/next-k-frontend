@@ -382,18 +382,10 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <div>
                             <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">每日全市场寻优</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5"><span id="mq-daily-enabled-badge" class="text-neon-green">每日寻优已默认开启</span> · UTC <span id="mq-daily-schedule" class="font-mono">06:30</span> · 同步 <span class="font-mono text-neon-yellow">daily-*</span> Profile</p>
+                            <p class="text-[10px] text-text-muted mt-0.5"><span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span> · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 自动寻优 · 同步 <span class="font-mono text-neon-yellow">daily-*</span> Profile</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
-                            <button type="button" id="mq-daily-run"
-                                class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15"
-                                title="后台执行，约 10–20 分钟，请勿重复点击">
-                                立即全量寻优
-                            </button>
-                        </div>
+                        <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
                     </div>
-                    <p id="mq-daily-msg" class="text-[11px] font-mono min-h-[1rem] mb-2"></p>
                     <div id="mq-daily-table" class="text-text-muted text-xs overflow-auto max-h-64">加载寻优结果…</div>
                 </div>
                 <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
@@ -646,6 +638,7 @@
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化纸面扫描">Moss 纸面</button>
+                        <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 23 标的全量寻优，约 10–20 分钟">Moss 全量寻优</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
@@ -2302,7 +2295,7 @@
             const dailyBadge = document.getElementById('mq-daily-enabled-badge');
             if (dailyBadge) {
                 const on = sum.daily_optimize_enabled !== false;
-                dailyBadge.textContent = on ? '每日寻优已默认开启' : '每日寻优已关闭';
+                dailyBadge.textContent = on ? '每日定时已开启' : '每日定时已关闭';
                 dailyBadge.className = on ? 'text-neon-green' : 'text-warn';
             }
             const pnl = Number(sum.total_pnl_usdt) || 0;
@@ -2522,7 +2515,7 @@
             updateMqCreateFormState(profiles);
             const regimeMap = mqRegimeMapFromScan(scan || _mqLastPaperScan);
             if (!profiles || !profiles.length) {
-                list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile。可点「立即全量寻优」自动生成 23 个 daily-*，或手动在下方创建（每币一个）。</p>';
+                list.innerHTML = '<p class="text-text-muted text-xs">暂无 Profile。每日定时会自动生成 daily-*；也可在维护面板手动「Moss 全量寻优」，或下方手动创建（每币一个）。</p>';
                 return;
             }
             const rows = profiles.map((p) => {
@@ -2613,11 +2606,11 @@
         function renderMqDailyPanel(data, sum) {
             const root = document.getElementById('mq-daily-table');
             const meta = document.getElementById('mq-daily-meta');
-            const runBtn = document.getElementById('mq-daily-run');
+            const maintBtn = document.getElementById('maint-mq-daily-optimize');
             const running = !!(sum && sum.daily_optimize_running) || (data && data.batch && data.batch.status === 'running');
-            if (runBtn) {
-                runBtn.disabled = running;
-                runBtn.textContent = running ? '寻优进行中…' : '立即全量寻优';
+            if (maintBtn) {
+                maintBtn.disabled = running;
+                maintBtn.textContent = running ? 'Moss 寻优中…' : 'Moss 全量寻优';
             }
             if (!data || !data.has_batch || !data.batch) {
                 if (meta) meta.textContent = running ? '运行中…' : '尚无批次';
@@ -2691,17 +2684,18 @@
         }
 
         async function runMqDailyOptimize() {
-            const msg = document.getElementById('mq-daily-msg');
-            const btn = document.getElementById('mq-daily-run');
+            const msg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-mq-daily-optimize');
             if (btn && btn.disabled) return;
             if (!confirm('将对 23 个标的依次网格寻优（约 10–20 分钟），完成后自动创建/更新 daily-* Profile。确定？')) return;
-            if (msg) msg.textContent = '提交后台任务…';
+            if (msg) msg.textContent = 'Moss 全量寻优提交中…';
+            if (btn) btn.disabled = true;
             try {
                 const out = await API.mqDailyOptimizeRun({});
                 if (out.already_running) {
                     if (msg) msg.innerHTML = '<span class="text-warn">已有寻优任务在运行</span>';
                 } else if (out.started) {
-                    if (msg) msg.innerHTML = '<span class="text-neon-green">已启动，请稍后刷新或等待自动轮询</span>';
+                    if (msg) msg.innerHTML = '<span class="text-neon-green">已启动后台寻优，Moss 面板将自动刷新结果（约 10–20 分钟）</span>';
                 } else {
                     if (msg) msg.textContent = out.message || '—';
                 }
@@ -2709,6 +2703,7 @@
                 await loadMqDailyPanel(true);
             } catch (e) {
                 if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '启动失败') + '</span>';
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -3190,7 +3185,6 @@
             initMqProfilesPanelOnce._done = true;
             document.getElementById('mq-create-template')?.addEventListener('change', updateMqTemplateHint);
             document.getElementById('mq-create-btn')?.addEventListener('click', () => void submitMqCreateProfile());
-            document.getElementById('mq-daily-run')?.addEventListener('click', () => void runMqDailyOptimize());
             document.getElementById('mq-bt-backtest')?.addEventListener('click', () => void runMqResearch('backtest'));
             document.getElementById('mq-bt-baseline')?.addEventListener('click', () => void runMqResearch('baseline'));
             document.getElementById('mq-bt-reflect')?.addEventListener('click', () => void runMqResearch('reflect'));
@@ -4162,6 +4156,7 @@
             document.getElementById('maint-mom-clear-db')?.addEventListener('click', () => void clearMomLaneData());
             document.getElementById('maint-jz-clear-db')?.addEventListener('click', () => void clearJzLaneData());
             document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
+            document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
