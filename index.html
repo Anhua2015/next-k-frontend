@@ -2823,7 +2823,9 @@
             const meta = document.getElementById('mq-daily-meta');
             const chipsEl = document.getElementById('mq-daily-summary-chips');
             const maintBtn = document.getElementById('maint-mq-daily-optimize');
-            const running = !!(sum && sum.daily_optimize_running) || (data && data.batch && data.batch.status === 'running');
+            const running = sum != null
+                ? !!sum.daily_optimize_running
+                : !!(data && data.batch && data.batch.status === 'running');
             if (maintBtn) {
                 maintBtn.disabled = running;
                 maintBtn.textContent = running ? 'Moss 寻优中…' : 'Moss 全量寻优';
