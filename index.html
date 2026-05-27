@@ -2541,6 +2541,17 @@
             return '<span class="font-mono text-[11px] ' + cls + '">' + sign + escHtml(fmtZctPx(n, 2)) + '</span>';
         }
 
+        function mqMarginPnlPct(d) {
+            const entry = Number(d.entry_price);
+            const mark = Number(d.mark_price);
+            const lev = Number(d.leverage) || 10;
+            if (!Number.isFinite(entry) || entry <= 0 || !Number.isFinite(mark)) return null;
+            const side = String(d.side || '').toUpperCase();
+            if (side === 'LONG' || side === 'BUY') return (mark - entry) / entry * lev * 100;
+            if (side === 'SHORT' || side === 'SELL') return (entry - mark) / entry * lev * 100;
+            return null;
+        }
+
         function mqPositionExtra(d, act) {
             const side = String(d.side || '');
             const entry = mqFormatPx(d.entry_price);
@@ -2551,6 +2562,7 @@
                 ? (upnl > 0 ? '+' : '') + fmtZctPx(upnl, 2) + ' U'
                 : '—';
             const upnlCls = upnl > 0 ? 'text-neon-green' : upnl < 0 ? 'text-neon-red' : 'text-text-muted';
+            const pnlPct = d.pnl_pct != null ? Number(d.pnl_pct) : mqMarginPnlPct(d);
             let html = '<div class="text-[10px] text-text-muted mt-0.5 leading-relaxed">'
                 + escHtml(side) + ' · 开仓 <span class="font-mono text-text-primary">' + escHtml(entry) + '</span>';
             if (d.mark_price != null) {
@@ -2558,8 +2570,10 @@
             }
             html += ' · 浮盈 <span class="font-mono ' + upnlCls + '">' + escHtml(upnlTxt) + '</span>';
             if (notional) html += ' · 名义 ' + notional;
-            if (act === 'hold' && d.pnl_pct != null) {
-                html += ' · ' + escHtml(String(d.pnl_pct)) + '%';
+            if (act === 'hold' || act === 'open') {
+                if (pnlPct != null && Number.isFinite(pnlPct)) {
+                    html += ' · ' + escHtml((pnlPct > 0 ? '+' : '') + pnlPct.toFixed(2)) + '%';
+                }
             }
             html += '</div>';
             return html;
@@ -2616,6 +2630,8 @@
                         cur.upnl = pos.upnl;
                         cur.side = pos.side || cur.side;
                         if (pos.notional != null) cur.notional = pos.notional;
+                        if (pos.pnl_pct != null) cur.pnl_pct = pos.pnl_pct;
+                        if (pos.leverage != null) cur.leverage = pos.leverage;
                     }
                     if (!cur.action || cur.action === 'wait' || cur.action === 'error') cur.action = 'hold';
                     byPid.set(pid, cur);
@@ -2654,11 +2670,15 @@
             const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
             if (meta) {
                 const posNote = (!scan.has_run && hasDetails) ? '（仅有持仓，待扫描）· ' : '';
+                const holdN = scan.open_hold_count != null
+                    ? Number(scan.open_hold_count)
+                    : (scan.open_positions || []).length;
                 meta.textContent = posNote
                     + (ts ? ts + ' UTC · ' : '')
                     + '扫描 ' + (scan.profiles_scanned ?? 0) + ' 个'
-                    + ' · 开 ' + (scan.opens ?? 0)
-                    + ' · 平 ' + (scan.closes ?? 0);
+                    + ' · 持仓 ' + holdN
+                    + ' · 本轮开 ' + (scan.opens ?? 0)
+                    + ' · 本轮平 ' + (scan.closes ?? 0);
             }
             const details = (scan.details || []).filter((d) => d && typeof d === 'object');
             if (!details.length) {
@@ -3288,24 +3308,40 @@
                 const open = !row.outcome;
                 const pnl = open ? row.unrealized_pnl_usdt : row.pnl_usdt;
                 const pnlCls = pxClass(Number(pnl));
+                const notional = row.virtual_notional_usdt != null
+                    ? fmtZctPx(row.virtual_notional_usdt, 0)
+                    : '—';
+                let pnlPct = row.pnl_pct != null ? Number(row.pnl_pct) : null;
+                if (open && (pnlPct == null || !Number.isFinite(pnlPct))) {
+                    pnlPct = mqMarginPnlPct(row);
+                }
+                const pnlPctTxt = pnlPct != null && Number.isFinite(pnlPct)
+                    ? (pnlPct > 0 ? '+' : '') + pnlPct.toFixed(2) + '%'
+                    : '—';
+                const pnlPctCls = pnlPct > 0 ? 'text-neon-green' : pnlPct < 0 ? 'text-neon-red' : 'text-text-muted';
                 return `<tr class="border-b border-border/60">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml(String(row.id))}</td>
                     <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml((row.recorded_at_utc || '').slice(0, 19))}</td>
                     <td class="py-1.5 pr-2 font-mono">${escHtml(row.symbol)}</td>
                     <td class="py-1.5 pr-2">${escHtml(row.side)}</td>
-                    <td class="py-1.5 pr-2 text-right font-mono">${fmtZctPx(row.entry_price, 4)}</td>
-                    <td class="py-1.5 pr-2 text-right font-mono">${open ? fmtZctPx(row.mark_price, 4) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${mqFormatPx(row.entry_price)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${open ? mqFormatPx(row.mark_price) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono text-text-muted">${notional}</td>
                     <td class="py-1.5 pr-2">${open ? '持仓' : escHtml(row.outcome || '')}</td>
-                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? ((Number(pnl) > 0 ? '+' : '') + fmtZctPx(pnl, 2)) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlPctCls}">${escHtml(pnlPctTxt)}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${escHtml(row.exit_rule || row.regime || '')}</td>
                 </tr>`;
             }).join('');
-            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[900px]">
+            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[1000px]">
                 <thead><tr class="border-b border-border/80 text-text-muted text-[10px] uppercase">
                     <th class="py-2 pr-2">#</th><th class="py-2 pr-2">UTC</th><th class="py-2 pr-2">标的</th>
                     <th class="py-2 pr-2">方向</th><th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2 text-right">标记</th>
-                    <th class="py-2 pr-2">状态</th><th class="py-2 pr-2 text-right">盈亏U</th><th class="py-2 pr-2">备注</th>
-                </tr></thead><tbody>${rows}</tbody></table>` + laneBoardScrollHint(items.length);
+                    <th class="py-2 pr-2 text-right">名义U</th><th class="py-2 pr-2">状态</th>
+                    <th class="py-2 pr-2 text-right">浮盈U</th><th class="py-2 pr-2 text-right">收益率</th>
+                    <th class="py-2 pr-2">备注</th>
+                </tr></thead><tbody>${rows}</tbody></table>
+                <p class="text-[9px] text-text-muted mt-2">持仓行的标记价与浮盈在加载时按最新 K 线刷新；收益率按杠杆计保证金收益。</p>` + laneBoardScrollHint(items.length);
         }
 
         async function hydrateMqBoard() {
