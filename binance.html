@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>实盘看板 · Next K</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -235,7 +235,7 @@
         <div class="bg-surface rounded-xl border border-border card p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-text-primary font-semibold text-sm">交易配置</h2>
-                <button type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25">保存配置</button>
+                <button id="btn-save-config" type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25 disabled:opacity-50 disabled:cursor-not-allowed">保存配置</button>
             </div>
             <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
                 <button type="button" class="tab-btn active px-3 py-1.5 text-xs font-medium" data-tab="global" onclick="switchConfigTab('global')">全局</button>
@@ -403,6 +403,16 @@ function tickCountdowns() {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
+function escHtml(v) {
+    if (v == null) return '';
+    return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function fmtTime(iso) {
     if (!iso) return '—';
     try {
@@ -424,8 +434,8 @@ function pnlColor(v) {
 
 function sideBadge(side) {
     if (!side) return '—';
-    var cls = side.toLowerCase() === 'long' ? 'badge-long' : 'badge-short';
-    return '<span class="badge ' + cls + '">' + side + '</span>';
+    var cls = String(side).toLowerCase() === 'long' ? 'badge-long' : 'badge-short';
+    return '<span class="badge ' + cls + '">' + escHtml(side) + '</span>';
 }
 
 function reasonBadge(r) {
@@ -445,17 +455,29 @@ function reasonBadge(r) {
         trail_low: '低档保护', trail_stop: '硬止损',
         rotate: '换仓', expired: '到期',
     };
+    // class 白名单：只允许已知 key 进入 class 属性
+    var BADGE_CLASS_WHITELIST = {
+        tp: 1, sl: 1, expired: 1, manual: 1, unknown: 1,
+        paper_close: 1, external: 1,
+        momentum_scan: 1, momentum_trail: 1,
+        jiezhen_scan: 1, jiezhen_trail: 1,
+        trail_tier1: 1, trail_tier2: 1,
+        trail_low: 1, trail_stop: 1,
+        rotate: 1,
+    };
     var sourceLabel = labels[sourcePart] || sourcePart;
     var ruleLabel = ruleLabels[rulePart] || rulePart;
     var display = ruleLabel ? sourceLabel + '/' + ruleLabel : sourceLabel;
-    return '<span class="badge badge-' + (rulePart || sourcePart) + '">' + display + '</span>';
+    var rawClassKey = rulePart || sourcePart;
+    var classKey = BADGE_CLASS_WHITELIST[rawClassKey] ? rawClassKey : 'unknown';
+    return '<span class="badge badge-' + classKey + '">' + escHtml(display) + '</span>';
 }
 
 function signalStatusBadge(s) {
     if (!s) return '—';
     var cls = s === 'traded' ? 'badge-open' : s === 'error' ? 'badge-sl' : 'badge-unknown';
     var labels = { traded: '已开仓', received: '已收到', error: '错误' };
-    return '<span class="badge ' + cls + '">' + (labels[s] || s) + '</span>';
+    return '<span class="badge ' + cls + '">' + escHtml(labels[s] || s) + '</span>';
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -588,19 +610,19 @@ async function loadConfig() {
                     var opts = (item.options || []).map(function(o) {
                         var label = o === '' ? '（回退全局）' : o;
                         var sel = String(val) === String(o) ? ' selected' : '';
-                        return '<option value="' + o + '"' + sel + '>' + label + '</option>';
+                        return '<option value="' + escHtml(o) + '"' + sel + '>' + escHtml(label) + '</option>';
                     }).join('');
-                    control = '<select id="cfg-' + item.key + '" class="config-input">' + opts + '</select>';
+                    control = '<select id="cfg-' + escHtml(item.key) + '" class="config-input">' + opts + '</select>';
                 } else {
                     var inputType = item.password ? 'password' : 'text';
-                    control = '<input id="cfg-' + item.key + '" type="' + inputType + '" value="' + val + '" placeholder="' + item.hint + '" class="config-input"/>';
+                    control = '<input id="cfg-' + escHtml(item.key) + '" type="' + inputType + '" value="' + escHtml(val) + '" placeholder="' + escHtml(item.hint) + '" class="config-input"/>';
                 }
                 return '<div class="flex flex-col gap-0.5">'
-                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + item.label + '</label>'
+                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + escHtml(item.label) + '</label>'
                     + control
                     + '</div>';
             }).join('');
-            sections.push('<div id="config-section-' + tab + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
+            sections.push('<div id="config-section-' + escHtml(tab) + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
         }
         document.getElementById('config-body').innerHTML = sections.join('');
     } catch(e) {
@@ -610,6 +632,8 @@ async function loadConfig() {
 }
 
 async function saveConfig() {
+    var btn = document.getElementById('btn-save-config');
+    if (btn && btn.disabled) return;
     var pairs = {};
     _allConfigKeys().forEach(function(item) {
         var el = document.getElementById('cfg-' + item.key);
@@ -618,6 +642,11 @@ async function saveConfig() {
         if (item.password && !v) return;
         pairs[item.key] = v;
     });
+    var origText = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '保存中…';
+    }
     try {
         await apiFetch('/api/binance/config', {
             method: 'POST',
@@ -628,6 +657,11 @@ async function saveConfig() {
         loadConfig();
     } catch(e) {
         showToast('保存失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = origText || '保存配置';
+        }
     }
 }
 
@@ -690,13 +724,13 @@ async function loadOpenPositions() {
 
         var trs = rows.map(function(p) {
             return '<tr>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(p.sl_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(p.tp_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
-                + '<td data-expire="' + (p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
+                + '<td data-expire="' + escHtml(p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
                 + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -738,7 +772,7 @@ async function loadClosedPositions() {
             var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
             var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
             return '<tr>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + (p.close_price != null ? fmtNum(p.close_price, 6) : '—') + '</td>'
@@ -774,14 +808,14 @@ async function loadSignals() {
 
         var trs = rows.map(function(s) {
             return '<tr>'
-                + '<td class="text-text-secondary">' + (s.source || '—') + '</td>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (s.symbol || '—') + '</td>'
+                + '<td class="text-text-secondary">' + escHtml(s.source || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(s.sl_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(s.tp_price, 4) + '</td>'
                 + '<td>' + signalStatusBadge(s.status) + '</td>'
-                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + (s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + (s.skip_reason || '—') + '</td>'
+                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + escHtml(s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + escHtml(s.skip_reason || '—') + '</td>'
                 + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -848,11 +882,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('settings-modal').classList.remove('hidden');
     }
     setInterval(function() {
-        if (_authVerified) {
+        if (_authVerified && document.visibilityState === 'visible') {
             loadOpenPositions();
             loadStatus();
         }
     }, 30000);
+
+    // tab 切回前台时立即刷新一次（弥补后台暂停的间隙）
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && _authVerified) {
+            loadOpenPositions();
+            loadStatus();
+        }
+    });
 });
 </script>
 </body>
