@@ -362,14 +362,14 @@
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">🧬</span> Moss Quant (Paper)
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 纸面 Profile · 下方可回测 / 分段进化（需 Groq 做 reflect）</p>
+                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 纸面 Profile · 回测/寻优/纸面 K 线由 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span> 提供</p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                         <button type="button" id="mq-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-purple/40 hover:text-neon-purple">刷新</button>
                     </div>
                 </div>
-                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 shrink-0"></div>
                 <div id="mq-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 纸面扫描</h3>
@@ -2260,9 +2260,19 @@
             const el = document.getElementById('mq-summary');
             if (!el) return;
             if (!sum || !sum.ok) { el.innerHTML = ''; return; }
+            const dsEl = document.getElementById('mq-data-source-label');
+            if (dsEl) {
+                const lbl = sum.data_source_label || sum.data_source || '—';
+                const lim = sum.kline_limit != null ? ' · ' + sum.kline_limit + ' bars' : '';
+                dsEl.textContent = lbl + lim;
+            }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">K 线源</div>
+                    <div class="text-sm font-mono text-neon-purple">${escHtml(String(sum.data_source_label || sum.data_source || '—'))}</div>
+                </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">启用 Profile</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}</div>
@@ -2656,7 +2666,12 @@
         function formatMqOptimizeResult(data) {
             const lines = [];
             lines.push('自动寻优完成 · ' + (data.symbol || ''));
-            lines.push('K线 bars=' + (data.bars ?? '—') + ' · 测试 ' + (data.combinations_tested ?? 0) + ' 组 · 成功 ' + (data.combinations_ok ?? 0));
+            const ds = data.data_source_label || data.data_source || '';
+            lines.push('数据源 ' + ds + ' · bars=' + (data.bars ?? '—') + ' · 测试 ' + (data.combinations_tested ?? 0) + ' 组');
+            if (data.kline_start && data.kline_end) {
+                lines.push('K线区间 ' + String(data.kline_start).slice(0, 19) + ' ~ ' + String(data.kline_end).slice(0, 19));
+            }
+            if (data.warning) lines.push('⚠ ' + data.warning);
             const best = data.best;
             if (!best || !best.summary) {
                 lines.push('无有效回测结果');
