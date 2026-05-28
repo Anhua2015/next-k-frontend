@@ -242,6 +242,7 @@
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="zct_vwap" onclick="switchConfigTab('zct_vwap')">ZCT VWAP</button>
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="momentum" onclick="switchConfigTab('momentum')">动量</button>
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="jiezhen" onclick="switchConfigTab('jiezhen')">接针</button>
+                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="moss_quant" onclick="switchConfigTab('moss_quant')">Moss Quant</button>
             </div>
             <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
@@ -494,7 +495,7 @@ async function loadStatus() {
 
         var sp = d.strategy_positions || {};
         var spHtml = '';
-        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针'};
+        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针', moss_quant:'Moss'};
         for (var k in labels) {
             if (labels.hasOwnProperty(k)) {
                 spHtml += '<span class="text-text-muted text-[10px] mr-1">' + labels[k] + '</span>'
@@ -568,6 +569,14 @@ var EDITABLE_KEYS = {
         { key: 'src_jiezhen_expire_hours',   label: '过期时限(h)',      hint: '4' },
         { key: 'src_jiezhen_entry_type',     label: '入场单类型',      hint: '回退全局', type: 'select', options: ['','MARKET','LIMIT'] },
         { key: 'src_jiezhen_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
+    ],
+    moss_quant: [
+        { key: 'src_moss_quant_enabled',          label: '启用策略',        hint: 'true / false' },
+        { key: 'src_moss_quant_leverage',         label: '杠杆(回退用)',     hint: '10' },
+        { key: 'src_moss_quant_max_positions',    label: '最大持仓',        hint: '10' },
+        { key: 'src_moss_quant_expire_hours',     label: '过期时限(h)',      hint: '24' },
+        { key: 'src_moss_quant_entry_type',       label: '入场单类型',      hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
+        { key: 'moss_quant_rolling_enabled',      label: '滚仓功能',        hint: 'true / false' },
     ],
 };
 
