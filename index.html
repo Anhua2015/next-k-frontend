@@ -417,13 +417,12 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <div>
                             <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">从每日/市值看板「加入纸面」，或在维护面板手动新建；可启用/停用。15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
+                            <p class="text-[10px] text-text-muted mt-0.5">从每日/市值看板「加入纸面」；可启用/停用。15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
                         </div>
                         <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/43</span>
                     </div>
                     <div id="mq-profiles-list" class="text-text-muted text-xs mb-2">加载 Profile…</div>
                     <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-1"></p>
-                    <p class="text-[10px] text-text-muted leading-relaxed">从「每日最优」或「市值扩展」看板可一键加入纸面。手动新建 Profile、回测/进化在<b class="text-text-secondary">维护面板</b>（页脚「Next K」1 秒内连点 5 次，或地址栏 <code class="text-[10px] font-mono">?maint=1</code>）。</p>
                 </div>
                 <div class="px-4 pt-2 pb-0 border-t border-border/30">
                     <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
@@ -2587,7 +2586,7 @@
             updateMqCreateFormState(profiles);
             const regimeMap = mqRegimeMapFromScan(scan || _mqLastPaperScan);
             if (!profiles || !profiles.length) {
-                list.innerHTML = '<p class="text-text-muted text-xs">暂无纸面 Profile。可在「每日最优」或「市值扩展」看板点「加入纸面」；手动新建见维护面板（页脚连点 5 次）。</p>';
+                list.innerHTML = '<p class="text-text-muted text-xs">暂无纸面 Profile。可在「每日最优」或「市值扩展」看板点「加入纸面」。</p>';
                 return;
             }
             const rows = profiles.map((p) => {
