@@ -371,6 +371,24 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="Moss市值扩展寻优" id="mq-mcap-scan-section">
+            <div class="bg-surface rounded-xl border border-neon-blue/25 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">🔭</span> 市值扩展寻优 Top20
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            币安市值前 <span id="mq-mcap-pool-limit" class="font-mono">100</span>（去稳定币 · 排除每日扫描宇宙）· 网格寻优后展示收益前 20
+                        </p>
+                    </div>
+                    <span id="mq-mcap-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                </div>
+                <div id="mq-mcap-summary-chips" class="px-4 py-2 flex flex-wrap gap-2 text-[10px] font-mono border-b border-border/30"></div>
+                <div id="mq-mcap-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[28rem] min-h-[6rem]">加载扩展寻优…</div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="Moss量化纸面" id="mq-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -592,6 +610,7 @@
                 pick('jz-lane-section', '接针策略纸面'),
                 pick('mom-lane-section', '动量多一空一纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
+                pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
                 pick('mq-lane-section', 'Moss量化纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
@@ -672,6 +691,7 @@
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化纸面扫描">Moss 纸面</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
+                        <button type="button" id="maint-mq-mcap-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss-quant/mcap-scan/run · 市值Top100扩展寻优，约 1–2 小时">Moss 市值扩展寻优</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
@@ -1101,6 +1121,14 @@
             },
             async mqDailyOptimizeRun(body) {
                 return API._mqPost('/api/moss-quant/daily-optimize/run', body || {});
+            },
+            async mqMcapScanLatest() {
+                const res = await fetch(`${API_BASE}/api/moss-quant/mcap-scan/latest`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async mqMcapScanRun(body) {
+                return API._mqPost('/api/moss-quant/mcap-scan/run', body || {});
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -2560,19 +2588,11 @@
                 const tpl = escHtml(MQ_TEMPLATE_LABELS[tplKey] || tplKey);
                 const srcBadge = mqProfileSourceBadge(p.profile_source);
                 const eq = p.virtual_equity_usdt != null ? fmtZctPx(p.virtual_equity_usdt, 0) : '—';
-                const regime = regimeMap.get(Number(p.id)) || '';
-                const fit = mqTemplateFit(tplKey, regime);
-                const recShort = regime ? mqFormatRecommend(regime) : '待 15m 扫描';
-                const recCls = fit === 'warn' ? 'text-warn/95' : fit === 'match' ? 'text-neon-green/90' : 'text-text-muted';
                 return `<tr class="border-b border-border/50 hover:bg-surface-light/25">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">#${escHtml(String(p.id))}</td>
                     <td class="py-1.5 pr-2">${escHtml(p.name || '')}${srcBadge}</td>
                     <td class="py-1.5 pr-2 font-mono">${sym}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${tpl}</td>
-                    <td class="py-1.5 pr-2 min-w-[7rem]">
-                        <div class="flex flex-wrap items-center gap-1">${mqRegimeBadgeHtml(regime)} ${mqFitBadgeHtml(fit)}</div>
-                        <div class="text-[10px] ${recCls} mt-0.5 leading-snug">${escHtml(recShort)}</div>
-                    </td>
                     <td class="py-1.5 pr-2 text-right font-mono">${escHtml(eq)}</td>
                     <td class="py-1.5 pr-2">
                         <button type="button" data-mq-toggle="${escHtml(String(p.id))}" data-mq-enabled="${on ? '0' : '1'}"
@@ -2591,10 +2611,9 @@
             list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
                 <thead><tr class="text-text-muted text-[10px] uppercase">
                     <th class="py-1 pr-2">ID</th><th class="py-1 pr-2">名称</th><th class="py-1 pr-2">标的</th>
-                    <th class="py-1 pr-2">当前策略</th><th class="py-1 pr-2">行情 · 推荐</th><th class="py-1 pr-2 text-right">权益U</th>
+                    <th class="py-1 pr-2">当前策略</th><th class="py-1 pr-2 text-right">权益U</th>
                     <th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
-                </tr></thead><tbody>${rows}</tbody></table>
-                <p class="text-[10px] text-text-muted mt-2">行情来自最近一次 15m 纸面扫描；✓ 匹配 / ○ 可用 / ⚠ 非最优 为当前策略与推荐对照。</p>`;
+                </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
         const MQ_SCAN_REASON_LABELS = {
@@ -3013,7 +3032,7 @@
                         <th class="py-1 pr-2 text-right">胜率</th><th class="py-1 pr-2">说明</th>
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。不达标仍会列出原因；是否参与纸面由你在下方 Profile 手动启用。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。全量寻优结束后，<b class="text-text-secondary">已启用或有持仓</b>的 Profile 若与本批最优不一致会自动更新；有仓时下一轮纸面扫描立即按新参数判 SL/TP/反向平仓（不改启用状态）。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
@@ -3049,6 +3068,164 @@
             } catch (e) {
                 console.warn('mq daily:', e);
                 if (root) root.innerHTML = '<span class="text-neon-red text-xs">' + escHtml(e.message || '加载失败') + '</span>';
+            }
+        }
+
+        function mqFormatMcapUsd(v) {
+            const n = Number(v);
+            if (!Number.isFinite(n) || n <= 0) return '—';
+            if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            return String(Math.round(n));
+        }
+
+        let _mqMcapPollTimer = null;
+
+        function mqStopMcapPoll() {
+            if (_mqMcapPollTimer) {
+                clearInterval(_mqMcapPollTimer);
+                _mqMcapPollTimer = null;
+            }
+        }
+
+        function mqStartMcapPoll() {
+            mqStopMcapPoll();
+            _mqMcapPollTimer = setInterval(() => void loadMqMcapPanel(true), 30000);
+        }
+
+        function renderMqMcapPanel(data, sum) {
+            const root = document.getElementById('mq-mcap-table');
+            const meta = document.getElementById('mq-mcap-meta');
+            const chipsEl = document.getElementById('mq-mcap-summary-chips');
+            const maintBtn = document.getElementById('maint-mq-mcap-scan');
+            const poolEl = document.getElementById('mq-mcap-pool-limit');
+            const running = sum != null
+                ? !!sum.mcap_scan_running
+                : !!(data && data.batch && data.batch.status === 'running');
+            if (poolEl && sum && sum.mcap_scan_pool_limit != null) {
+                poolEl.textContent = String(sum.mcap_scan_pool_limit);
+            }
+            if (maintBtn) {
+                maintBtn.disabled = running;
+                maintBtn.textContent = running ? '市值寻优中…' : 'Moss 市值扩展寻优';
+            }
+            if (!data || !data.has_batch || !data.batch) {
+                if (meta) meta.textContent = running ? '运行中…' : '尚无批次';
+                if (chipsEl) chipsEl.innerHTML = '';
+                if (root) {
+                    root.innerHTML = '<p class="text-text-muted text-xs">' + (running
+                        ? '市值扩展寻优进行中（候选约百个标的，约 1–2 小时）…'
+                        : '尚无记录。请在维护面板触发「Moss 市值扩展寻优」。') + '</p>';
+                }
+                if (running) mqStartMcapPoll();
+                else mqStopMcapPoll();
+                return;
+            }
+            const b = data.batch;
+            const st = String(b.status || '');
+            const ts = (b.finished_at_utc || b.ran_at_utc || '').slice(0, 19).replace('T', ' ');
+            if (meta) {
+                meta.textContent = '#' + b.id + ' · ' + st + ' · ' + (b.symbols_ok ?? 0) + '/' + (b.symbols_total ?? 0)
+                    + (ts ? ' · ' + ts + ' UTC' : '');
+            }
+            const top = (b.top || []).slice();
+            if (chipsEl) {
+                chipsEl.innerHTML = [
+                    ['展示 Top', top.length, 'text-neon-blue border-neon-blue/35'],
+                    ['扫描池', b.symbols_total ?? '—', 'text-text-muted border-border/70'],
+                    ['有效', b.symbols_ok ?? '—', 'text-text-muted border-border/70'],
+                ].map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50">'
+                    + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>').join('');
+            }
+            if (!top.length) {
+                if (root) {
+                    root.innerHTML = '<p class="text-text-muted text-xs">' + (st === 'running'
+                        ? '寻优进行中，完成后展示收益 Top20…'
+                        : '本批次无有效寻优结果。') + '</p>';
+                }
+                if (st === 'running' || running) mqStartMcapPoll();
+                else mqStopMcapPoll();
+                return;
+            }
+            const rows = top.map((it, idx) => {
+                const sym = escHtml(String(it.symbol || '').toUpperCase());
+                const tpl = escHtml(MQ_TEMPLATE_LABELS[(it.template || '').toLowerCase()] || it.template || '—');
+                const s = it.summary || {};
+                const err = s.error || it.error;
+                if (err) {
+                    return `<tr class="border-b border-border/40 text-warn/90">
+                        <td class="py-1 pr-2 font-mono">${idx + 1}</td>
+                        <td class="py-1 pr-2 font-mono">${sym}</td>
+                        <td colspan="7" class="py-1">${escHtml(String(err))}</td></tr>`;
+                }
+                const ret = Number(s.total_return);
+                const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(2) + '%' : '—';
+                const retCls = ret > 0 ? 'text-neon-green' : ret < 0 ? 'text-neon-red' : 'text-text-muted';
+                const mcapRank = it.mcap_rank != null ? String(it.mcap_rank) : '—';
+                return `<tr class="border-b border-border/40 hover:bg-surface-light/20">
+                    <td class="py-1 pr-2 font-mono text-text-muted">${idx + 1}</td>
+                    <td class="py-1 pr-2 font-mono">${sym}</td>
+                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(mqFormatMcapUsd(it.market_cap_usd))}</td>
+                    <td class="py-1 pr-2 text-[10px] text-text-muted">#${escHtml(mcapRank)}</td>
+                    <td class="py-1 pr-2 text-[10px]">${tpl}</td>
+                    <td class="py-1 pr-2 text-right font-mono ${retCls}">${escHtml(retPct)}</td>
+                    <td class="py-1 pr-2 text-right font-mono">${escHtml(s.total_trades != null ? String(s.total_trades) : '—')}</td>
+                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(s.win_rate != null ? (Number(s.win_rate) * 100).toFixed(0) + '%' : '—')}</td>
+                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(it.score != null ? Number(it.score).toFixed(4) : '—')}</td>
+                </tr>`;
+            }).join('');
+            if (root) {
+                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[880px]">
+                    <thead><tr class="text-text-muted text-[10px] uppercase">
+                        <th class="py-1 pr-2">#</th><th class="py-1 pr-2">标的</th>
+                        <th class="py-1 pr-2 text-right">市值</th><th class="py-1 pr-2 text-right">市值序</th>
+                        <th class="py-1 pr-2">最优模板</th><th class="py-1 pr-2 text-right">收益</th>
+                        <th class="py-1 pr-2 text-right">回合</th><th class="py-1 pr-2 text-right">胜率</th>
+                        <th class="py-1 pr-2 text-right">得分</th>
+                    </tr></thead><tbody>${rows}</tbody></table>
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">按回测得分排序的前 20 名；仅展示，不自动创建 Profile。触发入口：页脚连点 → 维护面板。</p>`;
+            }
+            if (st === 'running' || running) mqStartMcapPoll();
+            else mqStopMcapPoll();
+        }
+
+        async function loadMqMcapPanel(quiet) {
+            const root = document.getElementById('mq-mcap-table');
+            if (!root) return;
+            if (!quiet) root.innerHTML = '<span class="animate-pulse">加载扩展寻优…</span>';
+            try {
+                const [data, sum] = await Promise.all([
+                    API.mqMcapScanLatest(),
+                    API.mqSummary().catch(() => null),
+                ]);
+                renderMqMcapPanel(data, sum);
+            } catch (e) {
+                console.warn('mq mcap:', e);
+                if (root) root.innerHTML = '<span class="text-neon-red text-xs">' + escHtml(e.message || '加载失败') + '</span>';
+            }
+        }
+
+        async function runMqMcapScan() {
+            const msg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-mq-mcap-scan');
+            if (btn && btn.disabled) return;
+            if (!confirm('将对币安市值 Top100（去稳定币、排除每日 Moss 宇宙）依次网格寻优，约 1–2 小时。确定？')) return;
+            if (msg) msg.textContent = '市值扩展寻优提交中…';
+            if (btn) btn.disabled = true;
+            try {
+                const out = await API.mqMcapScanRun({});
+                if (out.already_running) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">已有市值扩展寻优在运行</span>';
+                } else if (out.started) {
+                    if (msg) msg.innerHTML = '<span class="text-neon-green">已启动后台寻优，下方 Top20 面板将自动刷新</span>';
+                } else {
+                    if (msg) msg.textContent = out.message || '—';
+                }
+                mqStartMcapPoll();
+                await loadMqMcapPanel(true);
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '启动失败') + '</span>';
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -3598,6 +3775,7 @@
                 renderMqSummary(sum);
                 await loadMqProfilesPanel();
                 await loadMqDailyPanel(true);
+                await loadMqMcapPanel(true);
                 const [sig, scan] = await Promise.all([
                     API.mqSignals(),
                     API.mqPaperScanLatest().catch((err) => {
@@ -4477,6 +4655,7 @@
             document.getElementById('maint-jz-clear-db')?.addEventListener('click', () => void clearJzLaneData());
             document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
             document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
+            document.getElementById('maint-mq-mcap-scan')?.addEventListener('click', () => void runMqMcapScan());
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
@@ -4558,6 +4737,7 @@
                 pick('jz-lane-section', '接针策略纸面'),
                 pick('mom-lane-section', '动量多一空一纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
+                pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
                 pick('mq-lane-section', 'Moss量化纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
