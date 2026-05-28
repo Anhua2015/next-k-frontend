@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>实盘看板 · Next K</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -124,7 +124,7 @@
         td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 90%, transparent); white-space: nowrap; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: var(--hover-bg); }
-        input.config-input {
+        .config-input {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 0.5rem;
@@ -134,7 +134,8 @@
             outline: none;
             transition: border-color 0.15s;
         }
-        input.config-input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+        .config-input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+        select.config-input { appearance: auto; cursor: pointer; }
         .tab-btn { transition: color 0.15s, border-color 0.15s; }
         .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
         .tab-btn:not(.active) { color: var(--text-muted); border-bottom: 2px solid transparent; }
@@ -234,13 +235,14 @@
         <div class="bg-surface rounded-xl border border-border card p-4">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-text-primary font-semibold text-sm">交易配置</h2>
-                <button type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25">保存配置</button>
+                <button id="btn-save-config" type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25 disabled:opacity-50 disabled:cursor-not-allowed">保存配置</button>
             </div>
             <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
                 <button type="button" class="tab-btn active px-3 py-1.5 text-xs font-medium" data-tab="global" onclick="switchConfigTab('global')">全局</button>
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="zct_vwap" onclick="switchConfigTab('zct_vwap')">ZCT VWAP</button>
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="momentum" onclick="switchConfigTab('momentum')">动量</button>
                 <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="jiezhen" onclick="switchConfigTab('jiezhen')">接针</button>
+                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="moss_quant" onclick="switchConfigTab('moss_quant')">Moss Quant</button>
             </div>
             <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
@@ -402,6 +404,16 @@ function tickCountdowns() {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
+function escHtml(v) {
+    if (v == null) return '';
+    return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function fmtTime(iso) {
     if (!iso) return '—';
     try {
@@ -423,8 +435,8 @@ function pnlColor(v) {
 
 function sideBadge(side) {
     if (!side) return '—';
-    var cls = side.toLowerCase() === 'long' ? 'badge-long' : 'badge-short';
-    return '<span class="badge ' + cls + '">' + side + '</span>';
+    var cls = String(side).toLowerCase() === 'long' ? 'badge-long' : 'badge-short';
+    return '<span class="badge ' + cls + '">' + escHtml(side) + '</span>';
 }
 
 function reasonBadge(r) {
@@ -444,17 +456,29 @@ function reasonBadge(r) {
         trail_low: '低档保护', trail_stop: '硬止损',
         rotate: '换仓', expired: '到期',
     };
+    // class 白名单：只允许已知 key 进入 class 属性
+    var BADGE_CLASS_WHITELIST = {
+        tp: 1, sl: 1, expired: 1, manual: 1, unknown: 1,
+        paper_close: 1, external: 1,
+        momentum_scan: 1, momentum_trail: 1,
+        jiezhen_scan: 1, jiezhen_trail: 1,
+        trail_tier1: 1, trail_tier2: 1,
+        trail_low: 1, trail_stop: 1,
+        rotate: 1,
+    };
     var sourceLabel = labels[sourcePart] || sourcePart;
     var ruleLabel = ruleLabels[rulePart] || rulePart;
     var display = ruleLabel ? sourceLabel + '/' + ruleLabel : sourceLabel;
-    return '<span class="badge badge-' + (rulePart || sourcePart) + '">' + display + '</span>';
+    var rawClassKey = rulePart || sourcePart;
+    var classKey = BADGE_CLASS_WHITELIST[rawClassKey] ? rawClassKey : 'unknown';
+    return '<span class="badge badge-' + classKey + '">' + escHtml(display) + '</span>';
 }
 
 function signalStatusBadge(s) {
     if (!s) return '—';
     var cls = s === 'traded' ? 'badge-open' : s === 'error' ? 'badge-sl' : 'badge-unknown';
     var labels = { traded: '已开仓', received: '已收到', error: '错误' };
-    return '<span class="badge ' + cls + '">' + (labels[s] || s) + '</span>';
+    return '<span class="badge ' + cls + '">' + escHtml(labels[s] || s) + '</span>';
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -471,7 +495,7 @@ async function loadStatus() {
 
         var sp = d.strategy_positions || {};
         var spHtml = '';
-        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针'};
+        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针', moss_quant:'Moss'};
         for (var k in labels) {
             if (labels.hasOwnProperty(k)) {
                 spHtml += '<span class="text-text-muted text-[10px] mr-1">' + labels[k] + '</span>'
@@ -512,6 +536,8 @@ var EDITABLE_KEYS = {
         { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
         { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
         { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
+        { key: 'entry_type',            label: '入场单类型(默认)', hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
+        { key: 'limit_entry_timeout_sec', label: '限价超时(秒,默认)', hint: '30' },
     ],
     zct_vwap: [
         { key: 'src_zct_vwap_enabled',  label: '启用策略',        hint: 'true / false' },
@@ -523,6 +549,8 @@ var EDITABLE_KEYS = {
         { key: 'expire_hours_play01',   label: 'PLAY01 过期(h)',   hint: '5' },
         { key: 'expire_hours_play02',   label: 'PLAY02 过期(h)',   hint: '4' },
         { key: 'expire_hours_play03',   label: 'PLAY03 过期(h)',   hint: '3' },
+        { key: 'src_zct_vwap_entry_type', label: '入场单类型', hint: '回退全局', type: 'select', options: ['','MARKET','LIMIT'] },
+        { key: 'src_zct_vwap_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
     ],
     momentum: [
         { key: 'src_momentum_enabled',        label: '启用策略',        hint: 'true / false' },
@@ -530,6 +558,8 @@ var EDITABLE_KEYS = {
         { key: 'src_momentum_leverage',       label: '杠杆',            hint: '10' },
         { key: 'src_momentum_max_positions',  label: '最大持仓',        hint: '2' },
         { key: 'src_momentum_expire_hours',   label: '过期时限(h)',      hint: '4' },
+        { key: 'src_momentum_entry_type',     label: '入场单类型',      hint: 'LIMIT', type: 'select', options: ['','MARKET','LIMIT'] },
+        { key: 'src_momentum_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
     ],
     jiezhen: [
         { key: 'src_jiezhen_enabled',        label: '启用策略',        hint: 'true / false' },
@@ -537,6 +567,16 @@ var EDITABLE_KEYS = {
         { key: 'src_jiezhen_leverage',       label: '杠杆',            hint: '10' },
         { key: 'src_jiezhen_max_positions',  label: '最大持仓',        hint: '3' },
         { key: 'src_jiezhen_expire_hours',   label: '过期时限(h)',      hint: '4' },
+        { key: 'src_jiezhen_entry_type',     label: '入场单类型',      hint: '回退全局', type: 'select', options: ['','MARKET','LIMIT'] },
+        { key: 'src_jiezhen_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
+    ],
+    moss_quant: [
+        { key: 'src_moss_quant_enabled',          label: '启用策略',        hint: 'true / false' },
+        { key: 'src_moss_quant_leverage',         label: '杠杆(回退用)',     hint: '10' },
+        { key: 'src_moss_quant_max_positions',    label: '最大持仓',        hint: '10' },
+        { key: 'src_moss_quant_expire_hours',     label: '过期时限(h)',      hint: '24' },
+        { key: 'src_moss_quant_entry_type',       label: '入场单类型',      hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
+        { key: 'moss_quant_rolling_enabled',      label: '滚仓功能',        hint: 'true / false' },
     ],
 };
 
@@ -574,13 +614,24 @@ async function loadConfig() {
             var items = keys.map(function(item) {
                 var raw = cfg[item.key] != null ? cfg[item.key] : '';
                 var val = (item.password && raw === '****') ? '' : raw;
-                var inputType = item.password ? 'password' : 'text';
+                var control;
+                if (item.type === 'select') {
+                    var opts = (item.options || []).map(function(o) {
+                        var label = o === '' ? '（回退全局）' : o;
+                        var sel = String(val) === String(o) ? ' selected' : '';
+                        return '<option value="' + escHtml(o) + '"' + sel + '>' + escHtml(label) + '</option>';
+                    }).join('');
+                    control = '<select id="cfg-' + escHtml(item.key) + '" class="config-input">' + opts + '</select>';
+                } else {
+                    var inputType = item.password ? 'password' : 'text';
+                    control = '<input id="cfg-' + escHtml(item.key) + '" type="' + inputType + '" value="' + escHtml(val) + '" placeholder="' + escHtml(item.hint) + '" class="config-input"/>';
+                }
                 return '<div class="flex flex-col gap-0.5">'
-                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + item.label + '</label>'
-                    + '<input id="cfg-' + item.key + '" type="' + inputType + '" value="' + val + '" placeholder="' + item.hint + '" class="config-input"/>'
+                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + escHtml(item.label) + '</label>'
+                    + control
                     + '</div>';
             }).join('');
-            sections.push('<div id="config-section-' + tab + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
+            sections.push('<div id="config-section-' + escHtml(tab) + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
         }
         document.getElementById('config-body').innerHTML = sections.join('');
     } catch(e) {
@@ -590,6 +641,8 @@ async function loadConfig() {
 }
 
 async function saveConfig() {
+    var btn = document.getElementById('btn-save-config');
+    if (btn && btn.disabled) return;
     var pairs = {};
     _allConfigKeys().forEach(function(item) {
         var el = document.getElementById('cfg-' + item.key);
@@ -598,6 +651,11 @@ async function saveConfig() {
         if (item.password && !v) return;
         pairs[item.key] = v;
     });
+    var origText = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '保存中…';
+    }
     try {
         await apiFetch('/api/binance/config', {
             method: 'POST',
@@ -608,6 +666,11 @@ async function saveConfig() {
         loadConfig();
     } catch(e) {
         showToast('保存失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = origText || '保存配置';
+        }
     }
 }
 
@@ -670,13 +733,13 @@ async function loadOpenPositions() {
 
         var trs = rows.map(function(p) {
             return '<tr>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(p.sl_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(p.tp_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
-                + '<td data-expire="' + (p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
+                + '<td data-expire="' + escHtml(p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
                 + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -718,7 +781,7 @@ async function loadClosedPositions() {
             var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
             var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
             return '<tr>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (p.symbol || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + (p.close_price != null ? fmtNum(p.close_price, 6) : '—') + '</td>'
@@ -754,14 +817,14 @@ async function loadSignals() {
 
         var trs = rows.map(function(s) {
             return '<tr>'
-                + '<td class="text-text-secondary">' + (s.source || '—') + '</td>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + (s.symbol || '—') + '</td>'
+                + '<td class="text-text-secondary">' + escHtml(s.source || '—') + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(s.sl_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(s.tp_price, 4) + '</td>'
                 + '<td>' + signalStatusBadge(s.status) + '</td>'
-                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + (s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + (s.skip_reason || '—') + '</td>'
+                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + escHtml(s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + escHtml(s.skip_reason || '—') + '</td>'
                 + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -828,11 +891,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('settings-modal').classList.remove('hidden');
     }
     setInterval(function() {
-        if (_authVerified) {
+        if (_authVerified && document.visibilityState === 'visible') {
             loadOpenPositions();
             loadStatus();
         }
     }, 30000);
+
+    // tab 切回前台时立即刷新一次（弥补后台暂停的间隙）
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && _authVerified) {
+            loadOpenPositions();
+            loadStatus();
+        }
+    });
 });
 </script>
 </body>

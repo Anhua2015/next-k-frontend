@@ -1,9 +1,5 @@
 function resolveApiBase() {
     try {
-        const q = new URLSearchParams(window.location.search).get('api');
-        if (q) return String(q).replace(/\/$/, '');
-    } catch (e) { /* ignore */ }
-    try {
         const ls = localStorage.getItem('NEXT_K_API_BASE');
         if (ls) return String(ls).replace(/\/$/, '');
     } catch (e) { /* ignore */ }
@@ -21,13 +17,9 @@ function resolveApiBase() {
 
 function getMaintenanceToken() {
     try {
-        const q = new URLSearchParams(window.location.search).get('maint_token');
-        if (q && String(q).trim()) return String(q).trim();
-    } catch (e) { /* ignore */ }
-    try {
         const ls = localStorage.getItem('NEXT_K_MAINTENANCE_TOKEN');
         if (ls && String(ls).trim()) return String(ls).trim();
-    } catch (e2) { /* ignore */ }
+    } catch (e) { /* ignore */ }
     return '';
 }
 

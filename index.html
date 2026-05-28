@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -180,6 +180,20 @@
             transition: all 0.15s;
         }
         .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 0.6rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            z-index: 999;
+            animation: fadein 0.2s ease;
+        }
+        .toast-ok  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 30%, transparent); color: var(--neon-green); }
+        .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
+        @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
@@ -1193,6 +1207,20 @@
             const d = document.createElement('div');
             d.textContent = String(s);
             return d.innerHTML;
+        }
+
+        function showToast(msg, ok) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            const el = document.createElement('div');
+            el.className = 'toast ' + (ok ? 'toast-ok' : 'toast-err');
+            el.textContent = String(msg || '');
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
         }
 
         /** 永续合约 symbol（如 BTCUSDT）→ 展示/外链用 pair（如 BTC/USDT） */
@@ -2275,19 +2303,23 @@
             const tsEl = document.getElementById('jz-ts');
             if (!root) return;
             root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载接针纸面…</div>';
-            try {
-                const sum = await API.jzSummary();
-                renderJzSummary(sum);
-                const sig = await API.jzSignals();
-                const all = sig.signals || [];
+            const [sumRes, sigRes] = await Promise.allSettled([API.jzSummary(), API.jzSignals()]);
+            if (sumRes.status === 'fulfilled') {
+                renderJzSummary(sumRes.value);
+            } else {
+                console.error('jiezhen summary:', sumRes.reason);
+                renderJzSummary(null);
+            }
+            if (sigRes.status === 'fulfilled') {
+                const all = sigRes.value.signals || [];
                 const stEl = document.getElementById('jz-filter-status');
                 const symEl = document.getElementById('jz-filter-symbol');
                 const filtered = laneFilterRows(all, stEl ? stEl.value : 'all', symEl ? symEl.value : '');
                 renderJzTable(filtered, all.length ? '共 ' + all.length + ' 条' : '');
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-            } catch (e) {
-                console.error('jiezhen:', e);
-                renderJzSummary(null);
+            } else {
+                console.error('jiezhen signals:', sigRes.reason);
+                const e = sigRes.reason;
                 root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
                 if (tsEl) tsEl.textContent = '--';
             }
@@ -2298,19 +2330,23 @@
             const tsEl = document.getElementById('mom-ts');
             if (!root) return;
             root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载动量纸面…</div>';
-            try {
-                const sum = await API.momSummary();
-                renderMomSummary(sum);
-                const sig = await API.momSignals();
-                const all = sig.signals || [];
+            const [sumRes, sigRes] = await Promise.allSettled([API.momSummary(), API.momSignals()]);
+            if (sumRes.status === 'fulfilled') {
+                renderMomSummary(sumRes.value);
+            } else {
+                console.error('momentum summary:', sumRes.reason);
+                renderMomSummary(null);
+            }
+            if (sigRes.status === 'fulfilled') {
+                const all = sigRes.value.signals || [];
                 const stEl = document.getElementById('mom-filter-status');
                 const symEl = document.getElementById('mom-filter-symbol');
                 const filtered = momFilterRows(all, stEl ? stEl.value : 'all', symEl ? symEl.value : '');
                 renderMomTable(filtered, all.length);
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-            } catch (e) {
-                console.error('momentum:', e);
-                renderMomSummary(null);
+            } else {
+                console.error('momentum signals:', sigRes.reason);
+                const e = sigRes.reason;
                 root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
                 if (tsEl) tsEl.textContent = '--';
             }
@@ -4069,9 +4105,10 @@
             try {
                 await API.zctVwapPatchManual(id, body);
                 await hydrateZctVwapBoard();
+                showToast('实盘记录已保存', true);
             } catch (err) {
                 console.error('zct-vwap manual:', err);
-                window.alert(err && err.message ? String(err.message) : '保存失败');
+                showToast('保存失败：' + (err && err.message ? String(err.message) : '未知错误'), false);
             }
         }
 
@@ -4225,7 +4262,10 @@
             }
         }
 
+        let _oiRadarLoading = false;
         async function loadAccumulationOiRadar(options = {}) {
+            if (_oiRadarLoading) return;
+            _oiRadarLoading = true;
             const forceRefresh = options.forceRefresh === true;
             const body = document.getElementById('oi-radar-body');
             const tsEl = document.getElementById('oi-radar-ts');
@@ -4276,16 +4316,20 @@
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
                 const msg = e && e.message ? String(e.message) : '加载失败';
-                const hint = /fail(ed)? to fetch|networkerror|load failed/i.test(msg)
-                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（本页默认直连线上 API；本机可加 <code class="text-accent font-mono text-[11px]">?api=http://127.0.0.1:8000</code>）。</p>'
+                const isNet = /fail(ed)? to fetch|networkerror|load failed/i.test(msg);
+                const hint = isNet
+                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（如需切换 API base，可在 localStorage 设置 <code class="text-accent font-mono text-[11px]">NEXT_K_API_BASE</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
                 void hydrateWorthHighlightBoards({});
+                // 仅当用户主动点刷新时才弹 toast，避免初始化失败重复打扰
+                if (forceRefresh) showToast('OI 雷达刷新失败：' + msg, false);
             } finally {
                 if (btn) btn.disabled = false;
+                _oiRadarLoading = false;
             }
         }
 
@@ -4314,9 +4358,8 @@
             try {
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('maint') === '1') openMaintPanel();
-                const mt = params.get('maint_token');
-                if (mt && String(mt).trim()) {
-                    setMaintenanceToken(mt);
+                // 拒绝从 URL 读 maint_token —— 出现就立即清掉，避免被书签 / 历史 / Referer 泄露
+                if (params.has('maint_token')) {
                     try {
                         const u = new URL(window.location.href);
                         u.searchParams.delete('maint_token');
@@ -4703,9 +4746,9 @@
             });
         }
 
-        async function init() {
-            enforceDashboardLayout();
+        async function checkConnection() {
             const conn = document.getElementById('connection-status');
+            if (!conn) return;
             try {
                 await API.health();
                 conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-green/[0.09] text-neon-green border border-neon-green/15';
@@ -4714,6 +4757,18 @@
                 conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15';
                 conn.innerHTML = '<span>API 连接失败</span>';
             }
+        }
+
+        async function init() {
+            // enforceDashboardLayout 已由顶部 IIFE 在 DOM 加载时跑过；此处不重复
+            await checkConnection();
+            // 每 60s 复查一次连接，断网后状态能自动更新；后台 tab 时跳过
+            setInterval(() => {
+                if (document.visibilityState === 'visible') checkConnection();
+            }, 60000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkConnection();
+            });
             setupMaintPanel();
             initWorthHistoryTabDelegationOnce();
             void hydrateWorthHighlightBoards({});
