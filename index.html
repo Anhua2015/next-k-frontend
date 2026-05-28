@@ -360,8 +360,8 @@
                         </h2>
                         <p class="text-text-muted text-xs mt-0.5">
                             <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
-                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 全市场寻优
-                            · 仅展示回测结果，<b class="text-text-secondary">不自动改纸面 Profile</b>；达标后可「加入纸面」
+                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 核心标的寻优
+                            · 展示回测与达标；<b class="text-text-secondary">不自动新增/删除</b>纸面 Profile，<b class="text-text-secondary">已启用或有持仓</b>的将同步本批最优参数；可手动「加入纸面」
                         </p>
                     </div>
                     <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
@@ -3064,7 +3064,7 @@
                         <th class="py-1 pr-2 text-right">胜率</th><th class="py-1 pr-2">说明</th>
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。全量寻优结束后，<b class="text-text-secondary">已启用或有持仓</b>的 Profile 若与本批最优不一致会自动更新；有仓时下一轮纸面扫描立即按新参数判 SL/TP/反向平仓（不改启用状态）。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。参数同步不改启用状态；有仓时下一轮纸面扫描按新参数判 SL/TP/反向平仓。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
