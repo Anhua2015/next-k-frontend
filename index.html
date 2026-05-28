@@ -293,7 +293,7 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="接针策略纸面" id="jz-lane-section">
+        <section class="mb-6 hidden" aria-label="接针策略纸面" id="jz-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
@@ -323,7 +323,7 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="动量多一空一纸面" id="mom-lane-section">
+        <section class="mb-6 hidden" aria-label="动量多一空一纸面" id="mom-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
@@ -493,8 +493,6 @@
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('zct-lane-section', 'ZCT 量化'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('jz-lane-section', '接针策略纸面'),
-                pick('mom-lane-section', '动量多一空一纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
                 pick('mq-lane-section', 'Moss量化纸面'),
@@ -4840,8 +4838,6 @@
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('zct-lane-section', 'ZCT 量化'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('jz-lane-section', '接针策略纸面'),
-                pick('mom-lane-section', '动量多一空一纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
                 pick('mq-lane-section', 'Moss量化纸面'),
@@ -4880,23 +4876,10 @@
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
             loadS2FundingSignals();
-            /* ZCT VWAP 主看板已隐藏；维护面板仍可清库/触轨池 */
-            void hydrateMomBoard();
-            void hydrateJzBoard();
+            /* ZCT / 接针 / 动量主看板已隐藏；维护面板仍可清库/触轨 */
             initMqProfilesPanelOnce();
             void hydrateMqBoard();
-            document.getElementById('mom-refresh')?.addEventListener('click', () => void hydrateMomBoard());
             document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
-            document.getElementById('mom-filter-status')?.addEventListener('change', () => void hydrateMomBoard());
-            document.getElementById('mom-filter-symbol')?.addEventListener('keydown', (ev) => {
-                if (ev.key === 'Enter') void hydrateMomBoard();
-            });
-            document.getElementById('jz-refresh')?.addEventListener('click', () => void hydrateJzBoard());
-            document.getElementById('jz-filter-status')?.addEventListener('change', () => void hydrateJzBoard());
-            document.getElementById('jz-filter-symbol')?.addEventListener('keydown', (ev) => {
-                if (ev.key === 'Enter') void hydrateJzBoard();
-            });
-            document.getElementById('jz-universe-btn')?.addEventListener('click', () => void showJzUniverse());
             document.getElementById('zct-vwap-root')?.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
                 if (!btn) return;
