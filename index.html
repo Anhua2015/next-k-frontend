@@ -3068,20 +3068,47 @@
             else mqStopDailyPoll();
         }
 
+        function mqFromDailyErrorLabel(code) {
+            const c = String(code || '').trim();
+            const map = {
+                symbol_not_allowed: '标的不在纸面宇宙（需为内置币或已加入每日寻优表）',
+                daily_item_not_found: '尚无该标的每日寻优结果，请先完成一轮每日寻优',
+                max_active_profiles_reached: '已启用 Profile 数量达上限',
+                symbol_already_active: '该标的已有启用的纸面 Profile',
+                profile_already_exists: '纸面 Profile 已存在且不允许覆盖',
+            };
+            return map[c] || c || '加入失败';
+        }
+
         async function submitMqFromDaily(symbol, enabled) {
             const msg = document.getElementById('mq-profiles-msg');
+            const dailyMeta = document.getElementById('mq-daily-meta');
             const sym = String(symbol || '').trim().toUpperCase();
             if (!sym) return;
+            const btn = document.querySelector('[data-mq-from-daily="' + sym + '"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '加入中…';
+            }
             try {
                 await API.mqProfileFromDaily({
                     symbol: sym,
                     enabled: enabled !== false,
                     update_existing: true,
                 });
-                if (msg) msg.innerHTML = '<span class="text-neon-green">已从寻优加入 ' + escHtml(sym) + '</span>';
+                const okLine = '已从寻优加入 ' + sym;
+                if (dailyMeta) dailyMeta.innerHTML = '<span class="text-neon-green">' + escHtml(okLine) + '</span>';
+                if (msg) msg.innerHTML = '<span class="text-neon-green">' + escHtml(okLine) + '</span>';
                 await hydrateMqBoard();
+                await loadMqDailyPanel(true);
             } catch (e) {
-                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+                const errLine = mqFromDailyErrorLabel(e.message || String(e));
+                if (dailyMeta) dailyMeta.innerHTML = '<span class="text-neon-red">' + escHtml(sym) + '：' + escHtml(errLine) + '</span>';
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(errLine) + '</span>';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '加入纸面';
+                }
             }
         }
 
