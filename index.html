@@ -396,14 +396,20 @@
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">🧬</span> Moss Quant (Paper)
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">五维 composite · 纸面 Profile · 回测/寻优/纸面 K 线由 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span> 提供</p>
+                        <p class="text-text-muted text-xs mt-0.5">全局纸面钱包 · 各 Profile = 一币一机器人 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
                         <button type="button" id="mq-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-purple/40 hover:text-neon-purple">刷新</button>
                     </div>
                 </div>
-                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 shrink-0"></div>
+                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="mq-robot-pnl-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.18] shrink-0">
+                    <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide mb-2">各机器人盈亏</h3>
+                    <div id="mq-robot-pnl" class="flex flex-wrap gap-2 text-xs min-h-[2.5rem]">
+                        <span class="text-text-muted animate-pulse">加载…</span>
+                    </div>
+                </div>
                 <div id="mq-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
@@ -416,8 +422,8 @@
                 <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <div>
-                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">从每日/市值看板「加入纸面」；可启用/停用。15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
+                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile（策略配置）</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">盈亏见上方「各机器人」卡片与下表；15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
                         </div>
                         <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/43</span>
                     </div>
@@ -2358,10 +2364,116 @@
             }
         }
 
+        let _mqLastSummary = null;
+
+        function mqProfilePnlMap(sum) {
+            const map = new Map();
+            (sum && Array.isArray(sum.per_profile) ? sum.per_profile : []).forEach((row) => {
+                const pid = Number(row.profile_id);
+                if (Number.isFinite(pid)) map.set(pid, row);
+            });
+            return map;
+        }
+
+        function mqOpenPnlMap(sum) {
+            const map = new Map();
+            (sum && Array.isArray(sum.open_by_profile) ? sum.open_by_profile : []).forEach((row) => {
+                const pid = Number(row.profile_id);
+                if (Number.isFinite(pid)) map.set(pid, row);
+            });
+            return map;
+        }
+
+        function mqFmtSignedPnl(v, digits) {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return '—';
+            return (n > 0 ? '+' : '') + fmtZctPx(n, digits != null ? digits : 2);
+        }
+
+        function mqPnlClass(v) {
+            const n = Number(v);
+            if (!Number.isFinite(n) || n === 0) return 'text-text-muted';
+            return n > 0 ? 'text-neon-green' : 'text-neon-red';
+        }
+
+        function renderMqRobotPnl(profiles, sum) {
+            const el = document.getElementById('mq-robot-pnl');
+            if (!el) return;
+            const realizedMap = mqProfilePnlMap(sum);
+            const openMap = mqOpenPnlMap(sum);
+            const list = profiles && profiles.length ? profiles.slice() : [];
+            const orphanIds = new Set(realizedMap.keys());
+            list.forEach((p) => orphanIds.delete(Number(p.id)));
+            if (!list.length && !orphanIds.size) {
+                el.innerHTML = '<span class="text-text-muted text-xs">暂无 Profile。加入纸面并产生交易后，此处显示各机器人盈亏。</span>';
+                return;
+            }
+            const cards = [];
+            const renderCard = (pid, sym, name, enabled, tplKey) => {
+                const r = realizedMap.get(pid);
+                const o = openMap.get(pid);
+                const realized = r ? Number(r.total_pnl_usdt) : 0;
+                const floating = o ? Number(o.unrealized_pnl_usdt) : 0;
+                const total = realized + floating;
+                const settledN = r ? Number(r.settled_count || 0) : 0;
+                const openN = o ? Number(o.open_count || 0) : 0;
+                const tpl = MQ_TEMPLATE_LABELS[tplKey] || tplKey || '—';
+                const enCls = enabled
+                    ? 'border-neon-purple/35 bg-neon-purple/[0.06]'
+                    : 'border-border/70 bg-surface/40 opacity-90';
+                const status = openN > 0 ? '持仓中' : (enabled ? '启用' : '停用');
+                cards.push(
+                    '<div class="min-w-[10.5rem] max-w-[14rem] flex-1 rounded-lg border px-2.5 py-2 ' + enCls + '">'
+                    + '<div class="flex items-center justify-between gap-1 mb-1">'
+                    + '<span class="font-mono text-[11px] font-semibold text-text-primary">#' + escHtml(String(pid)) + ' ' + escHtml(sym) + '</span>'
+                    + '<span class="text-[9px] text-text-muted">' + escHtml(status) + '</span></div>'
+                    + '<div class="text-[9px] text-text-muted truncate mb-1" title="' + escHtml(name || '') + '">' + escHtml(name || tpl) + '</div>'
+                    + '<div class="font-mono text-base font-semibold ' + mqPnlClass(total) + '">' + escHtml(mqFmtSignedPnl(total, 2)) + ' <span class="text-[9px] font-normal text-text-muted">合计U</span></div>'
+                    + '<div class="text-[9px] font-mono mt-1 leading-relaxed">'
+                    + '<span class="' + mqPnlClass(realized) + '">已实现 ' + escHtml(mqFmtSignedPnl(realized, 2)) + '</span>'
+                    + ' · <span class="' + mqPnlClass(floating) + '">浮动 ' + escHtml(mqFmtSignedPnl(floating, 2)) + '</span>'
+                    + '<br><span class="text-text-muted">平' + settledN + ' · 持' + openN + '</span></div></div>',
+                );
+            };
+            list.sort((a, b) => {
+                const ae = a.enabled ? 0 : 1;
+                const be = b.enabled ? 0 : 1;
+                if (ae !== be) return ae - be;
+                return Number(a.id) - Number(b.id);
+            });
+            list.forEach((p) => {
+                renderCard(
+                    Number(p.id),
+                    String(p.symbol || '').toUpperCase(),
+                    String(p.name || ''),
+                    !!p.enabled,
+                    String(p.template || 'balanced').toLowerCase(),
+                );
+            });
+            orphanIds.forEach((pid) => {
+                const r = realizedMap.get(pid);
+                renderCard(
+                    pid,
+                    r ? String(r.symbol || '').toUpperCase() : '?',
+                    '已删Profile',
+                    false,
+                    '',
+                );
+            });
+            el.innerHTML = cards.join('');
+        }
+
         function renderMqSummary(sum) {
             const el = document.getElementById('mq-summary');
             if (!el) return;
-            if (!sum || !sum.ok) { el.innerHTML = ''; return; }
+            if (!sum || !sum.ok) {
+                _mqLastSummary = null;
+                el.innerHTML = '';
+                const rp = document.getElementById('mq-robot-pnl');
+                if (rp) rp.innerHTML = '';
+                return;
+            }
+            _mqLastSummary = sum;
             const dsEl = document.getElementById('mq-data-source-label');
             if (dsEl) {
                 const lbl = sum.data_source_label || sum.data_source || '—';
@@ -2383,27 +2495,37 @@
             }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const wInit = Number(sum.wallet_initial_usdt);
+            const wBal = Number(sum.wallet_balance_usdt);
+            const walletInit = Number.isFinite(wInit) ? wInit : 10000;
+            const walletBal = Number.isFinite(wBal) ? wBal : (walletInit + pnl);
+            const balCls = walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">K 线源</div>
                     <div class="text-sm font-mono text-neon-purple">${escHtml(String(sum.data_source_label || sum.data_source || '—'))}</div>
                 </div>
+                <div class="bg-surface-light/30 rounded-lg border border-neon-purple/25 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">纸面钱包（全账户）</div>
+                    <div class="text-lg font-semibold font-mono ${balCls}">${fmtZctPx(walletBal, 2)}</div>
+                    <div class="text-[9px] text-text-muted font-mono">初始 ${fmtZctPx(walletInit, 0)} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span></div>
+                </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">启用 Profile</div>
+                    <div class="text-text-muted text-[10px] uppercase">启用机器人</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">持仓</div>
+                    <div class="text-text-muted text-[10px] uppercase">持仓（全账户）</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">已结算</div>
+                    <div class="text-text-muted text-[10px] uppercase">已结算（全账户）</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.settled_count ?? 0))}</div>
-                </div>
-                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">已实现 U</div>
-                    <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 4)}</div>
                 </div>`;
+            if (_mqProfilesCache.length) {
+                renderMqRobotPnl(_mqProfilesCache, sum);
+                renderMqProfilesList(_mqProfilesCache, _mqLastPaperScan, sum);
+            }
         }
 
         let MQ_MAX_ENABLED = 43;
@@ -2578,11 +2700,13 @@
             return '<span class="text-[9px] font-mono text-text-muted border border-border/60 rounded px-1 ml-1">手动</span>';
         }
 
-        function renderMqProfilesList(profiles, scan) {
+        function renderMqProfilesList(profiles, scan, sum) {
             const list = document.getElementById('mq-profiles-list');
             if (!list) return;
             updateMqCreateFormState(profiles);
             const regimeMap = mqRegimeMapFromScan(scan || _mqLastPaperScan);
+            const realizedMap = mqProfilePnlMap(sum || _mqLastSummary);
+            const openMap = mqOpenPnlMap(sum || _mqLastSummary);
             if (!profiles || !profiles.length) {
                 list.innerHTML = '<p class="text-text-muted text-xs">暂无纸面 Profile。可在「每日最优」或「市值扩展」看板点「加入纸面」。</p>';
                 return;
@@ -2593,13 +2717,23 @@
                 const tplKey = (p.template || 'balanced').toLowerCase();
                 const tpl = escHtml(MQ_TEMPLATE_LABELS[tplKey] || tplKey);
                 const srcBadge = mqProfileSourceBadge(p.profile_source);
-                const eq = p.virtual_equity_usdt != null ? fmtZctPx(p.virtual_equity_usdt, 0) : '—';
+                const pid = Number(p.id);
+                const r = realizedMap.get(pid);
+                const o = openMap.get(pid);
+                const realized = r ? Number(r.total_pnl_usdt) : 0;
+                const floating = o ? Number(o.unrealized_pnl_usdt) : 0;
+                const total = realized + floating;
+                const settledN = r ? Number(r.settled_count || 0) : 0;
+                const openN = o ? Number(o.open_count || 0) : 0;
                 return `<tr class="border-b border-border/50 hover:bg-surface-light/25">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">#${escHtml(String(p.id))}</td>
                     <td class="py-1.5 pr-2">${escHtml(p.name || '')}${srcBadge}</td>
                     <td class="py-1.5 pr-2 font-mono">${sym}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${tpl}</td>
-                    <td class="py-1.5 pr-2 text-right font-mono">${escHtml(eq)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${mqPnlClass(realized)}">${escHtml(mqFmtSignedPnl(realized, 2))}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${mqPnlClass(floating)}">${escHtml(mqFmtSignedPnl(floating, 2))}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono font-semibold ${mqPnlClass(total)}">${escHtml(mqFmtSignedPnl(total, 2))}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono text-[10px] text-text-muted">${escHtml(String(settledN))}/${escHtml(String(openN))}</td>
                     <td class="py-1.5 pr-2">
                         <button type="button" data-mq-toggle="${escHtml(String(p.id))}" data-mq-enabled="${on ? '0' : '1'}"
                             class="text-[10px] px-2 py-0.5 rounded border ${on ? 'border-neon-purple/40 text-neon-purple bg-neon-purple/10' : 'border-border text-text-muted hover:border-neon-purple/30'}">
@@ -2614,11 +2748,15 @@
                     </td>
                 </tr>`;
             }).join('');
-            list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
+            list.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[880px]">
                 <thead><tr class="text-text-muted text-[10px] uppercase">
                     <th class="py-1 pr-2">ID</th><th class="py-1 pr-2">名称</th><th class="py-1 pr-2">标的</th>
-                    <th class="py-1 pr-2">当前策略</th><th class="py-1 pr-2 text-right">权益U</th>
-                    <th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
+                    <th class="py-1 pr-2">策略</th>
+                    <th class="py-1 pr-2 text-right">已实现U</th>
+                    <th class="py-1 pr-2 text-right">浮动U</th>
+                    <th class="py-1 pr-2 text-right">合计U</th>
+                    <th class="py-1 pr-2 text-right" title="已平仓/持仓中">平/持</th>
+                    <th class="py-1 pr-2">状态</th><th class="py-1 pr-2">操作</th>
                 </tr></thead><tbody>${rows}</tbody></table>`;
         }
 
@@ -2783,7 +2921,7 @@
                 if (meta) meta.textContent = '尚无扫描记录';
                 if (summaryEl) summaryEl.innerHTML = '';
                 root.innerHTML = '<p class="text-[10px] text-text-muted py-1">尚无 15m 纸面扫描记录。请启用 Profile 并等待定时任务，或在维护面板触发 Moss 纸面扫描。</p>';
-                if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, null);
+                if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, null, _mqLastSummary);
                 return;
             }
             const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
@@ -2803,7 +2941,7 @@
             if (!details.length) {
                 if (summaryEl) summaryEl.innerHTML = '';
                 root.innerHTML = '<p class="text-[10px] text-text-muted py-1">（本次扫描无明细）</p>';
-                if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan);
+                if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan, _mqLastSummary);
                 return;
             }
 
@@ -2909,7 +3047,7 @@
 
             root.innerHTML = bodyHtml;
 
-            if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan);
+            if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, scan, _mqLastSummary);
         }
 
         let _mqDailyPollTimer = null;
@@ -3752,7 +3890,8 @@
             const data = await API.mqProfiles();
             const profiles = data.profiles || [];
             _mqProfilesCache = profiles;
-            renderMqProfilesList(profiles, _mqLastPaperScan);
+            renderMqProfilesList(profiles, _mqLastPaperScan, _mqLastSummary);
+            renderMqRobotPnl(profiles, _mqLastSummary);
             syncMqResearchProfileSelect(profiles);
             return profiles;
         }
@@ -3861,6 +4000,7 @@
                 return `<tr class="border-b border-border/60">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml(String(row.id))}</td>
                     <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml((row.recorded_at_utc || '').slice(0, 19))}</td>
+                    <td class="py-1.5 pr-2 font-mono text-[10px] text-text-muted">p${escHtml(String(row.profile_id != null ? row.profile_id : '—'))}</td>
                     <td class="py-1.5 pr-2 font-mono">${escHtml(row.symbol)}</td>
                     <td class="py-1.5 pr-2">${escHtml(row.side)}</td>
                     <td class="py-1.5 pr-2 text-right font-mono">${mqFormatPx(row.entry_price)}</td>
@@ -3872,9 +4012,9 @@
                     <td class="py-1.5 pr-2 text-[10px]">${escHtml(row.exit_rule || row.regime || '')}</td>
                 </tr>`;
             }).join('');
-            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[1000px]">
+            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[1060px]">
                 <thead><tr class="border-b border-border/80 text-text-muted text-[10px] uppercase">
-                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">UTC</th><th class="py-2 pr-2">标的</th>
+                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">UTC</th><th class="py-2 pr-2">机器人</th><th class="py-2 pr-2">标的</th>
                     <th class="py-2 pr-2">方向</th><th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2 text-right">标记</th>
                     <th class="py-2 pr-2 text-right">名义U</th><th class="py-2 pr-2">状态</th>
                     <th class="py-2 pr-2 text-right">浮盈U</th><th class="py-2 pr-2 text-right">收益率</th>
@@ -3906,6 +4046,17 @@
                 _mqLastPaperScan = mqNormalizePaperScan(scan);
                 renderMqTable(sig.signals || []);
                 renderMqPaperScan(_mqLastPaperScan);
+                try {
+                    const sum2 = await API.mqSummary();
+                    _mqLastSummary = sum2;
+                    renderMqSummary(sum2);
+                    if (_mqProfilesCache.length) {
+                        renderMqRobotPnl(_mqProfilesCache, sum2);
+                        renderMqProfilesList(_mqProfilesCache, _mqLastPaperScan, sum2);
+                    }
+                } catch (e2) {
+                    console.warn('mq summary refresh:', e2);
+                }
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('moss_quant:', e);
