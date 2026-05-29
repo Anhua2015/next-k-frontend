@@ -2497,8 +2497,10 @@
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             const wInit = Number(sum.wallet_initial_usdt);
             const wBal = Number(sum.wallet_balance_usdt);
-            const walletInit = Number.isFinite(wInit) ? wInit : 10000;
+            const walletInit = Number.isFinite(wInit) ? wInit : 100000;
             const walletBal = Number.isFinite(wBal) ? wBal : (walletInit + pnl);
+            const profileCap = Number(sum.profile_capital_usdt);
+            const profileCapTxt = Number.isFinite(profileCap) ? fmtZctPx(profileCap, 0) : '10,000';
             const balCls = walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
@@ -2508,7 +2510,7 @@
                 <div class="bg-surface-light/30 rounded-lg border border-neon-purple/25 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">纸面钱包（全账户）</div>
                     <div class="text-lg font-semibold font-mono ${balCls}">${fmtZctPx(walletBal, 2)}</div>
-                    <div class="text-[9px] text-text-muted font-mono">初始 ${fmtZctPx(walletInit, 0)} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span></div>
+                    <div class="text-[9px] text-text-muted font-mono">初始 ${fmtZctPx(walletInit, 0)} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 每机器人 ${profileCapTxt} U</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">启用机器人</div>
