@@ -496,7 +496,6 @@ var EDITABLE_KEYS = {
     global: [
         { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
         { key: 'testnet',               label: '测试网',          hint: 'true / false' },
-        { key: 'leverage',              label: '全局杠杆',        hint: '10' },
         { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
         { key: 'entry_type',            label: '入场单类型(默认)', hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
     ],
@@ -630,7 +629,7 @@ async function loadOpenPositions() {
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('open-positions-body').innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
+            '<div style="color:var(--neon-red);font-size:0.75rem">读取当前持仓失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
     }
 }
 
