@@ -779,6 +779,16 @@ function sourceParam(src) {
     return src ? '&source=' + encodeURIComponent(src) : '';
 }
 
+function setStrategyFilterActive(btn, on) {
+    btn.classList.toggle('active', on);
+    btn.classList.toggle('text-accent', on);
+    btn.classList.toggle('border-accent/45', on);
+    btn.classList.toggle('bg-accent/10', on);
+    btn.classList.toggle('text-text-muted', !on);
+    btn.classList.toggle('border-border/90', !on);
+    btn.classList.toggle('bg-surface-light/80', !on);
+}
+
 function bindStrategyFilters(rootId, setter) {
     var root = document.getElementById(rootId);
     if (!root) return;
@@ -787,11 +797,7 @@ function bindStrategyFilters(rootId, setter) {
             var src = btn.getAttribute('data-source') || '';
             setter(src);
             root.querySelectorAll('.strategy-filter').forEach(function(b) {
-                var on = b === btn;
-                b.classList.toggle('active', on);
-                b.classList.toggle('text-accent', on);
-                b.classList.toggle('border-accent/45', on);
-                b.classList.toggle('bg-accent/10', on);
+                setStrategyFilterActive(b, b === btn);
             });
         });
     });
