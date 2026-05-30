@@ -361,7 +361,7 @@
                         <p class="text-text-muted text-xs mt-0.5">
                             <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
                             · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 核心标的寻优
-                            · 展示回测与达标；<b class="text-text-secondary">不自动新增/删除</b>纸面 Profile，<b class="text-text-secondary">已启用或有持仓</b>的将同步本批最优参数；可手动「加入纸面」
+                            · 展示回测与达标；<b class="text-text-secondary">不自动新增/删除</b>实仓 Profile，<b class="text-text-secondary">已启用或有持仓</b>的将同步本批最优参数；可手动「加入实仓」
                         </p>
                     </div>
                     <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
@@ -389,14 +389,14 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="Moss量化纸面" id="mq-lane-section">
+        <section class="mb-6" aria-label="Moss量化实仓" id="mq-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
                     <div>
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
-                            <span aria-hidden="true">🧬</span> Moss Quant (Paper)
+                            <span aria-hidden="true">🧬</span> Moss Quant (Live)
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">全局纸面钱包 · 各 Profile = 一币一机器人 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
+                        <p class="text-text-muted text-xs mt-0.5">实仓钱包 · 各 Profile = 一币一机器人 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
@@ -415,14 +415,14 @@
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
                         <span id="mq-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
                     </div>
-                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；持仓盈亏、入场价见下方「纸面信号」。</p>
+                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；持仓盈亏、入场价见下方「实仓信号」。</p>
                     <div id="mq-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
                     <div id="mq-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto min-h-[2rem] text-xs">加载最近一次扫描…</div>
                 </div>
                 <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                         <div>
-                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">纸面 Profile（策略配置）</h3>
+                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">实仓 Profile（机器人配置）</h3>
                             <p class="text-[10px] text-text-muted mt-0.5">盈亏见上方「各机器人」卡片与下表；15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
                         </div>
                         <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/43</span>
@@ -431,10 +431,10 @@
                     <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-1"></p>
                 </div>
                 <div class="px-4 pt-2 pb-0 border-t border-border/30">
-                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
+                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">实仓信号</h3>
                 </div>
                 <div id="mq-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[28rem] border-t border-border/40 lane-board-scroll">
-                    <div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>
+                    <div class="text-text-muted text-sm animate-pulse">加载 Moss 实仓…</div>
                 </div>
             </div>
         </section>
@@ -501,7 +501,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
-                pick('mq-lane-section', 'Moss量化纸面'),
+                pick('mq-lane-section', 'Moss量化实仓'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ];
@@ -579,7 +579,7 @@
                         <button type="button" data-maint-cron="mom_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="动量移动止盈检查">动量止盈</button>
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
-                        <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化纸面扫描">Moss 纸面</button>
+                        <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
                         <button type="button" id="maint-mq-mcap-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss-quant/mcap-scan/run · 市值Top100扩展寻优，约 1–2 小时">Moss 市值扩展寻优</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
@@ -590,7 +590,7 @@
             </div>
             <div id="maint-mq-advanced" class="mt-4 pt-3 border-t border-border/50 space-y-3">
                 <div class="text-neon-purple/90 text-xs font-semibold tracking-wide">Moss 高级 · Profile / 回测</div>
-                <p class="text-text-muted text-[10px] leading-relaxed">手动创建纸面 Profile、单标的回测与进化流水线。主看盘仅保留 Profile 列表与看板「加入纸面」。</p>
+                <p class="text-text-muted text-[10px] leading-relaxed">手动创建实仓 Profile、单标的回测与进化流水线。主看盘仅保留 Profile 列表与看板「加入实仓」。</p>
                 <datalist id="mq-symbol-datalist"></datalist>
                 <div class="rounded-lg border border-border/80 bg-surface/60 p-3 space-y-2">
                     <div class="text-text-muted text-[10px] font-medium uppercase tracking-wide">新建 Profile</div>
@@ -625,7 +625,7 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <label class="inline-flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
                             <input type="checkbox" id="mq-create-enabled" checked class="rounded border-border text-neon-purple focus:ring-neon-purple/30" />
-                            创建后立即启用（参与 15m 纸面扫描）
+                            创建后立即启用（参与 15m 实仓扫描）
                         </label>
                         <button type="button" id="mq-create-btn"
                             class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">
@@ -2405,7 +2405,7 @@
             const orphanIds = new Set(realizedMap.keys());
             list.forEach((p) => orphanIds.delete(Number(p.id)));
             if (!list.length && !orphanIds.size) {
-                el.innerHTML = '<span class="text-text-muted text-xs">暂无 Profile。加入纸面并产生交易后，此处显示各机器人盈亏。</span>';
+                el.innerHTML = '<span class="text-text-muted text-xs">暂无 Profile。加入实仓并产生交易后，此处显示各机器人盈亏。</span>';
                 return;
             }
             const cards = [];
@@ -2500,13 +2500,17 @@
             const walletInit = Number.isFinite(wInit) ? wInit : 10000;
             const walletBal = Number.isFinite(wBal) ? wBal : (walletInit + pnl);
             const balCls = walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red';
+            const liveMode = String(sum.mode || '').toLowerCase() === 'live';
+            const protoLev = sum.protocol_moss && sum.protocol_moss.leverage != null
+                ? Number(sum.protocol_moss.leverage)
+                : null;
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">K 线源</div>
-                    <div class="text-sm font-mono text-neon-purple">${escHtml(String(sum.data_source_label || sum.data_source || '—'))}</div>
+                    <div class="text-text-muted text-[10px] uppercase">Moss 杠杆</div>
+                    <div class="text-lg font-semibold">${protoLev != null && Number.isFinite(protoLev) ? escHtml(String(protoLev) + 'x') : '—'}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-neon-purple/25 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">纸面钱包（全账户）</div>
+                    <div class="text-text-muted text-[10px] uppercase">${liveMode ? '实仓钱包（Protocol）' : '纸面钱包（全账户）'}</div>
                     <div class="text-lg font-semibold font-mono ${balCls}">${fmtZctPx(walletBal, 2)}</div>
                     <div class="text-[9px] text-text-muted font-mono">初始 ${fmtZctPx(walletInit, 0)} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span></div>
                 </div>
@@ -2708,7 +2712,7 @@
             const realizedMap = mqProfilePnlMap(sum || _mqLastSummary);
             const openMap = mqOpenPnlMap(sum || _mqLastSummary);
             if (!profiles || !profiles.length) {
-                list.innerHTML = '<p class="text-text-muted text-xs">暂无纸面 Profile。可在「每日最优」或「市值扩展」看板点「加入纸面」。</p>';
+                list.innerHTML = '<p class="text-text-muted text-xs">暂无实仓 Profile。可在「每日最优」或「市值扩展」看板点「加入实仓」。</p>';
                 return;
             }
             const rows = profiles.map((p) => {
@@ -2920,7 +2924,7 @@
             if (!scan || (!scan.has_run && !hasDetails)) {
                 if (meta) meta.textContent = '尚无扫描记录';
                 if (summaryEl) summaryEl.innerHTML = '';
-                root.innerHTML = '<p class="text-[10px] text-text-muted py-1">尚无 15m 纸面扫描记录。请启用 Profile 并等待定时任务，或在维护面板触发 Moss 纸面扫描。</p>';
+                root.innerHTML = '<p class="text-[10px] text-text-muted py-1">尚无 15m 实仓扫描记录。请启用 Profile 并等待定时任务，或在维护面板触发 Moss 实仓扫描。</p>';
                 if (_mqProfilesCache.length) renderMqProfilesList(_mqProfilesCache, null, _mqLastSummary);
                 return;
             }
@@ -2987,7 +2991,7 @@
             if (holdSyms.length) {
                 bodyHtml += '<p class="text-[10px] text-text-muted py-1 mb-2">'
                     + '持仓 <b class="text-neon-blue font-mono">' + holdSyms.length + '</b> 笔'
-                    + '（' + escHtml(holdSyms.join('、')) + '）→ 见下方<b class="text-text-secondary">纸面信号</b>。'
+                    + '（' + escHtml(holdSyms.join('、')) + '）→ 见下方<b class="text-text-secondary">实仓信号</b>。'
                     + '</p>';
             }
 
@@ -3176,9 +3180,9 @@
                 const autoReason = gate.reason || '';
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
                 const addBtn = profileSyms.has(symRaw)
-                    ? '<span class="text-[10px] text-text-muted">已在纸面</span>'
+                    ? '<span class="text-[10px] text-text-muted">已启用</span>'
                     : '<button type="button" data-mq-from-daily="' + escHtml(symRaw) + '" data-mq-from-daily-en="1"'
-                        + ' class="text-[10px] px-2 py-0.5 rounded border border-neon-purple/35 text-neon-purple bg-neon-purple/10 hover:bg-neon-purple/15">加入纸面</button>';
+                        + ' class="text-[10px] px-2 py-0.5 rounded border border-neon-purple/35 text-neon-purple bg-neon-purple/10 hover:bg-neon-purple/15">加入实仓</button>';
                 return `<tr class="border-b border-border/40 hover:bg-surface-light/20">
                     <td class="py-1 pr-2 font-mono">${sym}</td>
                     <td class="py-1 pr-2 text-[10px]">${tpl}</td>
@@ -3198,9 +3202,9 @@
                         <th class="py-1 pr-2">标的</th><th class="py-1 pr-2">最优模板</th><th class="py-1 pr-2">达标</th>
                         <th class="py-1 pr-2 text-right">收益</th><th class="py-1 pr-2 text-right">回合</th>
                         <th class="py-1 pr-2 text-right">胜率</th><th class="py-1 pr-2">说明</th>
-                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
+                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">实仓</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。参数同步不改启用状态；有仓时下一轮纸面扫描按新参数判 SL/TP/反向平仓。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">达标=收益&gt;0、回合≥8、回撤≤45%、无爆仓（内置）。参数同步不改启用状态；有仓时下一轮实仓扫描按新参数判 SL/TP/反向平仓。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
@@ -3209,11 +3213,11 @@
         function mqFromDailyErrorLabel(code) {
             const c = String(code || '').trim();
             const map = {
-                symbol_not_allowed: '标的不在纸面宇宙（需为内置币或已加入每日寻优表）',
+                symbol_not_allowed: '标的不在实仓宇宙（需为内置币或已加入每日寻优表）',
                 daily_item_not_found: '尚无该标的每日寻优结果，请先完成一轮每日寻优',
                 max_active_profiles_reached: '已启用 Profile 数量达上限',
-                symbol_already_active: '该标的已有启用的纸面 Profile',
-                profile_already_exists: '纸面 Profile 已存在且不允许覆盖',
+                symbol_already_active: '该标的已有启用的实仓 Profile',
+                profile_already_exists: '实仓 Profile 已存在且不允许覆盖',
             };
             return map[c] || c || '加入失败';
         }
@@ -3245,7 +3249,7 @@
                 if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(errLine) + '</span>';
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = '加入纸面';
+                    btn.textContent = '加入实仓';
                 }
             }
         }
@@ -3513,7 +3517,7 @@
 
         async function deleteMqProfile(profileId) {
             const msg = document.getElementById('mq-profiles-msg');
-            if (!confirm('确定删除 Profile #' + profileId + '？\n关联纸面信号与回测记录将一并删除；若有未平仓持仓则无法删除。')) return;
+            if (!confirm('确定删除 Profile #' + profileId + '？\n关联实仓信号与回测记录将一并删除；若有未平仓持仓则无法删除。')) return;
             if (msg) msg.textContent = '删除中…';
             try {
                 const out = await API.mqDeleteProfile(profileId);
@@ -3867,7 +3871,7 @@
                 setMqResearchOut('请先完成 ② baseline 或 ④ evolve run（含 final_params）', true);
                 return;
             }
-            if (!confirm('将 final_params 战术字段写入 Profile #' + pid + '？\n性格权重不变，纸面下一扫描起生效。')) return;
+            if (!confirm('将 final_params 战术字段写入 Profile #' + pid + '？\n性格权重不变，实仓下一扫描起生效。')) return;
             if (btn) btn.disabled = true;
             setMqResearchOut('写入 Profile 中…', false);
             try {
@@ -3979,7 +3983,7 @@
             const root = document.getElementById('mq-signals-root');
             if (!root) return;
             if (!items || !items.length) {
-                root.innerHTML = '<p class="text-text-muted text-sm">暂无纸面信号。请在上方创建并启用 Profile，等待 15m 扫描或维护面板「Moss 纸面」。</p>';
+                root.innerHTML = '<p class="text-text-muted text-sm">暂无实仓信号。请在上方创建并启用 Profile，等待 15m 扫描或维护面板「Moss 实仓」。</p>';
                 return;
             }
             const rows = items.map((row) => {
@@ -4027,7 +4031,7 @@
             const sigRoot = document.getElementById('mq-signals-root');
             const tsEl = document.getElementById('mq-ts');
             if (!sigRoot) return;
-            sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 纸面…</div>';
+            sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 实仓…</div>';
             const listEl = document.getElementById('mq-profiles-list');
             if (listEl) listEl.innerHTML = '<span class="animate-pulse">加载 Profile…</span>';
             try {
@@ -4139,7 +4143,7 @@
                 else alert(hint);
                 return;
             }
-            if (!confirm('确定清空 Moss 量化全部纸面/回测/profile 数据？不可撤销。')) return;
+            if (!confirm('确定清空 Moss 量化全部实仓/回测/profile 数据？不可撤销。')) return;
             if (btn) btn.disabled = true;
             if (maintMsg) maintMsg.textContent = 'Moss 清库请求中…';
             try {
@@ -4754,8 +4758,8 @@
                 jz_scan: '接针 hot_oi 纸面扫描',
                 jiezhen_trail: '接针移动止盈检查',
                 jz_trail: '接针移动止盈检查',
-                moss_quant_scan: 'Moss 量化纸面扫描',
-                mq_paper: 'Moss 量化纸面扫描',
+                moss_quant_scan: 'Moss 量化实仓扫描',
+                mq_paper: 'Moss 量化实仓扫描',
                 powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
             };
@@ -5018,7 +5022,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-mcap-scan-section', 'Moss市值扩展寻优'),
-                pick('mq-lane-section', 'Moss量化纸面'),
+                pick('mq-lane-section', 'Moss量化实仓'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ].forEach((el) => {
