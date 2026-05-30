@@ -472,7 +472,6 @@ async function loadStatus() {
             ['网络',     testnet  ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
             ['最大持仓', '<span class="text-text-primary font-mono">' + (d.max_positions || '—') + '</span>'],
-            ['API Key',  d.api_key_set ? '<span style="color:var(--neon-green)" class="text-xs">已设置</span>' : '<span style="color:var(--neon-red)" class="text-xs">未设置</span>'],
         ];
 
         document.getElementById('status-body').innerHTML = items.map(function(item) {
@@ -497,8 +496,6 @@ var EDITABLE_KEYS = {
     global: [
         { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
         { key: 'testnet',               label: '测试网',          hint: 'true / false' },
-        { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
-        { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
         { key: 'leverage',              label: '全局杠杆',        hint: '10' },
         { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
         { key: 'entry_type',            label: '入场单类型(默认)', hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
