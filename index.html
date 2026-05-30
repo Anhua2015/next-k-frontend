@@ -2523,8 +2523,6 @@
             const balCls = walletBalKnown && walletInitKnown
                 ? (walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red')
                 : 'text-warn';
-            const mode = String(sum.mode || '').toLowerCase();
-            const liveMode = mode === 'live' || mode === 'live_unavailable';
             const walletValue = walletBalKnown ? fmtZctPx(walletBal, 2) : '读取失败';
             const walletDetail = walletBalKnown
                 ? `初始 ${walletInitKnown ? fmtZctPx(walletInit, 0) : '—'} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 每机器人 ${profileCapTxt} U`
@@ -2535,10 +2533,10 @@
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">Moss 杠杆</div>
-                    <div class="text-lg font-semibold">${protoLev != null && Number.isFinite(protoLev) ? escHtml(String(protoLev) + 'x') : '—'}</div>
+                <div class="text-lg font-semibold">${protoLev != null && Number.isFinite(protoLev) ? escHtml(String(protoLev) + 'x') : '—'}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-neon-purple/25 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">${liveMode ? '实仓钱包（Protocol）' : '纸面钱包（全账户）'}</div>
+                    <div class="text-text-muted text-[10px] uppercase">实仓钱包（Protocol）</div>
                     <div class="text-lg font-semibold font-mono ${balCls}">${walletValue}</div>
                     <div class="text-[9px] text-text-muted font-mono">${walletDetail}</div>
                 </div>
