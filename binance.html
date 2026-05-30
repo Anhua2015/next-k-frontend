@@ -278,6 +278,13 @@
             <button type="button" class="tab-btn active px-4 py-2 text-xs font-medium" id="tab-closed" onclick="switchTab('closed')">历史持仓</button>
             <button type="button" class="tab-btn px-4 py-2 text-xs font-medium" id="tab-all" onclick="switchTab('all')">全部</button>
         </div>
+        <div id="position-strategy-filter-bar" class="px-4 py-2 border-b border-border/70 bg-surface-light/[0.2] flex flex-wrap items-center gap-2">
+            <button type="button" class="strategy-filter active btn-secondary px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/45 text-accent text-xs hover:border-accent/40 hover:text-accent" data-source="">全部</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="zct_vwap">ZCT</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="momentum">动量</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="jiezhen">接针</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="moss_quant">Moss</button>
+        </div>
         <div class="overflow-x-auto">
             <div id="closed-positions-body" class="p-4">
                 <div class="text-text-muted text-xs animate-pulse">加载中…</div>
@@ -290,6 +297,13 @@
         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
             <h2 class="text-text-primary font-semibold text-sm">信号日志</h2>
             <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+        </div>
+        <div id="signal-strategy-filter-bar" class="px-4 py-2 border-b border-border/70 bg-surface-light/[0.2] flex flex-wrap items-center gap-2">
+            <button type="button" class="strategy-filter active btn-secondary px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/45 text-accent text-xs hover:border-accent/40 hover:text-accent" data-source="">全部</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="zct_vwap">ZCT</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="momentum">动量</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="jiezhen">接针</button>
+            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="moss_quant">Moss</button>
         </div>
         <div class="overflow-x-auto">
             <div id="signals-body" class="p-4">
@@ -758,6 +772,30 @@ async function loadOpenPositions() {
 // ── Closed / all positions ────────────────────────────────────────────────────
 
 var _currentTab = 'closed';
+var _positionSourceFilter = '';
+var _signalSourceFilter = '';
+
+function sourceParam(src) {
+    return src ? '&source=' + encodeURIComponent(src) : '';
+}
+
+function bindStrategyFilters(rootId, setter) {
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    root.querySelectorAll('.strategy-filter').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var src = btn.getAttribute('data-source') || '';
+            setter(src);
+            root.querySelectorAll('.strategy-filter').forEach(function(b) {
+                var on = b === btn;
+                b.classList.toggle('active', on);
+                b.classList.toggle('text-accent', on);
+                b.classList.toggle('border-accent/45', on);
+                b.classList.toggle('bg-accent/10', on);
+            });
+        });
+    });
+}
 
 function switchTab(tab) {
     _currentTab = tab;
@@ -767,7 +805,7 @@ function switchTab(tab) {
 }
 
 async function loadClosedPositions() {
-    var param = _currentTab === 'closed' ? '?status=closed&limit=100' : '?limit=100';
+    var param = (_currentTab === 'closed' ? '?status=closed&limit=100' : '?limit=100') + sourceParam(_positionSourceFilter);
     try {
         var rows = await apiFetch('/api/binance/positions' + param);
 
@@ -781,6 +819,8 @@ async function loadClosedPositions() {
             var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
             var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
             return '<tr>'
+                + '<td class="text-text-secondary">' + escHtml(p.source || '—') + '</td>'
+                + '<td class="text-text-muted">' + escHtml(p.profile_id || '—') + '</td>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
@@ -795,7 +835,7 @@ async function loadClosedPositions() {
 
         document.getElementById('closed-positions-body').innerHTML =
             '<table><thead><tr>'
-            + '<th>标的</th><th>方向</th><th>开仓价</th><th>平仓价</th><th>原因</th><th>PnL (USDT)</th><th>PnL %</th><th>开仓时间</th><th>平仓时间</th>'
+            + '<th>来源</th><th>Profile</th><th>标的</th><th>方向</th><th>开仓价</th><th>平仓价</th><th>原因</th><th>PnL (USDT)</th><th>PnL %</th><th>开仓时间</th><th>平仓时间</th>'
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('closed-positions-body').innerHTML =
@@ -807,7 +847,7 @@ async function loadClosedPositions() {
 
 async function loadSignals() {
     try {
-        var rows = await apiFetch('/api/binance/signals?limit=100');
+        var rows = await apiFetch('/api/binance/signals?limit=100' + sourceParam(_signalSourceFilter));
 
         if (!rows.length) {
             document.getElementById('signals-body').innerHTML =
@@ -818,6 +858,9 @@ async function loadSignals() {
         var trs = rows.map(function(s) {
             return '<tr>'
                 + '<td class="text-text-secondary">' + escHtml(s.source || '—') + '</td>'
+                + '<td class="text-text-secondary">' + escHtml(s.action || '—') + '</td>'
+                + '<td class="text-text-muted">' + escHtml(s.profile_id || '—') + '</td>'
+                + '<td class="text-text-muted">' + escHtml(s.position_id || '—') + '</td>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
@@ -831,7 +874,7 @@ async function loadSignals() {
 
         document.getElementById('signals-body').innerHTML =
             '<table><thead><tr>'
-            + '<th>来源</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>跳过原因</th><th>收到时间</th>'
+            + '<th>来源</th><th>动作</th><th>Profile</th><th>仓位ID</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>跳过原因</th><th>收到时间</th>'
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('signals-body').innerHTML =
@@ -883,6 +926,15 @@ function toggleTheme() {
 })();
 
 document.addEventListener('DOMContentLoaded', async function() {
+    bindStrategyFilters('position-strategy-filter-bar', function(src) {
+        _positionSourceFilter = src;
+        loadClosedPositions();
+    });
+    bindStrategyFilters('signal-strategy-filter-bar', function(src) {
+        _signalSourceFilter = src;
+        loadSignals();
+    });
+
     const ok = await tryAuth();
     if (ok) {
         _authVerified = true;
