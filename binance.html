@@ -239,24 +239,11 @@
             </div>
             <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
                 <button type="button" class="tab-btn active px-3 py-1.5 text-xs font-medium" data-tab="global" onclick="switchConfigTab('global')">全局</button>
-                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="zct_vwap" onclick="switchConfigTab('zct_vwap')">ZCT VWAP</button>
-                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="momentum" onclick="switchConfigTab('momentum')">动量</button>
-                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="jiezhen" onclick="switchConfigTab('jiezhen')">接针</button>
-                <button type="button" class="tab-btn px-3 py-1.5 text-xs font-medium" data-tab="moss_quant" onclick="switchConfigTab('moss_quant')">Moss Quant</button>
             </div>
             <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
             </div>
         </div>
-    </section>
-
-    <!-- PnL summary -->
-    <section class="bg-surface rounded-xl border border-border card p-4">
-        <h2 class="text-text-primary font-semibold text-sm mb-3">PnL 汇总</h2>
-        <div id="pnl-summary-body">
-            <div class="text-text-muted text-xs animate-pulse">加载中…</div>
-        </div>
-        <div id="pnl-daily-body" class="mt-4 overflow-x-auto"></div>
     </section>
 
     <!-- Open positions -->
@@ -272,38 +259,11 @@
         </div>
     </section>
 
-    <!-- History / all positions tabs -->
-    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
-        <div class="px-4 pt-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center gap-0">
-            <button type="button" class="tab-btn active px-4 py-2 text-xs font-medium" id="tab-closed" onclick="switchTab('closed')">历史持仓</button>
-            <button type="button" class="tab-btn px-4 py-2 text-xs font-medium" id="tab-all" onclick="switchTab('all')">全部</button>
-        </div>
-        <div id="position-strategy-filter-bar" class="px-4 py-2 border-b border-border/70 bg-surface-light/[0.2] flex flex-wrap items-center gap-2">
-            <button type="button" class="strategy-filter active btn-secondary px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/45 text-accent text-xs hover:border-accent/40 hover:text-accent" data-source="">全部</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="zct_vwap">ZCT</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="momentum">动量</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="jiezhen">接针</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="moss_quant">Moss</button>
-        </div>
-        <div class="overflow-x-auto">
-            <div id="closed-positions-body" class="p-4">
-                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
-            </div>
-        </div>
-    </section>
-
     <!-- Signal log -->
     <section class="bg-surface rounded-xl border border-border card overflow-hidden">
         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
             <h2 class="text-text-primary font-semibold text-sm">信号日志</h2>
             <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
-        </div>
-        <div id="signal-strategy-filter-bar" class="px-4 py-2 border-b border-border/70 bg-surface-light/[0.2] flex flex-wrap items-center gap-2">
-            <button type="button" class="strategy-filter active btn-secondary px-2.5 py-1 rounded-lg bg-accent/10 border border-accent/45 text-accent text-xs hover:border-accent/40 hover:text-accent" data-source="">全部</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="zct_vwap">ZCT</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="momentum">动量</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="jiezhen">接针</button>
-            <button type="button" class="strategy-filter btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent" data-source="moss_quant">Moss</button>
         </div>
         <div class="overflow-x-auto">
             <div id="signals-body" class="p-4">
@@ -507,21 +467,11 @@ async function loadStatus() {
         badge.className = 'badge ' + (enabled ? 'badge-enabled' : 'badge-disabled');
         badge.textContent = enabled ? (testnet ? 'TESTNET' : '实盘') : '已禁用';
 
-        var sp = d.strategy_positions || {};
-        var spHtml = '';
-        var labels = {zct_vwap:'ZCT', momentum:'动量', jiezhen:'接针', moss_quant:'Moss'};
-        for (var k in labels) {
-            if (labels.hasOwnProperty(k)) {
-                spHtml += '<span class="text-text-muted text-[10px] mr-1">' + labels[k] + '</span>'
-                    + '<span class="text-text-primary font-mono text-xs mr-2">' + (sp[k] != null ? sp[k] : '—') + '</span>';
-            }
-        }
         var items = [
             ['状态',     enabled ? '<span class="badge badge-enabled">启用</span>' : '<span class="badge badge-disabled">禁用</span>'],
             ['网络',     testnet  ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
             ['最大持仓', '<span class="text-text-primary font-mono">' + (d.max_positions || '—') + '</span>'],
-            ['策略持仓', spHtml || '<span class="text-text-muted text-xs">—</span>'],
             ['API Key',  d.api_key_set ? '<span style="color:var(--neon-green)" class="text-xs">已设置</span>' : '<span style="color:var(--neon-red)" class="text-xs">未设置</span>'],
         ];
 
@@ -549,47 +499,9 @@ var EDITABLE_KEYS = {
         { key: 'testnet',               label: '测试网',          hint: 'true / false' },
         { key: 'binance_api_key',       label: 'API Key',         hint: '留空保持不变', password: true },
         { key: 'binance_api_secret',    label: 'API Secret',      hint: '留空保持不变', password: true },
+        { key: 'leverage',              label: '全局杠杆',        hint: '10' },
         { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
         { key: 'entry_type',            label: '入场单类型(默认)', hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
-        { key: 'limit_entry_timeout_sec', label: '限价超时(秒,默认)', hint: '30' },
-    ],
-    zct_vwap: [
-        { key: 'src_zct_vwap_enabled',  label: '启用策略',        hint: 'true / false' },
-        { key: 'margin_usdt',           label: '单笔保证金(USDT)', hint: '100' },
-        { key: 'leverage',              label: '杠杆',            hint: '10' },
-        { key: 'max_positions_play01',  label: 'PLAY01 最大持仓',  hint: '5' },
-        { key: 'max_positions_play02',  label: 'PLAY02 最大持仓',  hint: '5' },
-        { key: 'max_positions_play03',  label: 'PLAY03 最大持仓',  hint: '5' },
-        { key: 'expire_hours_play01',   label: 'PLAY01 过期(h)',   hint: '5' },
-        { key: 'expire_hours_play02',   label: 'PLAY02 过期(h)',   hint: '4' },
-        { key: 'expire_hours_play03',   label: 'PLAY03 过期(h)',   hint: '3' },
-        { key: 'src_zct_vwap_entry_type', label: '入场单类型', hint: '回退全局', type: 'select', options: ['','MARKET','LIMIT'] },
-        { key: 'src_zct_vwap_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
-    ],
-    momentum: [
-        { key: 'src_momentum_enabled',        label: '启用策略',        hint: 'true / false' },
-        { key: 'src_momentum_margin_usdt',    label: '单笔保证金(USDT)', hint: '100' },
-        { key: 'src_momentum_leverage',       label: '杠杆',            hint: '10' },
-        { key: 'src_momentum_max_positions',  label: '最大持仓',        hint: '2' },
-        { key: 'src_momentum_expire_hours',   label: '过期时限(h)',      hint: '4' },
-        { key: 'src_momentum_entry_type',     label: '入场单类型',      hint: 'LIMIT', type: 'select', options: ['','MARKET','LIMIT'] },
-        { key: 'src_momentum_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
-    ],
-    jiezhen: [
-        { key: 'src_jiezhen_enabled',        label: '启用策略',        hint: 'true / false' },
-        { key: 'src_jiezhen_margin_usdt',    label: '单笔保证金(USDT)', hint: '100' },
-        { key: 'src_jiezhen_leverage',       label: '杠杆',            hint: '10' },
-        { key: 'src_jiezhen_max_positions',  label: '最大持仓',        hint: '3' },
-        { key: 'src_jiezhen_expire_hours',   label: '过期时限(h)',      hint: '4' },
-        { key: 'src_jiezhen_entry_type',     label: '入场单类型',      hint: '回退全局', type: 'select', options: ['','MARKET','LIMIT'] },
-        { key: 'src_jiezhen_limit_entry_timeout_sec', label: '限价超时(秒)', hint: '回退全局' },
-    ],
-    moss_quant: [
-        { key: 'src_moss_quant_enabled',          label: '启用策略',        hint: 'true / false' },
-        { key: 'src_moss_quant_leverage',         label: '杠杆(回退用)',     hint: '10' },
-        { key: 'src_moss_quant_max_positions',    label: '最大持仓',        hint: '10' },
-        { key: 'src_moss_quant_expire_hours',     label: '过期时限(h)',      hint: '24' },
-        { key: 'src_moss_quant_entry_type',       label: '入场单类型',      hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
     ],
 };
 
@@ -687,50 +599,6 @@ async function saveConfig() {
     }
 }
 
-// ── PnL summary ───────────────────────────────────────────────────────────────
-
-async function loadPnlSummary() {
-    try {
-        var d = await apiFetch('/api/binance/pnl/summary');
-        var winRate = d.total > 0 ? ((d.wins / d.total) * 100).toFixed(1) + '%' : '—';
-        var stats = [
-            ['总交易', String(d.total)],
-            ['盈利', '<span style="color:var(--neon-green)">' + d.wins + '</span>'],
-            ['亏损', '<span style="color:var(--neon-red)">' + d.losses + '</span>'],
-            ['胜率', winRate],
-            ['累计 PnL', '<span style="' + pnlColor(d.total_pnl) + '">' + fmtNum(d.total_pnl, 2) + ' USDT</span>'],
-            ['平均 PnL', '<span style="' + pnlColor(d.avg_pnl) + '">' + fmtNum(d.avg_pnl, 2) + ' USDT</span>'],
-        ];
-        document.getElementById('pnl-summary-body').innerHTML =
-            '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">'
-            + stats.map(function(item) {
-                return '<div class="bg-surface-light rounded-lg p-3 border border-border/60">'
-                    + '<div class="text-text-muted text-[10px] uppercase tracking-wider mb-1">' + item[0] + '</div>'
-                    + '<div class="text-text-primary font-mono text-sm">' + item[1] + '</div>'
-                    + '</div>';
-            }).join('')
-            + '</div>';
-
-        if (d.daily && d.daily.length > 0) {
-            var rows = d.daily.map(function(r) {
-                var pnl = Number(r.pnl);
-                return '<tr>'
-                    + '<td class="text-text-secondary">' + r.day + '</td>'
-                    + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pnl) + '">' + (pnl >= 0 ? '+' : '') + pnl.toFixed(4) + '</td>'
-                    + '</tr>';
-            }).join('');
-            document.getElementById('pnl-daily-body').innerHTML =
-                '<div class="text-text-muted text-[10px] uppercase tracking-wider mb-2">近 30 日每日 PnL（Asia/Shanghai）</div>'
-                + '<table style="max-width:260px"><thead><tr><th>日期</th><th>PnL (USDT)</th></tr></thead><tbody>' + rows + '</tbody></table>';
-        } else {
-            document.getElementById('pnl-daily-body').innerHTML = '';
-        }
-    } catch(e) {
-        document.getElementById('pnl-summary-body').innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
-    }
-}
-
 // ── Open positions ────────────────────────────────────────────────────────────
 
 async function loadOpenPositions() {
@@ -745,105 +613,26 @@ async function loadOpenPositions() {
         }
 
         var trs = rows.map(function(p) {
+            var upnl = Number(p.unrealized_pnl_usdt);
             return '<tr>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(p.sl_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(p.tp_price, 6) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.mark_price, 6) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
-                + '<td data-expire="' + escHtml(p.expire_at || '') + '" style="font-variant-numeric:tabular-nums;color:var(--text-muted)">—</td>'
-                + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(4)) : '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.leverage, 0) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.liquidation_price, 6) + '</td>'
+                + '<td class="text-text-muted">' + escHtml(p.margin_type || '—') + '</td>'
                 + '</tr>';
         }).join('');
 
         document.getElementById('open-positions-body').innerHTML =
             '<table><thead><tr>'
-            + '<th>标的</th><th>方向</th><th>开仓价</th><th>止损</th><th>止盈</th><th>数量</th><th>剩余时间</th><th>开仓时间</th>'
+            + '<th>标的</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>浮盈 U</th><th>杠杆</th><th>强平价</th><th>保证金模式</th>'
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
-        startCountdowns();
     } catch(e) {
         document.getElementById('open-positions-body').innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
-    }
-}
-
-// ── Closed / all positions ────────────────────────────────────────────────────
-
-var _currentTab = 'closed';
-var _positionSourceFilter = '';
-var _signalSourceFilter = '';
-
-function sourceParam(src) {
-    return src ? '&source=' + encodeURIComponent(src) : '';
-}
-
-function setStrategyFilterActive(btn, on) {
-    btn.classList.toggle('active', on);
-    btn.classList.toggle('text-accent', on);
-    btn.classList.toggle('border-accent/45', on);
-    btn.classList.toggle('bg-accent/10', on);
-    btn.classList.toggle('text-text-muted', !on);
-    btn.classList.toggle('border-border/90', !on);
-    btn.classList.toggle('bg-surface-light/80', !on);
-}
-
-function bindStrategyFilters(rootId, setter) {
-    var root = document.getElementById(rootId);
-    if (!root) return;
-    root.querySelectorAll('.strategy-filter').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var src = btn.getAttribute('data-source') || '';
-            setter(src);
-            root.querySelectorAll('.strategy-filter').forEach(function(b) {
-                setStrategyFilterActive(b, b === btn);
-            });
-        });
-    });
-}
-
-function switchTab(tab) {
-    _currentTab = tab;
-    document.getElementById('tab-closed').classList.toggle('active', tab === 'closed');
-    document.getElementById('tab-all').classList.toggle('active', tab === 'all');
-    loadClosedPositions();
-}
-
-async function loadClosedPositions() {
-    var param = (_currentTab === 'closed' ? '?status=closed&limit=100' : '?limit=100') + sourceParam(_positionSourceFilter);
-    try {
-        var rows = await apiFetch('/api/binance/positions' + param);
-
-        if (!rows.length) {
-            document.getElementById('closed-positions-body').innerHTML =
-                '<div class="text-text-muted text-xs">暂无数据</div>';
-            return;
-        }
-
-        var trs = rows.map(function(p) {
-            var pnl = p.pnl_usdt != null ? Number(p.pnl_usdt) : null;
-            var pct = p.pnl_pct  != null ? Number(p.pnl_pct)  : null;
-            return '<tr>'
-                + '<td class="text-text-secondary">' + escHtml(p.source || '—') + '</td>'
-                + '<td class="text-text-muted">' + escHtml(p.profile_id || '—') + '</td>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
-                + '<td>' + sideBadge(p.side) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + (p.close_price != null ? fmtNum(p.close_price, 6) : '—') + '</td>'
-                + '<td>' + reasonBadge(p.close_reason) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pnl) + '">' + (pnl != null ? (pnl >= 0 ? '+' : '') + pnl.toFixed(4) : '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(pct) + '">' + (pct != null ? (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%' : '—') + '</td>'
-                + '<td class="text-text-muted">' + fmtTime(p.opened_at) + '</td>'
-                + '<td class="text-text-muted">' + fmtTime(p.closed_at) + '</td>'
-                + '</tr>';
-        }).join('');
-
-        document.getElementById('closed-positions-body').innerHTML =
-            '<table><thead><tr>'
-            + '<th>来源</th><th>Profile</th><th>标的</th><th>方向</th><th>开仓价</th><th>平仓价</th><th>原因</th><th>PnL (USDT)</th><th>PnL %</th><th>开仓时间</th><th>平仓时间</th>'
-            + '</tr></thead><tbody>' + trs + '</tbody></table>';
-    } catch(e) {
-        document.getElementById('closed-positions-body').innerHTML =
             '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
     }
 }
@@ -852,7 +641,7 @@ async function loadClosedPositions() {
 
 async function loadSignals() {
     try {
-        var rows = await apiFetch('/api/binance/signals?limit=100' + sourceParam(_signalSourceFilter));
+        var rows = await apiFetch('/api/binance/signals?limit=100');
 
         if (!rows.length) {
             document.getElementById('signals-body').innerHTML =
@@ -864,8 +653,6 @@ async function loadSignals() {
             return '<tr>'
                 + '<td class="text-text-secondary">' + escHtml(s.source || '—') + '</td>'
                 + '<td class="text-text-secondary">' + escHtml(s.action || '—') + '</td>'
-                + '<td class="text-text-muted">' + escHtml(s.profile_id || '—') + '</td>'
-                + '<td class="text-text-muted">' + escHtml(s.position_id || '—') + '</td>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
@@ -879,7 +666,7 @@ async function loadSignals() {
 
         document.getElementById('signals-body').innerHTML =
             '<table><thead><tr>'
-            + '<th>来源</th><th>动作</th><th>Profile</th><th>仓位ID</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>跳过原因</th><th>收到时间</th>'
+            + '<th>来源</th><th>动作</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>跳过原因</th><th>收到时间</th>'
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
         document.getElementById('signals-body').innerHTML =
@@ -892,9 +679,7 @@ async function loadSignals() {
 function refreshAll() {
     loadStatus();
     loadConfig();
-    loadPnlSummary();
     loadOpenPositions();
-    loadClosedPositions();
     loadSignals();
 }
 
@@ -931,15 +716,6 @@ function toggleTheme() {
 })();
 
 document.addEventListener('DOMContentLoaded', async function() {
-    bindStrategyFilters('position-strategy-filter-bar', function(src) {
-        _positionSourceFilter = src;
-        loadClosedPositions();
-    });
-    bindStrategyFilters('signal-strategy-filter-bar', function(src) {
-        _signalSourceFilter = src;
-        loadSignals();
-    });
-
     const ok = await tryAuth();
     if (ok) {
         _authVerified = true;
