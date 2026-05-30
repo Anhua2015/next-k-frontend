@@ -361,7 +361,7 @@
                         <p class="text-text-muted text-xs mt-0.5">
                             <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
                             · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 核心标的寻优
-                            · 展示回测与达标；<b class="text-text-secondary">不自动新增/删除</b>纸面 Profile，<b class="text-text-secondary">已启用或有持仓</b>的将同步本批最优参数；可手动「加入纸面」
+                            · 展示回测与达标；<b class="text-text-secondary">池子治理</b>自动停/启（最多 <span id="mq-gov-max-enabled" class="font-mono">5</span> 个）· A 池 Top5 连续 2 轮达标补位 · C 1 轮 / B 2 轮自动停用 · 手动停用后不再自动启用
                         </p>
                     </div>
                     <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
@@ -2481,7 +2481,24 @@
                 dsEl.textContent = lbl + lim;
             }
             if (sum.max_active_profiles != null) {
-                MQ_MAX_ENABLED = Number(sum.max_active_profiles) || 43;
+                MQ_MAX_ENABLED = Number(sum.max_active_profiles) || 5;
+            }
+            if (sum.pool_governance) {
+                _mqGovernanceMeta = sum.pool_governance;
+                _mqGovernanceBySymbol = new Map();
+                (sum.pool_governance.profiles || []).forEach((p) => {
+                    _mqGovernanceBySymbol.set(String(p.symbol || '').toUpperCase(), p);
+                });
+                (sum.pool_governance.symbol_streaks || []).forEach((s) => {
+                    const sym = String(s.symbol || '').toUpperCase();
+                    if (!_mqGovernanceBySymbol.has(sym)) {
+                        _mqGovernanceBySymbol.set(sym, s);
+                    }
+                });
+                const govMax = document.getElementById('mq-gov-max-enabled');
+                if (govMax && sum.pool_governance.max_auto_enabled != null) {
+                    govMax.textContent = String(sum.pool_governance.max_auto_enabled);
+                }
             }
             const schedEl = document.getElementById('mq-daily-schedule');
             if (schedEl && sum.daily_optimize_utc) {
@@ -2514,7 +2531,7 @@
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">启用机器人</div>
-                    <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}<span class="text-sm text-text-muted font-normal">/${escHtml(String(MQ_MAX_ENABLED))}</span></div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">持仓（全账户）</div>
@@ -2530,7 +2547,9 @@
             }
         }
 
-        let MQ_MAX_ENABLED = 43;
+        let MQ_MAX_ENABLED = 5;
+        let _mqGovernanceBySymbol = new Map();
+        let _mqGovernanceMeta = {};
         const MQ_TEMPLATE_LABELS = {
             balanced: '均衡 balanced',
             momentum: '动量 momentum',
@@ -2693,6 +2712,9 @@
 
         function mqProfileSourceBadge(src) {
             const s = String(src || 'manual');
+            if (s === 'governance_auto') {
+                return '<span class="text-[9px] font-mono text-neon-green border border-neon-green/30 rounded px-1 ml-1" title="池子治理自动">自动</span>';
+            }
             if (s === 'from_daily') {
                 return '<span class="text-[9px] font-mono text-neon-yellow border border-neon-yellow/30 rounded px-1 ml-1">寻优</span>';
             }
@@ -2700,6 +2722,48 @@
                 return '<span class="text-[9px] font-mono text-text-muted border border-border/60 rounded px-1 ml-1" title="历史自动 Profile">legacy</span>';
             }
             return '<span class="text-[9px] font-mono text-text-muted border border-border/60 rounded px-1 ml-1">手动</span>';
+        }
+
+        function mqGovernanceHealthLabel(symRaw, enabledInPaper) {
+            const sym = String(symRaw || '').toUpperCase();
+            const g = _mqGovernanceBySymbol.get(sym) || {};
+            const prof = (_mqProfilesCache || []).find(
+                (p) => String(p.symbol || '').toUpperCase() === sym,
+            );
+            const manualLock = !!(g.governance_manual_lock || (prof && prof.governance_manual_lock));
+            const tier = String(g.last_pool_tier || '').toUpperCase();
+            const deg = Number(g.degrade_streak) || 0;
+            const up = Number(g.upgrade_streak) || 0;
+            const needUp = Number(_mqGovernanceMeta.upgrade_streak) || 2;
+            const degB = Number(_mqGovernanceMeta.degrade_streak_b) || 2;
+            const degC = Number(_mqGovernanceMeta.degrade_streak_c) || 1;
+            if (enabledInPaper) {
+                if (tier === 'C' && deg >= degC) {
+                    return { label: '风险', cls: 'text-neon-red border-neon-red/35 bg-neon-red/10', title: 'C 池 · 已/将自动停用' };
+                }
+                if (tier === 'B' && deg >= degB) {
+                    return { label: '风险', cls: 'text-neon-red border-neon-red/35 bg-neon-red/10', title: '连续 B 池 · 已/将自动停用' };
+                }
+                if (tier === 'B') {
+                    return { label: '观察', cls: 'text-neon-blue border-neon-blue/35 bg-neon-blue/10', title: '验证未过 · 连续 B 将自动停' };
+                }
+                if (tier === 'A') {
+                    return { label: '正常', cls: 'text-neon-green border-neon-green/35 bg-neon-green/10', title: 'A 池 · 参数同步' };
+                }
+            } else if (tier === 'A' && up >= needUp && !manualLock) {
+                return { label: '可补位', cls: 'text-neon-purple border-neon-purple/35 bg-neon-purple/10', title: '连续 A 达标 · 治理将自动启用' };
+            } else if (manualLock) {
+                return { label: '手动锁', cls: 'text-warn/90 border-warn/35 bg-warn/10', title: '手动停用 · 不再自动启用' };
+            }
+            if (tier === 'A' || tier === 'B' || tier === 'C') {
+                return { label: tier, cls: 'text-text-muted border-border/70', title: '升级 ' + up + '/' + needUp };
+            }
+            return { label: '—', cls: 'text-text-muted border-border/70', title: '' };
+        }
+
+        function mqGovernanceHealthBadge(symRaw, enabledInPaper) {
+            const h = mqGovernanceHealthLabel(symRaw, enabledInPaper);
+            return '<span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + h.cls + '" title="' + escHtml(h.title || h.label) + '">' + escHtml(h.label) + '</span>';
         }
 
         function renderMqProfilesList(profiles, scan, sum) {
@@ -2719,6 +2783,11 @@
                 const tplKey = (p.template || 'balanced').toLowerCase();
                 const tpl = escHtml(MQ_TEMPLATE_LABELS[tplKey] || tplKey);
                 const srcBadge = mqProfileSourceBadge(p.profile_source);
+                const govBadge = mqGovernanceHealthBadge(p.symbol, on);
+                const gov = _mqGovernanceBySymbol.get(String(p.symbol || '').toUpperCase());
+                const streakTxt = gov
+                    ? ('↑' + (gov.upgrade_streak || 0) + ' ↓' + (gov.degrade_streak || 0))
+                    : '—';
                 const pid = Number(p.id);
                 const r = realizedMap.get(pid);
                 const o = openMap.get(pid);
@@ -2736,6 +2805,7 @@
                     <td class="py-1.5 pr-2 text-right font-mono ${mqPnlClass(floating)}">${escHtml(mqFmtSignedPnl(floating, 2))}</td>
                     <td class="py-1.5 pr-2 text-right font-mono font-semibold ${mqPnlClass(total)}">${escHtml(mqFmtSignedPnl(total, 2))}</td>
                     <td class="py-1.5 pr-2 text-right font-mono text-[10px] text-text-muted">${escHtml(String(settledN))}/${escHtml(String(openN))}</td>
+                    <td class="py-1.5 pr-2">${govBadge}<span class="text-[9px] font-mono text-text-muted ml-1">${escHtml(streakTxt)}</span></td>
                     <td class="py-1.5 pr-2">
                         <button type="button" data-mq-toggle="${escHtml(String(p.id))}" data-mq-enabled="${on ? '0' : '1'}"
                             class="text-[10px] px-2 py-0.5 rounded border ${on ? 'border-neon-purple/40 text-neon-purple bg-neon-purple/10' : 'border-border text-text-muted hover:border-neon-purple/30'}">
@@ -2758,6 +2828,7 @@
                     <th class="py-1 pr-2 text-right">浮动U</th>
                     <th class="py-1 pr-2 text-right">合计U</th>
                     <th class="py-1 pr-2 text-right" title="已平仓/持仓中">平/持</th>
+                    <th class="py-1 pr-2">寻优</th>
                     <th class="py-1 pr-2">状态</th><th class="py-1 pr-2">操作</th>
                 </tr></thead><tbody>${rows}</tbody></table>`;
         }
@@ -3205,6 +3276,9 @@
                 return Number(b.score || 0) - Number(a.score || 0);
             });
             const profileSyms = new Set((_mqProfilesCache || []).map((p) => String(p.symbol || '').toUpperCase()));
+            const enabledSyms = new Set(
+                (_mqProfilesCache || []).filter((p) => p.enabled).map((p) => String(p.symbol || '').toUpperCase()),
+            );
             const rows = items.map((it) => {
                 const symRaw = String(it.symbol || '').toUpperCase();
                 const sym = escHtml(symRaw);
@@ -3235,6 +3309,7 @@
                     : 'text-warn/90 border-warn/35 bg-warn/10';
                 const autoReason = pool.reason || gate.reason || '';
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
+                const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw));
                 const canAdd = pool.tier !== 'C';
                 const addBtn = profileSyms.has(symRaw)
                     ? '<span class="text-[10px] text-text-muted">已在纸面</span>'
@@ -3256,6 +3331,7 @@
                     <td class="py-1 pr-2 text-[10px] text-text-muted max-w-[10rem]" title="${escHtml(autoReason)}">${escHtml(autoReason)}</td>
                     <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(score)}</td>
                     <td class="py-1 pr-2 font-mono text-[10px]">${escHtml(linked)}</td>
+                    <td class="py-1 pr-2">${healthBadge}</td>
                     <td class="py-1 pr-2 whitespace-nowrap">${addBtn}</td>
                 </tr>`;
             }).join('');
@@ -3267,9 +3343,10 @@
                         <th class="py-1 pr-2 text-right">训练收益</th><th class="py-1 pr-2 text-right">验证收益</th>
                         <th class="py-1 pr-2 text-right">Sharpe</th><th class="py-1 pr-2 text-right">回撤</th>
                         <th class="py-1 pr-2 text-right">回合</th><th class="py-1 pr-2">说明</th>
-                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">纸面</th><th class="py-1 pr-2">操作</th>
+                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">纸面</th>
+                        <th class="py-1 pr-2">治理</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">训练窗 70% / 验证窗 30%；复合评分 + 样本外验证。仅 A 池且验证通过会同步已启用 Profile 参数；B 观察 / C 剔除不同步。前 5 名 A 池满仓，其余半仓。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">训练窗 70% / 验证窗 30%。池子治理：A 池 Top5 连续 2 轮达标自动补位（最多 5 启用）；C 1 轮 / B 2 轮自动停用；手动停用不再自动启用。有仓停用后仍扫描平仓。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
