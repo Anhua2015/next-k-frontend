@@ -2476,7 +2476,9 @@
             _mqLastSummary = sum;
             const modeLbl = sum.mode === 'live'
                 ? '实仓 Protocol'
-                : (sum.mode === 'live_unavailable' ? 'Protocol 不可用' : String(sum.mode || ''));
+                : (sum.mode === 'live_unavailable'
+                    ? (sum.local_fallback ? 'Protocol 不可用 · 本地盈亏' : 'Protocol 不可用')
+                    : String(sum.mode || ''));
             const dsEl = document.getElementById('mq-data-source-label');
             if (dsEl) {
                 const lbl = sum.data_source_label || sum.data_source || '—';
@@ -2532,7 +2534,9 @@
             const walletValue = walletBalKnown ? fmtZctPx(walletBal, 2) : '读取失败';
             const walletDetail = walletBalKnown
                 ? `初始 ${walletInitKnown ? fmtZctPx(walletInit, 0) : '—'} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 每机器人 ${profileCapTxt} U`
-                : `未读取到 Protocol 账户余额${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`;
+                : (sum.local_fallback && (Number(sum.settled_count) > 0 || Number(sum.total_pnl_usdt) !== 0)
+                    ? `Protocol 离线 · 本地已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 已结算 ${escHtml(String(sum.settled_count ?? 0))}${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`
+                    : `未读取到 Protocol 账户余额${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`);
             const protoLev = sum.leverage != null
                 ? Number(sum.leverage)
                 : null;
@@ -4209,6 +4213,10 @@
             sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss 实仓…</div>';
             const listEl = document.getElementById('mq-profiles-list');
             if (listEl) listEl.innerHTML = '<span class="animate-pulse">加载 Profile…</span>';
+            const scanPromise = API.mqPaperScanLatest().catch((err) => {
+                console.warn('mq paper scan:', err);
+                return null;
+            });
             try {
                 const sum = await API.mqSummary();
                 renderMqSummary(sum);
@@ -4217,10 +4225,7 @@
                 await loadMqMcapPanel(true);
                 const [sig, scan] = await Promise.all([
                     API.mqSignals(),
-                    API.mqPaperScanLatest().catch((err) => {
-                        console.warn('mq paper scan:', err);
-                        return null;
-                    }),
+                    scanPromise,
                 ]);
                 _mqLastPaperScan = mqNormalizePaperScan(scan);
                 renderMqTable(sig.signals || []);
