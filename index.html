@@ -2474,11 +2474,16 @@
                 return;
             }
             _mqLastSummary = sum;
+            const modeLbl = sum.mode === 'live'
+                ? '实仓 Protocol'
+                : (sum.mode === 'live_unavailable' ? 'Protocol 不可用' : String(sum.mode || ''));
             const dsEl = document.getElementById('mq-data-source-label');
             if (dsEl) {
                 const lbl = sum.data_source_label || sum.data_source || '—';
                 const lim = sum.kline_limit != null ? ' · ' + sum.kline_limit + ' bars' : '';
-                dsEl.textContent = lbl + lim;
+                const modeSuffix = modeLbl ? ' · ' + modeLbl : '';
+                dsEl.textContent = lbl + lim + modeSuffix;
+                dsEl.className = 'text-[10px] text-text-muted font-mono ' + (sum.mode === 'live' ? '' : 'text-warn');
             }
             if (sum.max_active_profiles != null) {
                 MQ_MAX_ENABLED = Number(sum.max_active_profiles) || 5;
@@ -2512,6 +2517,7 @@
             }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const modeCls = sum.mode === 'live' ? 'text-neon-green' : 'text-warn';
             const wInit = Number(sum.wallet_initial_usdt);
             const wBal = Number(sum.wallet_balance_usdt);
             const walletInitKnown = Number.isFinite(wInit);
@@ -2547,6 +2553,10 @@
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">持仓（全账户）</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">数据源</div>
+                    <div class="text-sm font-semibold ${modeCls}">${escHtml(modeLbl || '—')}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">已结算（全账户）</div>
@@ -3009,12 +3019,16 @@
                 return;
             }
             const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
+            const scanModeLbl = scan.mode === 'live'
+                ? '实仓 Protocol'
+                : (scan.mode === 'paper' ? '纸面' : String(scan.mode || ''));
             if (meta) {
                 const posNote = (!scan.has_run && hasDetails) ? '（仅有持仓，待扫描）· ' : '';
                 const holdN = scan.open_hold_count != null
                     ? Number(scan.open_hold_count)
                     : (scan.open_positions || []).length;
-                meta.textContent = posNote
+                meta.textContent = (scanModeLbl ? scanModeLbl + ' · ' : '')
+                    + posNote
                     + (ts ? ts + ' UTC · ' : '')
                     + '扫描 ' + (scan.profiles_scanned ?? 0) + ' 个'
                     + ' · 持仓 ' + holdN
