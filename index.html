@@ -2527,8 +2527,8 @@
             const walletDetail = walletBalKnown
                 ? `初始 ${walletInitKnown ? fmtZctPx(walletInit, 0) : '—'} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 每机器人 ${profileCapTxt} U`
                 : `未读取到 Protocol 账户余额${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`;
-            const protoLev = sum.protocol_moss && sum.protocol_moss.leverage != null
-                ? Number(sum.protocol_moss.leverage)
+            const protoLev = sum.leverage != null
+                ? Number(sum.leverage)
                 : null;
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
