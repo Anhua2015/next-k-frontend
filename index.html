@@ -582,6 +582,7 @@
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
                         <button type="button" id="maint-mq-mcap-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss-quant/mcap-scan/run · 市值Top100扩展寻优，约 1–2 小时">Moss 市值扩展寻优</button>
+                        <button type="button" id="maint-moss2-init-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/45 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="POST /api/moss2-quant/sync-from-builtin-core-list + /api/moss2-quant/run-scan">Moss2 一键初始化+扫描</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
@@ -1141,6 +1142,30 @@
             },
             async mqDailyCoreAdd(body) {
                 return API._mqPost('/api/moss-quant/daily-core-symbols', body || {});
+            },
+            async moss2SyncFromBuiltinCoreList(body) {
+                const res = await fetch(`${API_BASE}/api/moss2-quant/sync-from-builtin-core-list`, {
+                    method: 'POST',
+                    headers: { ...maintenanceHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async moss2RunScan(body) {
+                const res = await fetch(`${API_BASE}/api/moss2-quant/run-scan`, {
+                    method: 'POST',
+                    headers: { ...maintenanceHeaders(), 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -3703,6 +3728,30 @@
             }
         }
 
+        async function runMoss2InitAndScan() {
+            const msg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-moss2-init-scan');
+            if (btn && btn.disabled) return;
+            if (!confirm('将使用内置核心币列表初始化 Moss2 分层与机器人候选池，并立即执行一次扫描。确定？')) return;
+            if (msg) msg.textContent = 'Moss2 初始化中…';
+            if (btn) btn.disabled = true;
+            try {
+                const initOut = await API.moss2SyncFromBuiltinCoreList({ auto_assign_robots: true });
+                if (msg) msg.textContent = 'Moss2 初始化完成，开始扫描…';
+                const scanOut = await API.moss2RunScan({ refresh_klines: false });
+                const line = 'Moss2 完成 · symbols=' + escHtml(String(initOut.symbols_selected ?? 0))
+                    + ' · robots=' + escHtml(String(scanOut.robots_scanned ?? 0))
+                    + ' · opens=' + escHtml(String(scanOut.opens ?? 0))
+                    + ' · closes=' + escHtml(String(scanOut.closes ?? 0))
+                    + ' · skips=' + escHtml(String(scanOut.skips ?? 0));
+                if (msg) msg.innerHTML = '<span class="text-neon-green">' + line + '</span>';
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || 'Moss2 执行失败') + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
         async function deleteMqProfile(profileId) {
             const msg = document.getElementById('mq-profiles-msg');
             if (!confirm('确定删除 Profile #' + profileId + '？\n关联实仓信号与回测记录将一并删除；若有未平仓持仓则无法删除。')) return;
@@ -5131,6 +5180,7 @@
             document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
             document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
             document.getElementById('maint-mq-mcap-scan')?.addEventListener('click', () => void runMqMcapScan());
+            document.getElementById('maint-moss2-init-scan')?.addEventListener('click', () => void runMoss2InitAndScan());
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
