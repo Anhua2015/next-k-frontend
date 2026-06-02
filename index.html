@@ -396,7 +396,7 @@
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
                             <span aria-hidden="true">🧬</span> Moss Quant (Live)
                         </h2>
-                        <p class="text-text-muted text-xs mt-0.5">实仓钱包 · 各 Profile = 一币一机器人 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
+                        <p class="text-text-muted text-xs mt-0.5">纸面账本（原工程）· 每机器人 <span id="mq-profile-cap-label" class="font-mono">1000</span>U · 1x · 开平同步币安限价 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                         <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
@@ -2474,18 +2474,16 @@
                 return;
             }
             _mqLastSummary = sum;
-            const modeLbl = sum.mode === 'live'
-                ? '实仓 Protocol'
-                : (sum.mode === 'live_unavailable'
-                    ? (sum.local_fallback ? 'Protocol 不可用 · 本地盈亏' : 'Protocol 不可用')
-                    : String(sum.mode || ''));
+            const modeLbl = sum.mode === 'paper'
+                ? (sum.real_mode ? '纸面 · 实盘通知开/平' : '纸面')
+                : String(sum.mode || '纸面');
             const dsEl = document.getElementById('mq-data-source-label');
             if (dsEl) {
                 const lbl = sum.data_source_label || sum.data_source || '—';
                 const lim = sum.kline_limit != null ? ' · ' + sum.kline_limit + ' bars' : '';
                 const modeSuffix = modeLbl ? ' · ' + modeLbl : '';
                 dsEl.textContent = lbl + lim + modeSuffix;
-                dsEl.className = 'text-[10px] text-text-muted font-mono ' + (sum.mode === 'live' ? '' : 'text-warn');
+                dsEl.className = 'text-[10px] text-text-muted font-mono';
             }
             if (sum.max_active_profiles != null) {
                 MQ_MAX_ENABLED = Number(sum.max_active_profiles) || 5;
@@ -2519,24 +2517,37 @@
             }
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
-            const modeCls = sum.mode === 'live' ? 'text-neon-green' : 'text-warn';
+            const modeCls = 'text-neon-purple';
             const wInit = Number(sum.wallet_initial_usdt);
             const wBal = Number(sum.wallet_balance_usdt);
+            const equity = Number(sum.equity_usdt);
+            const upnl = Number(sum.unrealized_pnl_usdt);
             const walletInitKnown = Number.isFinite(wInit);
             const walletBalKnown = Number.isFinite(wBal);
+            const equityKnown = Number.isFinite(equity);
             const walletInit = walletInitKnown ? wInit : null;
             const walletBal = walletBalKnown ? wBal : null;
             const profileCap = Number(sum.profile_capital_usdt);
-            const profileCapTxt = Number.isFinite(profileCap) ? fmtZctPx(profileCap, 0) : '—';
-            const balCls = walletBalKnown && walletInitKnown
-                ? (walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red')
-                : 'text-warn';
-            const walletValue = walletBalKnown ? fmtZctPx(walletBal, 2) : '读取失败';
+            const profileCapTxt = Number.isFinite(profileCap) ? fmtZctPx(profileCap, 0) : '1000';
+            const capLbl = document.getElementById('mq-profile-cap-label');
+            if (capLbl) capLbl.textContent = profileCapTxt;
+            const balCls = equityKnown && walletInitKnown
+                ? (equity >= walletInit ? 'text-neon-green' : 'text-neon-red')
+                : (walletBalKnown && walletInitKnown
+                    ? (walletBal >= walletInit ? 'text-neon-green' : 'text-neon-red')
+                    : 'text-text-primary');
+            const walletValue = equityKnown
+                ? fmtZctPx(equity, 2)
+                : (walletBalKnown ? fmtZctPx(walletBal, 2) : '—');
+            const pCount = Number(sum.profile_count);
             const walletDetail = walletBalKnown
-                ? `初始 ${walletInitKnown ? fmtZctPx(walletInit, 0) : '—'} · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 每机器人 ${profileCapTxt} U`
-                : (sum.local_fallback && (Number(sum.settled_count) > 0 || Number(sum.total_pnl_usdt) !== 0)
-                    ? `Protocol 离线 · 本地已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span> · 已结算 ${escHtml(String(sum.settled_count ?? 0))}${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`
-                    : `未读取到 Protocol 账户余额${sum.protocol_error ? ' · ' + escHtml(String(sum.protocol_error)) : ''}`);
+                ? `初始 ${walletInitKnown ? fmtZctPx(walletInit, 0) : '—'}`
+                    + (Number.isFinite(pCount) && pCount > 0
+                        ? `（${pCount}×${profileCapTxt}U）` : '')
+                    + ` · 已实现 <span class="${pnlCls}">${mqFmtSignedPnl(pnl, 2)}</span>`
+                    + (Number.isFinite(upnl) ? ` · 浮盈 <span class="${upnl >= 0 ? 'text-neon-green' : 'text-neon-red'}">${mqFmtSignedPnl(upnl, 2)}</span>` : '')
+                    + ` · 每机器人 ${profileCapTxt} U`
+                : '—';
             const protoLev = sum.leverage != null
                 ? Number(sum.leverage)
                 : null;
@@ -2546,7 +2557,7 @@
                 <div class="text-lg font-semibold">${protoLev != null && Number.isFinite(protoLev) ? escHtml(String(protoLev) + 'x') : '—'}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-neon-purple/25 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">实仓钱包（Protocol）</div>
+                    <div class="text-text-muted text-[10px] uppercase">纸面总权益</div>
                     <div class="text-lg font-semibold font-mono ${balCls}">${walletValue}</div>
                     <div class="text-[9px] text-text-muted font-mono">${walletDetail}</div>
                 </div>
@@ -2555,7 +2566,7 @@
                     <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}<span class="text-sm text-text-muted font-normal">/${escHtml(String(MQ_MAX_ENABLED))}</span></div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">持仓（全账户）</div>
+                    <div class="text-text-muted text-[10px] uppercase">纸面持仓</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
@@ -3023,9 +3034,7 @@
                 return;
             }
             const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
-            const scanModeLbl = scan.mode === 'live'
-                ? '实仓 Protocol'
-                : (scan.mode === 'paper' ? '纸面' : String(scan.mode || ''));
+            const scanModeLbl = scan.mode === 'paper' ? '纸面' : String(scan.mode || '纸面');
             if (meta) {
                 const posNote = (!scan.has_run && hasDetails) ? '（仅有持仓，待扫描）· ' : '';
                 const holdN = scan.open_hold_count != null
