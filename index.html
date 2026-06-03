@@ -354,20 +354,39 @@
         <section class="mb-6" aria-label="Moss每日最优看板" id="mq-daily-board-section">
             <div class="bg-surface rounded-xl border border-neon-yellow/25 overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div>
+                    <div class="min-w-0 flex-1">
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
-                            <span aria-hidden="true">📊</span> 每日最优看板
+                            <span aria-hidden="true">📊</span> 每日寻优看板
                         </h2>
                         <p class="text-text-muted text-xs mt-0.5">
                             <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
-                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 核心标的寻优
-                            · 展示回测与达标；<b class="text-text-secondary">池子治理</b>自动停/启（最多 <span id="mq-gov-max-enabled" class="font-mono">5</span> 个）· A 池 Top5 连续 2 轮达标补位 · C 1 轮 / B 2 轮自动停用 · 手动停用后不再自动启用 · 可手动「加入实仓」
+                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 全市场寻优
+                            · 纸面最多 <span id="mq-gov-max-enabled" class="font-mono">5</span> 个机器人
                         </p>
                     </div>
-                    <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                    <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted shrink-0">—</span>
                 </div>
+                <details id="mq-daily-guide" class="px-4 py-2 border-b border-border/30 bg-surface-light/20 text-xs text-text-muted group">
+                    <summary class="cursor-pointer text-text-secondary font-medium select-none list-none flex items-center gap-1">
+                        <span class="group-open:rotate-90 transition-transform inline-block">▸</span> 怎么看这张表？（三层流水线）
+                    </summary>
+                    <div class="mt-2 grid gap-2 sm:grid-cols-3 leading-relaxed">
+                        <div class="rounded-lg border border-neon-purple/25 bg-neon-purple/5 px-2.5 py-2">
+                            <div class="text-neon-purple font-semibold text-[11px] mb-0.5">① L1 长窗研究</div>
+                            约 70 天 K 线网格寻优。看 <b>训练收益</b>、<b>验证收益</b>、<b>WF</b>。决定 <b>A/B/C 池</b> 与是否「回测达标」。
+                        </div>
+                        <div class="rounded-lg border border-neon-blue/25 bg-neon-blue/5 px-2.5 py-2">
+                            <div class="text-neon-blue font-semibold text-[11px] mb-0.5">② L3 近 15 天</div>
+                            与纸面同长的 1500 根 K 线再搜参数。列「短窗」：有过关组合会显示 <b>%</b>；「无合格」= 最近半个月没有参数同时过关。
+                        </div>
+                        <div class="rounded-lg border border-neon-green/25 bg-neon-green/5 px-2.5 py-2">
+                            <div class="text-neon-green font-semibold text-[11px] mb-0.5">③ 写入机器人</div>
+                            <b>会同步</b> = 本批结果可覆盖已启用 Profile 的参数。<b>不同步</b> = 仍用旧参数纸面交易。与「A 池可交易」不是一回事。
+                        </div>
+                    </div>
+                </details>
                 <div id="mq-daily-summary-chips" class="px-4 py-2 flex flex-wrap gap-2 text-[10px] font-mono border-b border-border/30"></div>
-                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[28rem] min-h-[6rem]">加载寻优结果…</div>
+                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[32rem] min-h-[6rem]">加载寻优结果…</div>
             </div>
         </section>
 
@@ -3307,6 +3326,87 @@
             return { label: '—', cls: 'text-text-muted border-border/70', reason: '' };
         }
 
+        /** L3 短窗：人话状态（对应「1500收益」列） */
+        function mqL3ShortWindowState(summary) {
+            const s = summary || {};
+            const rp = s.recent_pick || {};
+            const hasPick = rp && (rp.skipped != null || rp.bars != null || rp.reason != null || rp.recent_return_pct != null);
+            if (!hasPick) {
+                return {
+                    phase: 'none',
+                    label: '无数据',
+                    hint: '本批未跑 L3 或旧批次',
+                    pct: '—',
+                    pctCls: 'text-text-muted',
+                    badgeCls: 'text-text-muted border-border/70 bg-surface/40',
+                };
+            }
+            if (rp.skipped) {
+                return {
+                    phase: 'skip',
+                    label: '未执行',
+                    hint: String(rp.reason || '非 A 池或 L1 不可同步等'),
+                    pct: '跳过',
+                    pctCls: 'text-text-muted',
+                    badgeCls: 'text-text-muted border-border/60 bg-surface/30',
+                };
+            }
+            const raw = rp.recent_return_pct != null ? rp.recent_return_pct : s.recent_return_pct;
+            if (raw == null || raw === '') {
+                return {
+                    phase: 'fail',
+                    label: '无合格组合',
+                    hint: String(rp.reason || '1500 窗内参数均未同时过关'),
+                    pct: '—',
+                    pctCls: 'text-warn/90',
+                    badgeCls: 'text-warn/90 border-warn/35 bg-warn/10',
+                };
+            }
+            const n = Number(raw);
+            const adopted = s.recent_applied === true || String(s.param_source || '') === 'recent_1500';
+            return {
+                phase: adopted ? 'adopted' : 'ok',
+                label: adopted ? '已采纳' : '有过关组合',
+                hint: rp.narrative ? String(rp.narrative).slice(0, 120) : String(rp.reason || ''),
+                pct: (Number.isFinite(n) ? n.toFixed(2) : '—') + '%',
+                pctCls: n > 0 ? 'text-neon-green' : n < 0 ? 'text-neon-red' : 'text-text-muted',
+                badgeCls: adopted
+                    ? 'text-neon-yellow border-neon-yellow/35 bg-neon-yellow/10'
+                    : 'text-neon-blue border-neon-blue/35 bg-neon-blue/10',
+            };
+        }
+
+        /** 本批能否写入已启用 Profile */
+        function mqDeployState(summary) {
+            const s = summary || {};
+            const sync = mqSyncState(s);
+            const src = String(s.param_source || 'grid');
+            const srcLabel = src === 'recent_1500' ? '1500短窗' : (src === 'local_refine' ? '精修' : '网格');
+            if (s.sync_allowed === true) {
+                return {
+                    label: '会同步',
+                    sub: '参数源：' + srcLabel,
+                    cls: 'text-neon-green border-neon-green/35 bg-neon-green/10',
+                    title: '每日寻优 apply 后会更新已启用 Profile 的模板与战术参数',
+                };
+            }
+            if (s.sync_allowed === false) {
+                const why = s.sync_block_reason || sync.reason || s.wf_reason || s.pool_reason || '未通过同步门禁';
+                return {
+                    label: '不同步',
+                    sub: String(why).slice(0, 48),
+                    cls: 'text-warn/90 border-warn/35 bg-warn/10',
+                    title: why,
+                };
+            }
+            return {
+                label: '—',
+                sub: '',
+                cls: 'text-text-muted border-border/70',
+                title: '',
+            };
+        }
+
         function mqDailyGateState(summary) {
             const s = summary || {};
             if (s.auto_enabled === true) {
@@ -3376,16 +3476,18 @@
             });
             const poolsFromSum = sum && sum.daily_optimize_pools && sum.daily_optimize_pools.pool_counts;
             if (chipsEl) {
+                const aN = poolsFromSum ? poolsFromSum.A : poolA;
+                const bN = poolsFromSum ? poolsFromSum.B : poolB;
+                const cN = poolsFromSum ? poolsFromSum.C : poolC;
                 chipsEl.innerHTML = [
-                    ['全市场', items.length, 'text-text-muted border-border/70'],
-                    ['A可交易', poolsFromSum ? poolsFromSum.A : poolA, 'text-neon-green border-neon-green/35'],
-                    ['B观察', poolsFromSum ? poolsFromSum.B : poolB, 'text-neon-blue border-neon-blue/35'],
-                    ['C剔除', poolsFromSum ? poolsFromSum.C : poolC, 'text-warn/90 border-warn/35'],
-                    ['验证过', poolsFromSum ? (sum.daily_optimize_pools.validation_passed || valPass) : valPass, 'text-neon-purple border-neon-purple/35'],
-                    ['滚动过', wfPass, 'text-neon-blue border-neon-blue/35'],
-                    ['可同步', syncOk, 'text-neon-yellow border-neon-yellow/35'],
-                    ['L3采纳', recentApplied, 'text-neon-yellow border-neon-yellow/35'],
-                ].map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50">'
+                    ['① 全市场', items.length, 'text-text-muted border-border/70', '本批寻优标的数'],
+                    ['② 回测达标', passN, 'text-neon-purple border-neon-purple/35', 'L1 收益/笔数/回撤过关'],
+                    ['③ A 池', aN, 'text-neon-green border-neon-green/35', '可交易档（≠ 一定能同步）'],
+                    ['④ 本批可同步', syncOk, 'text-neon-yellow border-neon-yellow/35', '会写入已启用 Profile'],
+                    ['L3 已采纳', recentApplied, 'text-neon-yellow border-neon-yellow/35', '使用 1500 短窗参数'],
+                    ['B 观察', bN, 'text-neon-blue border-neon-blue/35', ''],
+                    ['C 剔除', cN, 'text-warn/90 border-warn/35', ''],
+                ].map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50" title="' + escHtml(c[3] || '') + '">'
                     + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>').join('');
             }
             items.sort((a, b) => {
@@ -3418,90 +3520,80 @@
                 const retCls = ret > 0 ? 'text-neon-green' : ret < 0 ? 'text-neon-red' : 'text-text-muted';
                 const valRet = s.val_return != null ? (Number(s.val_return) * 100).toFixed(2) + '%' : '—';
                 const valRetCls = Number(s.val_return) > 0 ? 'text-neon-green' : Number(s.val_return) < 0 ? 'text-neon-red' : 'text-text-muted';
-                const sharpe = s.sharpe != null ? Number(s.sharpe).toFixed(2) : '—';
-                const valSharpe = s.val_sharpe != null ? Number(s.val_sharpe).toFixed(2) : '—';
-                const stab = s.stability_score != null ? Number(s.stability_score).toFixed(3) : '—';
                 const wf = mqWfState(s);
-                const sync = mqSyncState(s);
-                const mdd = s.max_drawdown != null ? (Math.abs(Number(s.max_drawdown)) * 100).toFixed(1) + '%' : '—';
-                const trades = s.total_trades != null ? String(s.total_trades) : '—';
-                const wr = s.win_rate != null ? (Number(s.win_rate) * 100).toFixed(0) + '%' : '—';
-                const score = it.score != null ? Number(it.score).toFixed(4) : (s.train_score != null ? Number(s.train_score).toFixed(4) : '—');
                 const pool = mqPoolTierState(s);
-                const val = mqValidationState(s);
                 const gate = mqDailyGateState(s);
                 const autoOn = gate.ok;
                 const gateLabel = autoOn ? '达标' : '不达标';
                 const gateCls = autoOn
                     ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
                     : 'text-warn/90 border-warn/35 bg-warn/10';
-                const autoReason = sync.reason || pool.reason || gate.reason || '';
-                const rp = s.recent_pick || {};
-                const recentRaw = rp.recent_return_pct != null ? rp.recent_return_pct : s.recent_return_pct;
-                const recentPct = recentRaw != null && recentRaw !== ''
-                    ? (Number(recentRaw).toFixed(2) + '%')
-                    : (rp.skipped ? '跳过' : '—');
-                const recentNum = recentRaw != null && recentRaw !== '' ? Number(recentRaw) : NaN;
-                const recentCls = recentNum > 0 ? 'text-neon-green' : recentNum < 0 ? 'text-neon-red' : 'text-text-muted';
-                const paramSrc = String(s.param_source || 'grid');
-                const srcLabel = paramSrc === 'recent_1500' ? '1500' : (paramSrc === 'local_refine' ? '精修' : '网格');
-                const srcCls = paramSrc === 'recent_1500'
-                    ? 'text-neon-yellow border-neon-yellow/35 bg-neon-yellow/10'
-                    : 'text-text-muted border-border/70';
-                const recentTitle = rp.narrative
-                    ? String(rp.narrative)
-                    : (rp.reason
-                        ? String(rp.reason)
-                        : (recentRaw != null ? ('L3短窗收益 ' + Number(recentRaw).toFixed(2) + '%') : ''));
+                const l3 = mqL3ShortWindowState(s);
+                const deploy = mqDeployState(s);
+                const detailTitle = [
+                    gate.reason ? ('回测：' + gate.reason) : '',
+                    pool.reason ? ('池：' + pool.reason) : '',
+                    l3.hint ? ('L3：' + l3.hint) : '',
+                    deploy.title ? ('同步：' + deploy.title) : '',
+                    s.total_trades != null ? ('训练窗 ' + s.total_trades + ' 笔') : '',
+                    s.max_drawdown != null ? ('回撤 ' + (Math.abs(Number(s.max_drawdown)) * 100).toFixed(1) + '%') : '',
+                ].filter(Boolean).join('\n');
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
                 const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw), s);
                 const canAdd = pool.tier !== 'C';
                 const addBtn = profileSyms.has(symRaw)
-                    ? '<span class="text-[10px] text-text-muted">已启用</span>'
+                    ? '<span class="text-[10px] text-text-muted">已有Profile</span>'
                     : (canAdd
                         ? '<button type="button" data-mq-from-daily="' + escHtml(symRaw) + '" data-mq-from-daily-en="1"'
                             + ' class="text-[10px] px-2 py-0.5 rounded border border-neon-purple/35 text-neon-purple bg-neon-purple/10 hover:bg-neon-purple/15">加入实仓</button>'
                         : '<span class="text-[10px] text-text-muted" title="C池剔除">不可加</span>');
-                return `<tr class="border-b border-border/40 hover:bg-surface-light/20">
-                    <td class="py-1 pr-2 font-mono">${sym}</td>
-                    <td class="py-1 pr-2 text-[10px]">${tpl}</td>
-                    <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${pool.cls}">${escHtml(pool.label)}</span></td>
-                    <td class="py-1 pr-2 text-[10px] ${val.cls}">${escHtml(val.label)}</td>
-                    <td class="py-1 pr-2 text-[10px] ${wf.cls}" title="${escHtml(wf.title || '')}">${escHtml(wf.label)}</td>
-                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(valSharpe)}</td>
-                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(stab)}</td>
-                    <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${sync.cls}">${escHtml(sync.label)}</span></td>
-                    <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${gateCls}">${escHtml(gateLabel)}</span></td>
-                    <td class="py-1 pr-2 text-right font-mono ${retCls}">${escHtml(retPct)}</td>
-                    <td class="py-1 pr-2 text-right font-mono ${valRetCls}">${escHtml(valRet)}</td>
-                    <td class="py-1 pr-2 text-right font-mono ${recentCls}" title="${escHtml(recentTitle)}">${escHtml(recentPct)}</td>
-                    <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${srcCls}">${escHtml(srcLabel)}</span></td>
-                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(sharpe)}</td>
-                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(mdd)}</td>
-                    <td class="py-1 pr-2 text-right font-mono">${escHtml(trades)}</td>
-                    <td class="py-1 pr-2 text-[10px] text-text-muted max-w-[10rem]" title="${escHtml(autoReason)}">${escHtml(autoReason)}</td>
-                    <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(score)}</td>
-                    <td class="py-1 pr-2 font-mono text-[10px]">${escHtml(linked)}</td>
-                    <td class="py-1 pr-2">${healthBadge}</td>
-                    <td class="py-1 pr-2 whitespace-nowrap">${addBtn}</td>
+                const l1Block = '<div class="flex flex-wrap items-center gap-1.5">'
+                    + '<span class="text-[10px] px-1.5 py-0.5 rounded border ' + pool.cls + '">' + escHtml(pool.label) + '</span>'
+                    + '<span class="text-[10px] px-1.5 py-0.5 rounded border ' + gateCls + '">' + escHtml(gateLabel) + '</span>'
+                    + '</div>'
+                    + '<div class="mt-1 font-mono text-[10px] text-text-muted">训练 <span class="' + retCls + '">' + escHtml(retPct) + '</span>'
+                    + ' · 验证 <span class="' + valRetCls + '">' + escHtml(valRet) + '</span>'
+                    + ' · WF <span class="' + wf.cls + '">' + escHtml(wf.label) + '</span></div>';
+                const l3Block = '<div class="flex flex-wrap items-center gap-1.5">'
+                    + '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + l3.badgeCls + '">' + escHtml(l3.label) + '</span>'
+                    + '<span class="font-mono text-sm font-semibold ' + l3.pctCls + '">' + escHtml(l3.pct) + '</span>'
+                    + '</div>'
+                    + '<div class="mt-0.5 text-[10px] text-text-muted line-clamp-2" title="' + escHtml(l3.hint) + '">' + escHtml(l3.hint) + '</div>';
+                const deployBlock = '<div><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + deploy.cls + '">'
+                    + escHtml(deploy.label) + '</span></div>'
+                    + '<div class="mt-0.5 text-[10px] text-text-muted line-clamp-2" title="' + escHtml(deploy.title || deploy.sub) + '">' + escHtml(deploy.sub) + '</div>';
+                return `<tr class="border-b border-border/40 hover:bg-surface-light/20 align-top" title="${escHtml(detailTitle)}">
+                    <td class="py-2 pr-3 font-mono font-semibold whitespace-nowrap">${sym}</td>
+                    <td class="py-2 pr-3 text-[10px] whitespace-nowrap">${tpl}</td>
+                    <td class="py-2 pr-3 min-w-[11rem]">${l1Block}</td>
+                    <td class="py-2 pr-3 min-w-[12rem]">${l3Block}</td>
+                    <td class="py-2 pr-3 min-w-[9rem]">${deployBlock}</td>
+                    <td class="py-2 pr-2 whitespace-nowrap">${healthBadge}</td>
+                    <td class="py-2 pr-2 font-mono text-[10px] text-text-muted">${escHtml(linked)}</td>
+                    <td class="py-2 whitespace-nowrap">${addBtn}</td>
                 </tr>`;
             }).join('');
             if (root) {
-                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[1280px]">
-                    <thead><tr class="text-text-muted text-[10px] uppercase">
-                        <th class="py-1 pr-2">标的</th><th class="py-1 pr-2">模板</th><th class="py-1 pr-2">币池</th>
-                        <th class="py-1 pr-2">验证</th><th class="py-1 pr-2">滚动</th>
-                        <th class="py-1 pr-2 text-right">验证Sharpe</th><th class="py-1 pr-2 text-right">稳定分</th>
-                        <th class="py-1 pr-2">同步</th><th class="py-1 pr-2">达标</th>
-                        <th class="py-1 pr-2 text-right">训练收益</th><th class="py-1 pr-2 text-right">验证收益</th>
-                        <th class="py-1 pr-2 text-right" title="最近1500根全窗收益(L3)">1500收益</th>
-                        <th class="py-1 pr-2">参数源</th>
-                        <th class="py-1 pr-2 text-right">训练Sharpe</th><th class="py-1 pr-2 text-right">回撤</th>
-                        <th class="py-1 pr-2 text-right">回合</th><th class="py-1 pr-2">说明</th>
-                        <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">实仓</th>
-                        <th class="py-1 pr-2">治理</th><th class="py-1 pr-2">操作</th>
-                    </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">L1：训练 70% / WF 验证（≥2/3 折）选池与可同步。L3：A 池且 L1 可同步时，在最近 1500 根上按收益×笔数×PF 选模板+战术（含 exit），尾段≥-2% 且全窗 PF≥1；采纳后参数源「1500」。同步另验 L3 尾段；纸面叠加 regime 对齐与多空侧胜率偏置。满仓槽位 Top3。</p>`;
+                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[920px]">
+                    <thead>
+                    <tr class="text-text-muted text-[10px] border-b border-border/50">
+                        <th class="py-2 pr-3 font-normal" rowspan="2">标的</th>
+                        <th class="py-2 pr-3 font-normal" rowspan="2">策略</th>
+                        <th class="py-1 pr-3 font-semibold text-neon-purple/90" colspan="1">① L1 长窗研究</th>
+                        <th class="py-1 pr-3 font-semibold text-neon-blue/90" colspan="1">② L3 近15天</th>
+                        <th class="py-1 pr-3 font-semibold text-neon-green/90" colspan="1">③ 写入机器人</th>
+                        <th class="py-2 pr-2 font-normal" rowspan="2">纸面</th>
+                        <th class="py-2 pr-2 font-normal" rowspan="2">Profile</th>
+                        <th class="py-2 font-normal" rowspan="2">操作</th>
+                    </tr>
+                    <tr class="text-[9px] text-text-muted border-b border-border/40">
+                        <th class="pb-2 pr-3 font-normal">池 · 达标 · 训练/验证/WF</th>
+                        <th class="pb-2 pr-3 font-normal">状态 · 全窗收益</th>
+                        <th class="pb-2 pr-3 font-normal">会同步？ · 原因</th>
+                    </tr>
+                    </thead>
+                    <tbody>${rows}</tbody></table>
+                    <p class="text-[9px] text-text-muted mt-2">悬停单元格可看完整说明。展开上方「怎么看这张表」了解三层含义。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
