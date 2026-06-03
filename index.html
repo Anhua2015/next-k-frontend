@@ -3501,7 +3501,7 @@
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">实仓</th>
                         <th class="py-1 pr-2">治理</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">L1：训练 70% / WF 验证（≥2/3 折）选池与可同步。L3：A 池且可同步时，在最近 1500 根（与纸面扫描同长）上选收益最高模板+战术，后 30% 尾段不得明显为负；采纳后参数源显示「1500」。纸面另受 regime 对齐、费率/OI gate、组合风控。池子治理：可同步 Top5 连 2 批可补位；C 1 轮 / B 2 轮自动停用。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">L1：训练 70% / WF 验证（≥2/3 折）选池与可同步。L3：A 池且 L1 可同步时，在最近 1500 根上按收益×笔数×PF 选模板+战术（含 exit），尾段≥-2% 且全窗 PF≥1；采纳后参数源「1500」。同步另验 L3 尾段；纸面叠加 regime 对齐与多空侧胜率偏置。满仓槽位 Top3。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
