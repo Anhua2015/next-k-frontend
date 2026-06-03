@@ -2732,7 +2732,7 @@
             return '<span class="text-[9px] font-mono text-text-muted border border-border/60 rounded px-1 ml-1">手动</span>';
         }
 
-        function mqGovernanceHealthLabel(symRaw, enabledInPaper) {
+        function mqGovernanceHealthLabel(symRaw, enabledInPaper, dailySummary) {
             const sym = String(symRaw || '').toUpperCase();
             const g = _mqGovernanceBySymbol.get(sym) || {};
             const prof = (_mqProfilesCache || []).find(
@@ -2745,6 +2745,9 @@
             const needUp = Number(_mqGovernanceMeta.upgrade_streak) || 2;
             const degB = Number(_mqGovernanceMeta.degrade_streak_b) || 2;
             const degC = Number(_mqGovernanceMeta.degrade_streak_c) || 1;
+            const ds = dailySummary || {};
+            const syncOk = ds.sync_allowed === true;
+            const syncBlock = ds.sync_block_reason || ds.pool_reason || '';
             if (enabledInPaper) {
                 if (tier === 'C' && deg >= degC) {
                     return { label: '风险', cls: 'text-neon-red border-neon-red/35 bg-neon-red/10', title: 'C 池 · 已/将自动停用' };
@@ -2755,22 +2758,39 @@
                 if (tier === 'B') {
                     return { label: '观察', cls: 'text-neon-blue border-neon-blue/35 bg-neon-blue/10', title: '验证未过 · 连续 B 将自动停' };
                 }
-                if (tier === 'A') {
-                    return { label: '正常', cls: 'text-neon-green border-neon-green/35 bg-neon-green/10', title: 'A 池 · 参数同步' };
+                if (tier === 'A' && ds.sync_allowed === false) {
+                    return {
+                        label: '观察',
+                        cls: 'text-neon-blue border-neon-blue/35 bg-neon-blue/10',
+                        title: syncBlock || 'A 池 · 本批不可同步',
+                    };
                 }
-            } else if (tier === 'A' && up >= needUp && !manualLock) {
-                return { label: '可补位', cls: 'text-neon-purple border-neon-purple/35 bg-neon-purple/10', title: '连续 A 达标 · 治理将自动启用' };
+                if (tier === 'A') {
+                    return { label: '正常', cls: 'text-neon-green border-neon-green/35 bg-neon-green/10', title: 'A 池 · 参数可同步' };
+                }
+            } else if (g.auto_enable_eligible && !manualLock) {
+                return {
+                    label: '可补位',
+                    cls: 'text-neon-purple border-neon-purple/35 bg-neon-purple/10',
+                    title: '可同步 Top5 · 连续达标 · 下次每日寻优将自动启用',
+                };
             } else if (manualLock) {
                 return { label: '手动锁', cls: 'text-warn/90 border-warn/35 bg-warn/10', title: '手动停用 · 不再自动启用' };
             }
             if (tier === 'A' || tier === 'B' || tier === 'C') {
-                return { label: tier, cls: 'text-text-muted border-border/70', title: '升级 ' + up + '/' + needUp };
+                let title = '升级 ' + up + '/' + needUp;
+                if (tier === 'A' && up > 0 && !syncOk && syncBlock) {
+                    title += ' · 本批不可同步：' + syncBlock;
+                } else if (tier === 'A' && up >= needUp && !syncOk) {
+                    title += ' · 需可同步且位列可同步 Top5';
+                }
+                return { label: tier, cls: 'text-text-muted border-border/70', title };
             }
             return { label: '—', cls: 'text-text-muted border-border/70', title: '' };
         }
 
-        function mqGovernanceHealthBadge(symRaw, enabledInPaper) {
-            const h = mqGovernanceHealthLabel(symRaw, enabledInPaper);
+        function mqGovernanceHealthBadge(symRaw, enabledInPaper, dailySummary) {
+            const h = mqGovernanceHealthLabel(symRaw, enabledInPaper, dailySummary);
             return '<span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + h.cls + '" title="' + escHtml(h.title || h.label) + '">' + escHtml(h.label) + '</span>';
         }
 
@@ -3357,7 +3377,7 @@
                     : 'text-warn/90 border-warn/35 bg-warn/10';
                 const autoReason = sync.reason || pool.reason || gate.reason || '';
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
-                const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw));
+                const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw), s);
                 const canAdd = pool.tier !== 'C';
                 const addBtn = profileSyms.has(symRaw)
                     ? '<span class="text-[10px] text-text-muted">已启用</span>'
@@ -3400,7 +3420,7 @@
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">实仓</th>
                         <th class="py-1 pr-2">治理</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">训练 70% / 验证 30%；默认 3 段滚动验证（≥2 段过关）。「可同步」= 寻优达标且训练/验证收益比正常；若该币 Profile 近 7 日纸面亏损超过约 5% 则同步时会跳过。纸面开仓另受：同向敞口上限、费率/OI 假突破抬门槛、日内回撤微调。池子治理：A 池 Top5 连续 2 轮达标自动补位；C 1 轮 / B 2 轮自动停用。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">训练 70% / 验证 30%；默认 3 段滚动验证（≥2 段过关）。「可同步」= 寻优达标且训练/验证收益比正常；若该币 Profile 近 7 日纸面亏损超过约 5% 则同步时会跳过。纸面开仓另受：同向敞口上限、费率/OI 假突破抬门槛、日内回撤微调。池子治理：仅「可同步」Top5 且连续 2 个每日批次可同步才显示「可补位」并自动启用；C 1 轮 / B 2 轮自动停用。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
