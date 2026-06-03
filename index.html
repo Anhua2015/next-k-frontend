@@ -366,27 +366,20 @@
                     </div>
                     <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted shrink-0">—</span>
                 </div>
-                <details id="mq-daily-guide" class="px-4 py-2 border-b border-border/30 bg-surface-light/20 text-xs text-text-muted group">
-                    <summary class="cursor-pointer text-text-secondary font-medium select-none list-none flex items-center gap-1">
-                        <span class="group-open:rotate-90 transition-transform inline-block">▸</span> 怎么看这张表？（三层流水线）
-                    </summary>
-                    <div class="mt-2 grid gap-2 sm:grid-cols-3 leading-relaxed">
-                        <div class="rounded-lg border border-neon-purple/25 bg-neon-purple/5 px-2.5 py-2">
-                            <div class="text-neon-purple font-semibold text-[11px] mb-0.5">① L1 长窗研究</div>
-                            约 70 天 K 线网格寻优。看 <b>训练收益</b>、<b>验证收益</b>、<b>WF</b>。决定 <b>A/B/C 池</b> 与是否「回测达标」。
-                        </div>
-                        <div class="rounded-lg border border-neon-blue/25 bg-neon-blue/5 px-2.5 py-2">
-                            <div class="text-neon-blue font-semibold text-[11px] mb-0.5">② L3 近 15 天</div>
-                            与纸面同长的 1500 根 K 线再搜参数。列「短窗」：有过关组合会显示 <b>%</b>；「无合格」= 最近半个月没有参数同时过关。
-                        </div>
-                        <div class="rounded-lg border border-neon-green/25 bg-neon-green/5 px-2.5 py-2">
-                            <div class="text-neon-green font-semibold text-[11px] mb-0.5">③ 写入机器人</div>
-                            <b>会同步</b> = 本批结果可覆盖已启用 Profile 的参数。<b>不同步</b> = 仍用旧参数纸面交易。与「A 池可交易」不是一回事。
-                        </div>
-                    </div>
-                </details>
+                <div class="px-4 py-2.5 border-b border-border/30 bg-neon-yellow/5 text-xs text-text-secondary leading-relaxed">
+                    <b class="text-text-primary">只记一句：</b>看每行最粗的「本批结论」——
+                    <span class="text-neon-green">会更新</span> = 已启用的机器人将换成这批参数；
+                    <span class="text-warn/90">不更新</span> = 继续用旧参数，下面小字是原因。
+                </div>
                 <div id="mq-daily-summary-chips" class="px-4 py-2 flex flex-wrap gap-2 text-[10px] font-mono border-b border-border/30"></div>
-                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[32rem] min-h-[6rem]">加载寻优结果…</div>
+                <div id="mq-daily-filter" class="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-border/30 text-xs">
+                    <span class="text-text-muted mr-1">筛选</span>
+                    <span data-mq-filter-hint class="text-[10px] text-text-muted mr-2"></span>
+                    <button type="button" data-mq-daily-filter="all" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-neon-yellow/40 bg-neon-yellow/15 text-neon-yellow">全部</button>
+                    <button type="button" data-mq-daily-filter="sync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-neon-green/40">会更新机器人</button>
+                    <button type="button" data-mq-daily-filter="nosync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-warn/40">不更新</button>
+                </div>
+                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[36rem] min-h-[6rem]">加载寻优结果…</div>
             </div>
         </section>
 
@@ -3173,6 +3166,83 @@
         }
 
         let _mqDailyPollTimer = null;
+        let _mqDailyFilter = 'all';
+        let _mqDailyLastPayload = null;
+
+        function mqHumanizeBlockReason(raw) {
+            const r = String(raw || '').trim();
+            if (!r) return '未通过风控';
+            const map = {
+                '训练验证收益比过高': '训练赚得多、验证一般，怕过拟合',
+                '训练验证收益比过低': '验证相对训练过好，参数不稳',
+                '滚动验证未达标': '滚动验证过关折数不够',
+                '验证未通过': '验证窗回测不过关',
+                '1500窗无满足门槛的组合': '最近15天没有合格参数（长窗仍可能更新）',
+                '1500短窗未验收': '最近15天短窗未通过验收',
+                'L1不可同步': '长窗风控未过，未跑短窗',
+                'L1池级非A': '不在 A 池，仅观察',
+            };
+            for (const [k, v] of Object.entries(map)) {
+                if (r.includes(k) || r === k) return v;
+            }
+            if (r.includes('尾段')) return r;
+            return r.length > 42 ? r.slice(0, 42) + '…' : r;
+        }
+
+        /** 每行一句话结论（看板主信息） */
+        function mqRowVerdict(summary) {
+            const s = summary || {};
+            const pool = mqPoolTierState(s);
+            if (pool.tier === 'C') {
+                return {
+                    filter: 'nosync',
+                    line: '本批不更新 · 回测未达标已剔除',
+                    cls: 'text-warn/90',
+                    border: 'border-warn/30 bg-warn/5',
+                };
+            }
+            if (s.sync_allowed === true) {
+                const src = String(s.param_source || 'grid');
+                const paramWord = src === 'recent_1500'
+                    ? '最近15天最优'
+                    : (src === 'local_refine' ? '长窗精修' : '长窗网格');
+                return {
+                    filter: 'sync',
+                    line: '本批可写入 · 用' + paramWord + '（已启用纸面会换参）',
+                    cls: 'text-neon-green',
+                    border: 'border-neon-green/35 bg-neon-green/10',
+                };
+            }
+            const why = mqHumanizeBlockReason(
+                s.sync_block_reason || s.wf_reason || s.validation_reason || pool.reason,
+            );
+            return {
+                filter: 'nosync',
+                line: '本批不更新参数 · ' + why,
+                cls: 'text-warn/90',
+                border: 'border-warn/35 bg-warn/10',
+            };
+        }
+
+        function mqWfLabelHuman(summary) {
+            const wf = mqWfState(summary);
+            const folds = (summary || {}).wf_folds;
+            if (folds != null && Number(folds) > 1) {
+                return '滚动验证 ' + wf.label + ' 折';
+            }
+            return wf.label;
+        }
+
+        function mqL3LineHuman(summary) {
+            const l3 = mqL3ShortWindowState(summary);
+            if (l3.phase === 'skip') {
+                return '近15天：未测算（' + mqHumanizeBlockReason(l3.hint) + '）';
+            }
+            if (l3.phase === 'fail' || l3.phase === 'none') {
+                return '近15天：' + l3.label + '（长窗参数仍可能更新）';
+            }
+            return '近15天：' + l3.label + ' ' + l3.pct;
+        }
 
         function mqStopDailyPoll() {
             if (_mqDailyPollTimer) {
@@ -3255,6 +3325,85 @@
                 cls: ok ? 'text-neon-green' : 'text-warn/90',
                 title: s.wf_reason || (ok ? '滚动验证通过' : '滚动验证未达标'),
             };
+        }
+
+        function mqApplyDailyFilterUi() {
+            document.querySelectorAll('.mq-daily-filter-btn').forEach((btn) => {
+                const on = btn.getAttribute('data-mq-daily-filter') === _mqDailyFilter;
+                btn.classList.toggle('border-neon-yellow/40', on);
+                btn.classList.toggle('bg-neon-yellow/15', on);
+                btn.classList.toggle('text-neon-yellow', on);
+                btn.classList.toggle('border-border/70', !on);
+                btn.classList.toggle('text-text-muted', !on);
+            });
+        }
+
+        function mqRerenderDailyFromCache() {
+            const p = _mqDailyLastPayload;
+            const root = document.getElementById('mq-daily-table');
+            if (!p || !root) return;
+            root.innerHTML = mqRenderDailyCards(p.items, p.profileSyms, p.enabledSyms)
+                + '<p class="text-[9px] text-text-muted mt-3 text-center">每张卡片最上面一行是结论；下面两行是长窗 / 近15天细节。</p>';
+            mqApplyDailyFilterUi();
+            const hint = document.querySelector('[data-mq-filter-hint]');
+            if (hint && p.syncCount != null) {
+                hint.textContent = '会更新 ' + p.syncCount + ' · 不更新 ' + p.noSyncCount;
+            }
+        }
+
+        function mqRenderDailyCards(items, profileSyms, enabledSyms) {
+            const cards = items.map((it) => {
+                const symRaw = String(it.symbol || '').toUpperCase();
+                const sym = escHtml(symRaw);
+                const tpl = escHtml(MQ_TEMPLATE_LABELS[(it.template || '').toLowerCase()] || it.template || '—');
+                const s = it.summary || {};
+                const err = s.error || it.error;
+                if (err) {
+                    return `<div class="rounded-lg border border-warn/30 bg-warn/5 p-3" data-mq-daily-card="1" data-mq-filter="nosync">
+                        <div class="font-mono font-semibold">${sym}</div>
+                        <div class="text-warn/90 mt-1">${escHtml(String(err))}</div></div>`;
+                }
+                const verdict = mqRowVerdict(s);
+                if (_mqDailyFilter !== 'all' && verdict.filter !== _mqDailyFilter) {
+                    return '';
+                }
+                const ret = Number(s.total_return);
+                const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(1) + '%' : '—';
+                const valRet = s.val_return != null ? (Number(s.val_return) * 100).toFixed(1) + '%' : '—';
+                const pool = mqPoolTierState(s);
+                const enabledHere = enabledSyms.has(symRaw);
+                const canAdd = pool.tier !== 'C';
+                const addBtn = profileSyms.has(symRaw)
+                    ? (enabledHere
+                        ? '<span class="text-[10px] text-neon-green">纸面已启用</span>'
+                        : '<span class="text-[10px] text-text-muted">已加入未启用</span>')
+                    : (canAdd
+                        ? '<button type="button" data-mq-from-daily="' + escHtml(symRaw) + '" data-mq-from-daily-en="1"'
+                            + ' class="text-[10px] px-2 py-1 rounded border border-neon-purple/35 text-neon-purple bg-neon-purple/10">加入纸面</button>'
+                        : '<span class="text-[10px] text-text-muted">不可加</span>');
+                return `<div class="rounded-lg border ${verdict.border} p-3 hover:brightness-110 transition" data-mq-daily-card="1" data-mq-filter="${escHtml(verdict.filter)}">
+                    <div class="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                            <span class="font-mono font-semibold text-sm text-text-primary">${sym}</span>
+                            <span class="text-[10px] text-text-muted ml-2">${tpl}</span>
+                            <span class="text-[10px] ml-2 px-1.5 py-0.5 rounded border ${pool.cls}">${escHtml(pool.label)}</span>
+                        </div>
+                        <div class="text-sm font-semibold ${verdict.cls} max-w-[20rem] text-right leading-snug">${escHtml(verdict.line)}</div>
+                    </div>
+                    <div class="mt-2 grid gap-1 sm:grid-cols-2 text-[11px] text-text-muted">
+                        <div>长窗约70天：训练 ${escHtml(retPct)} · 验证 ${escHtml(valRet)} · ${escHtml(mqWfLabelHuman(s))}</div>
+                        <div>${escHtml(mqL3LineHuman(s))}</div>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/30">
+                        <span class="text-[10px]">${mqGovernanceHealthBadge(symRaw, enabledHere, s)}</span>
+                        ${addBtn}
+                    </div>
+                </div>`;
+            }).filter(Boolean).join('');
+            if (!cards) {
+                return '<p class="text-text-muted text-xs py-4 text-center">当前筛选下没有标的。点「全部」查看。</p>';
+            }
+            return '<div class="grid gap-2 sm:grid-cols-1 lg:grid-cols-2">' + cards + '</div>';
         }
 
         /** 网格后 70% 归因 + WF 局部精修对比（post_grid_pipeline） */
@@ -3342,10 +3491,16 @@
                 };
             }
             if (rp.skipped) {
+                let hint = String(rp.reason || '非 A 池等，未跑短窗');
+                if (hint === 'L1不可同步' || hint.includes('不可同步')) {
+                    hint = String(
+                        s.sync_block_reason || s.l1_sync_block_reason || hint,
+                    );
+                }
                 return {
                     phase: 'skip',
                     label: '未执行',
-                    hint: String(rp.reason || '非 A 池或 L1 不可同步等'),
+                    hint,
                     pct: '跳过',
                     pctCls: 'text-text-muted',
                     badgeCls: 'text-text-muted border-border/60 bg-surface/30',
@@ -3381,11 +3536,11 @@
             const s = summary || {};
             const sync = mqSyncState(s);
             const src = String(s.param_source || 'grid');
-            const srcLabel = src === 'recent_1500' ? '1500短窗' : (src === 'local_refine' ? '精修' : '网格');
+            const srcLabel = src === 'recent_1500' ? 'L3短窗' : (src === 'local_refine' ? 'L2精修' : 'L1网格');
             if (s.sync_allowed === true) {
                 return {
                     label: '会同步',
-                    sub: '参数源：' + srcLabel,
+                    sub: '写入：' + srcLabel,
                     cls: 'text-neon-green border-neon-green/35 bg-neon-green/10',
                     title: '每日寻优 apply 后会更新已启用 Profile 的模板与战术参数',
                 };
@@ -3452,13 +3607,9 @@
                 return;
             }
             let passN = 0;
-            let failN = 0;
             let poolA = 0;
             let poolB = 0;
             let poolC = 0;
-            let valPass = 0;
-            let wfPass = 0;
-            let syncOk = 0;
             let recentApplied = 0;
             items.forEach((it) => {
                 const s = it.summary || {};
@@ -3467,12 +3618,19 @@
                 if (pool.tier === 'A') poolA += 1;
                 else if (pool.tier === 'B') poolB += 1;
                 else poolC += 1;
-                if (s.validation_passed === true) valPass += 1;
-                if (s.wf_validation_passed === true) wfPass += 1;
-                if (s.sync_allowed === true) syncOk += 1;
                 if (mqDailyGateState(s).ok) passN += 1;
-                else failN += 1;
                 if (s.recent_applied === true || s.param_source === 'recent_1500') recentApplied += 1;
+            });
+            let syncCount = 0;
+            let noSyncCount = 0;
+            items.forEach((it) => {
+                const s = it.summary || {};
+                if (s.error || it.error) {
+                    noSyncCount += 1;
+                    return;
+                }
+                if (mqRowVerdict(s).filter === 'sync') syncCount += 1;
+                else noSyncCount += 1;
             });
             const poolsFromSum = sum && sum.daily_optimize_pools && sum.daily_optimize_pools.pool_counts;
             if (chipsEl) {
@@ -3480,120 +3638,44 @@
                 const bN = poolsFromSum ? poolsFromSum.B : poolB;
                 const cN = poolsFromSum ? poolsFromSum.C : poolC;
                 chipsEl.innerHTML = [
-                    ['① 全市场', items.length, 'text-text-muted border-border/70', '本批寻优标的数'],
-                    ['② 回测达标', passN, 'text-neon-purple border-neon-purple/35', 'L1 收益/笔数/回撤过关'],
-                    ['③ A 池', aN, 'text-neon-green border-neon-green/35', '可交易档（≠ 一定能同步）'],
-                    ['④ 本批可同步', syncOk, 'text-neon-yellow border-neon-yellow/35', '会写入已启用 Profile'],
-                    ['L3 已采纳', recentApplied, 'text-neon-yellow border-neon-yellow/35', '使用 1500 短窗参数'],
+                    ['全市场', items.length, 'text-text-muted border-border/70', '本批寻优标的数'],
+                    ['会更新', syncCount, 'text-neon-green border-neon-green/35', '本批允许写入已启用机器人'],
+                    ['不更新', noSyncCount, 'text-warn/90 border-warn/35', '继续用旧参数'],
+                    ['回测达标', passN, 'text-neon-purple border-neon-purple/35', '长窗收益/笔数/回撤过关'],
+                    ['A 池', aN, 'text-neon-green border-neon-green/35', '可交易档'],
+                    ['近15天采纳', recentApplied, 'text-neon-yellow border-neon-yellow/35', '写入时用短窗最优'],
                     ['B 观察', bN, 'text-neon-blue border-neon-blue/35', ''],
                     ['C 剔除', cN, 'text-warn/90 border-warn/35', ''],
                 ].map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50" title="' + escHtml(c[3] || '') + '">'
                     + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>').join('');
             }
             items.sort((a, b) => {
+                const va = mqRowVerdict(a.summary || {}).filter === 'sync' ? 0 : 1;
+                const vb = mqRowVerdict(b.summary || {}).filter === 'sync' ? 0 : 1;
+                if (va !== vb) return va - vb;
                 const ta = mqPoolTierState(a.summary || {}).tier;
                 const tb = mqPoolTierState(b.summary || {}).tier;
                 const pa = ta === 'A' ? 0 : ta === 'B' ? 1 : 2;
                 const pb = tb === 'A' ? 0 : tb === 'B' ? 1 : 2;
                 if (pa !== pb) return pa - pb;
-                const va = (a.summary || {}).validation_passed === true ? 0 : 1;
-                const vb = (b.summary || {}).validation_passed === true ? 0 : 1;
-                if (va !== vb) return va - vb;
                 return Number(b.score || 0) - Number(a.score || 0);
             });
             const profileSyms = new Set((_mqProfilesCache || []).map((p) => String(p.symbol || '').toUpperCase()));
             const enabledSyms = new Set(
                 (_mqProfilesCache || []).filter((p) => p.enabled).map((p) => String(p.symbol || '').toUpperCase()),
             );
-            const rows = items.map((it) => {
-                const symRaw = String(it.symbol || '').toUpperCase();
-                const sym = escHtml(symRaw);
-                const tpl = escHtml(MQ_TEMPLATE_LABELS[(it.template || '').toLowerCase()] || it.template || '—');
-                const s = it.summary || {};
-                const err = s.error || it.error;
-                if (err) {
-                    return `<tr class="border-b border-border/40 text-warn/90">
-                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="18" class="py-1">${escHtml(String(err))}</td></tr>`;
-                }
-                const ret = Number(s.total_return);
-                const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(2) + '%' : '—';
-                const retCls = ret > 0 ? 'text-neon-green' : ret < 0 ? 'text-neon-red' : 'text-text-muted';
-                const valRet = s.val_return != null ? (Number(s.val_return) * 100).toFixed(2) + '%' : '—';
-                const valRetCls = Number(s.val_return) > 0 ? 'text-neon-green' : Number(s.val_return) < 0 ? 'text-neon-red' : 'text-text-muted';
-                const wf = mqWfState(s);
-                const pool = mqPoolTierState(s);
-                const gate = mqDailyGateState(s);
-                const autoOn = gate.ok;
-                const gateLabel = autoOn ? '达标' : '不达标';
-                const gateCls = autoOn
-                    ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
-                    : 'text-warn/90 border-warn/35 bg-warn/10';
-                const l3 = mqL3ShortWindowState(s);
-                const deploy = mqDeployState(s);
-                const detailTitle = [
-                    gate.reason ? ('回测：' + gate.reason) : '',
-                    pool.reason ? ('池：' + pool.reason) : '',
-                    l3.hint ? ('L3：' + l3.hint) : '',
-                    deploy.title ? ('同步：' + deploy.title) : '',
-                    s.total_trades != null ? ('训练窗 ' + s.total_trades + ' 笔') : '',
-                    s.max_drawdown != null ? ('回撤 ' + (Math.abs(Number(s.max_drawdown)) * 100).toFixed(1) + '%') : '',
-                ].filter(Boolean).join('\n');
-                const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
-                const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw), s);
-                const canAdd = pool.tier !== 'C';
-                const addBtn = profileSyms.has(symRaw)
-                    ? '<span class="text-[10px] text-text-muted">已有Profile</span>'
-                    : (canAdd
-                        ? '<button type="button" data-mq-from-daily="' + escHtml(symRaw) + '" data-mq-from-daily-en="1"'
-                            + ' class="text-[10px] px-2 py-0.5 rounded border border-neon-purple/35 text-neon-purple bg-neon-purple/10 hover:bg-neon-purple/15">加入实仓</button>'
-                        : '<span class="text-[10px] text-text-muted" title="C池剔除">不可加</span>');
-                const l1Block = '<div class="flex flex-wrap items-center gap-1.5">'
-                    + '<span class="text-[10px] px-1.5 py-0.5 rounded border ' + pool.cls + '">' + escHtml(pool.label) + '</span>'
-                    + '<span class="text-[10px] px-1.5 py-0.5 rounded border ' + gateCls + '">' + escHtml(gateLabel) + '</span>'
-                    + '</div>'
-                    + '<div class="mt-1 font-mono text-[10px] text-text-muted">训练 <span class="' + retCls + '">' + escHtml(retPct) + '</span>'
-                    + ' · 验证 <span class="' + valRetCls + '">' + escHtml(valRet) + '</span>'
-                    + ' · WF <span class="' + wf.cls + '">' + escHtml(wf.label) + '</span></div>';
-                const l3Block = '<div class="flex flex-wrap items-center gap-1.5">'
-                    + '<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + l3.badgeCls + '">' + escHtml(l3.label) + '</span>'
-                    + '<span class="font-mono text-sm font-semibold ' + l3.pctCls + '">' + escHtml(l3.pct) + '</span>'
-                    + '</div>'
-                    + '<div class="mt-0.5 text-[10px] text-text-muted line-clamp-2" title="' + escHtml(l3.hint) + '">' + escHtml(l3.hint) + '</div>';
-                const deployBlock = '<div><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ' + deploy.cls + '">'
-                    + escHtml(deploy.label) + '</span></div>'
-                    + '<div class="mt-0.5 text-[10px] text-text-muted line-clamp-2" title="' + escHtml(deploy.title || deploy.sub) + '">' + escHtml(deploy.sub) + '</div>';
-                return `<tr class="border-b border-border/40 hover:bg-surface-light/20 align-top" title="${escHtml(detailTitle)}">
-                    <td class="py-2 pr-3 font-mono font-semibold whitespace-nowrap">${sym}</td>
-                    <td class="py-2 pr-3 text-[10px] whitespace-nowrap">${tpl}</td>
-                    <td class="py-2 pr-3 min-w-[11rem]">${l1Block}</td>
-                    <td class="py-2 pr-3 min-w-[12rem]">${l3Block}</td>
-                    <td class="py-2 pr-3 min-w-[9rem]">${deployBlock}</td>
-                    <td class="py-2 pr-2 whitespace-nowrap">${healthBadge}</td>
-                    <td class="py-2 pr-2 font-mono text-[10px] text-text-muted">${escHtml(linked)}</td>
-                    <td class="py-2 whitespace-nowrap">${addBtn}</td>
-                </tr>`;
-            }).join('');
+            _mqDailyLastPayload = { items, profileSyms, enabledSyms, syncCount, noSyncCount };
             if (root) {
-                root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[920px]">
-                    <thead>
-                    <tr class="text-text-muted text-[10px] border-b border-border/50">
-                        <th class="py-2 pr-3 font-normal" rowspan="2">标的</th>
-                        <th class="py-2 pr-3 font-normal" rowspan="2">策略</th>
-                        <th class="py-1 pr-3 font-semibold text-neon-purple/90" colspan="1">① L1 长窗研究</th>
-                        <th class="py-1 pr-3 font-semibold text-neon-blue/90" colspan="1">② L3 近15天</th>
-                        <th class="py-1 pr-3 font-semibold text-neon-green/90" colspan="1">③ 写入机器人</th>
-                        <th class="py-2 pr-2 font-normal" rowspan="2">纸面</th>
-                        <th class="py-2 pr-2 font-normal" rowspan="2">Profile</th>
-                        <th class="py-2 font-normal" rowspan="2">操作</th>
-                    </tr>
-                    <tr class="text-[9px] text-text-muted border-b border-border/40">
-                        <th class="pb-2 pr-3 font-normal">池 · 达标 · 训练/验证/WF</th>
-                        <th class="pb-2 pr-3 font-normal">状态 · 全窗收益</th>
-                        <th class="pb-2 pr-3 font-normal">会同步？ · 原因</th>
-                    </tr>
-                    </thead>
-                    <tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2">悬停单元格可看完整说明。展开上方「怎么看这张表」了解三层含义。</p>`;
+                root.innerHTML = mqRenderDailyCards(items, profileSyms, enabledSyms)
+                    + '<p class="text-[9px] text-text-muted mt-3 text-center">每张卡片最上面一行是结论；下面两行是长窗 / 近15天细节。</p>';
+            }
+            mqApplyDailyFilterUi();
+            const filterBar = document.getElementById('mq-daily-filter');
+            if (filterBar) {
+                const hint = filterBar.querySelector('[data-mq-filter-hint]');
+                if (hint) {
+                    hint.textContent = '会更新 ' + syncCount + ' · 不更新 ' + noSyncCount;
+                }
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
@@ -4271,6 +4353,15 @@
             });
             document.getElementById('mq-research-panel')?.addEventListener('toggle', (ev) => {
                 if (ev.target && ev.target.open) void ensureMqUniverseDatalist();
+            });
+            document.getElementById('mq-daily-filter')?.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('[data-mq-daily-filter]');
+                if (!btn) return;
+                const f = btn.getAttribute('data-mq-daily-filter');
+                if (f && f !== _mqDailyFilter) {
+                    _mqDailyFilter = f;
+                    mqRerenderDailyFromCache();
+                }
             });
             document.getElementById('mq-daily-table')?.addEventListener('click', (ev) => {
                 const addBtn = ev.target.closest('[data-mq-from-daily]');
