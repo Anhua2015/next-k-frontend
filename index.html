@@ -3238,6 +3238,63 @@
             };
         }
 
+        /** 网格后 70% 归因 + WF 局部精修对比（post_grid_pipeline） */
+        function mqRefineState(summary) {
+            const s = summary || {};
+            const pipe = s.post_grid_pipeline || {};
+            const refine = pipe.local_refine || {};
+            const hasPipeline = !!(pipe.local_refine || pipe.tuning_diagnosis);
+            const adopted = s.refine_improved === true || String(s.param_source || '') === 'local_refine';
+            const src = String(s.param_source || pipe.param_source || (adopted ? 'local_refine' : 'grid'));
+            const pct = (x) => (Number.isFinite(Number(x)) ? (Number(x) * 100).toFixed(2) + '%' : '—');
+            const gridRet = s.grid_val_return != null ? Number(s.grid_val_return) : Number(refine.grid_val_return);
+            const finalRet = s.val_return != null ? Number(s.val_return) : Number(refine.refined_val_return);
+            const gridSh = s.grid_val_sharpe != null ? Number(s.grid_val_sharpe) : Number(refine.grid_val_sharpe);
+            const finalSh = s.val_sharpe != null ? Number(s.val_sharpe) : Number(refine.refined_val_sharpe);
+            const rounds = refine.rounds_run != null ? Number(refine.rounds_run) : 0;
+            const label = !hasPipeline ? '—' : (adopted ? '已采纳' : '未采纳');
+            const compare = hasPipeline ? (pct(gridRet) + '→' + pct(finalRet)) : '—';
+            const sharpeCmp = hasPipeline ? (Number(gridSh).toFixed(2) + '→' + Number(finalSh).toFixed(2)) : '—';
+            const tips = [];
+            if (refine.narrative) tips.push(refine.narrative);
+            const diag = pipe.tuning_diagnosis || {};
+            const ta = diag.train_analysis || {};
+            if (ta.win_rate != null) {
+                tips.push(
+                    '训练窗胜率 ' + (Number(ta.win_rate) * 100).toFixed(0) + '%'
+                    + ' PF=' + (ta.profit_factor != null ? ta.profit_factor : '—')
+                    + ' 反手占比 ' + (ta.signal_exit_ratio != null ? (Number(ta.signal_exit_ratio) * 100).toFixed(0) + '%' : '—'),
+                );
+            }
+            if (diag.suggestion && diag.suggestion.narrative) tips.push(diag.suggestion.narrative);
+            if (refine.rounds && refine.rounds.length) {
+                refine.rounds.forEach((r) => {
+                    tips.push(
+                        '第' + r.round + '轮 '
+                        + (r.improved ? '↑' : '—')
+                        + ' WF验证收益 ' + pct(r.val_return)
+                        + ' 候选' + (r.candidates_tested || 0),
+                    );
+                });
+            }
+            const cls = adopted
+                ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
+                : hasPipeline
+                    ? 'text-neon-blue border-neon-blue/35 bg-neon-blue/10'
+                    : 'text-text-muted border-border/70 bg-surface/30';
+            return {
+                hasPipeline,
+                adopted,
+                src,
+                label,
+                compare,
+                sharpeCmp,
+                rounds,
+                cls,
+                title: tips.join('\n') || '尚无精修流水线数据（需 API 部署 post_grid_pipeline）',
+            };
+        }
+
         function mqSyncState(summary) {
             const s = summary || {};
             if (s.sync_allowed === true) {
@@ -3302,6 +3359,7 @@
             let valPass = 0;
             let wfPass = 0;
             let syncOk = 0;
+            let recentApplied = 0;
             items.forEach((it) => {
                 const s = it.summary || {};
                 if (s.error || it.error) return;
@@ -3314,6 +3372,7 @@
                 if (s.sync_allowed === true) syncOk += 1;
                 if (mqDailyGateState(s).ok) passN += 1;
                 else failN += 1;
+                if (s.recent_applied === true || s.param_source === 'recent_1500') recentApplied += 1;
             });
             const poolsFromSum = sum && sum.daily_optimize_pools && sum.daily_optimize_pools.pool_counts;
             if (chipsEl) {
@@ -3325,6 +3384,7 @@
                     ['验证过', poolsFromSum ? (sum.daily_optimize_pools.validation_passed || valPass) : valPass, 'text-neon-purple border-neon-purple/35'],
                     ['滚动过', wfPass, 'text-neon-blue border-neon-blue/35'],
                     ['可同步', syncOk, 'text-neon-yellow border-neon-yellow/35'],
+                    ['L3采纳', recentApplied, 'text-neon-yellow border-neon-yellow/35'],
                 ].map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50">'
                     + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>').join('');
             }
@@ -3351,7 +3411,7 @@
                 const err = s.error || it.error;
                 if (err) {
                     return `<tr class="border-b border-border/40 text-warn/90">
-                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="16" class="py-1">${escHtml(String(err))}</td></tr>`;
+                        <td class="py-1 pr-2 font-mono">${sym}</td><td colspan="18" class="py-1">${escHtml(String(err))}</td></tr>`;
                 }
                 const ret = Number(s.total_return);
                 const retPct = Number.isFinite(ret) ? (ret * 100).toFixed(2) + '%' : '—';
@@ -3376,6 +3436,23 @@
                     ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
                     : 'text-warn/90 border-warn/35 bg-warn/10';
                 const autoReason = sync.reason || pool.reason || gate.reason || '';
+                const rp = s.recent_pick || {};
+                const recentRaw = rp.recent_return_pct != null ? rp.recent_return_pct : s.recent_return_pct;
+                const recentPct = recentRaw != null && recentRaw !== ''
+                    ? (Number(recentRaw).toFixed(2) + '%')
+                    : (rp.skipped ? '跳过' : '—');
+                const recentNum = recentRaw != null && recentRaw !== '' ? Number(recentRaw) : NaN;
+                const recentCls = recentNum > 0 ? 'text-neon-green' : recentNum < 0 ? 'text-neon-red' : 'text-text-muted';
+                const paramSrc = String(s.param_source || 'grid');
+                const srcLabel = paramSrc === 'recent_1500' ? '1500' : (paramSrc === 'local_refine' ? '精修' : '网格');
+                const srcCls = paramSrc === 'recent_1500'
+                    ? 'text-neon-yellow border-neon-yellow/35 bg-neon-yellow/10'
+                    : 'text-text-muted border-border/70';
+                const recentTitle = rp.narrative
+                    ? String(rp.narrative)
+                    : (rp.reason
+                        ? String(rp.reason)
+                        : (recentRaw != null ? ('L3短窗收益 ' + Number(recentRaw).toFixed(2) + '%') : ''));
                 const linked = it.profile_id ? ('#' + it.profile_id) : (profileSyms.has(symRaw) ? '已加入' : '—');
                 const healthBadge = mqGovernanceHealthBadge(symRaw, enabledSyms.has(symRaw), s);
                 const canAdd = pool.tier !== 'C';
@@ -3397,6 +3474,8 @@
                     <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${gateCls}">${escHtml(gateLabel)}</span></td>
                     <td class="py-1 pr-2 text-right font-mono ${retCls}">${escHtml(retPct)}</td>
                     <td class="py-1 pr-2 text-right font-mono ${valRetCls}">${escHtml(valRet)}</td>
+                    <td class="py-1 pr-2 text-right font-mono ${recentCls}" title="${escHtml(recentTitle)}">${escHtml(recentPct)}</td>
+                    <td class="py-1 pr-2"><span class="inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded border ${srcCls}">${escHtml(srcLabel)}</span></td>
                     <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(sharpe)}</td>
                     <td class="py-1 pr-2 text-right font-mono text-text-muted">${escHtml(mdd)}</td>
                     <td class="py-1 pr-2 text-right font-mono">${escHtml(trades)}</td>
@@ -3415,12 +3494,14 @@
                         <th class="py-1 pr-2 text-right">验证Sharpe</th><th class="py-1 pr-2 text-right">稳定分</th>
                         <th class="py-1 pr-2">同步</th><th class="py-1 pr-2">达标</th>
                         <th class="py-1 pr-2 text-right">训练收益</th><th class="py-1 pr-2 text-right">验证收益</th>
+                        <th class="py-1 pr-2 text-right" title="最近1500根全窗收益(L3)">1500收益</th>
+                        <th class="py-1 pr-2">参数源</th>
                         <th class="py-1 pr-2 text-right">训练Sharpe</th><th class="py-1 pr-2 text-right">回撤</th>
                         <th class="py-1 pr-2 text-right">回合</th><th class="py-1 pr-2">说明</th>
                         <th class="py-1 pr-2 text-right">得分</th><th class="py-1 pr-2">实仓</th>
                         <th class="py-1 pr-2">治理</th><th class="py-1 pr-2">操作</th>
                     </tr></thead><tbody>${rows}</tbody></table>
-                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">训练 70% / 验证 30%；默认 3 段滚动验证（≥2 段过关）。「可同步」= 寻优达标且训练/验证收益比正常；若该币 Profile 近 7 日纸面亏损超过约 5% 则同步时会跳过。纸面开仓另受：同向敞口上限、费率/OI 假突破抬门槛、日内回撤微调。池子治理：仅「可同步」Top5 且连续 2 个每日批次可同步才显示「可补位」并自动启用；C 1 轮 / B 2 轮自动停用。</p>`;
+                    <p class="text-[9px] text-text-muted mt-2 leading-relaxed">L1：训练 70% / WF 验证（≥2/3 折）选池与可同步。L3：A 池且可同步时，在最近 1500 根（与纸面扫描同长）上选收益最高模板+战术，后 30% 尾段不得明显为负；采纳后参数源显示「1500」。纸面另受 regime 对齐、费率/OI gate、组合风控。池子治理：可同步 Top5 连 2 批可补位；C 1 轮 / B 2 轮自动停用。</p>`;
             }
             if (st === 'running' || running) mqStartDailyPoll();
             else mqStopDailyPoll();
