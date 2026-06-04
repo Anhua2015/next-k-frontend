@@ -4503,13 +4503,26 @@
             if (cnt) cnt.textContent = '启用 ' + (sum.enabled_profiles ?? 0) + '/' + (sum.profile_count ?? 0);
         }
 
+        function m2EvolutionHint(st) {
+            if (st === 'no_candidate') {
+                return '四模板回测未过闸门（成交/EV/Sharpe/回撤），系统不会自动启用；请刷新 CSV 后点「全自动建 Profile」或单币 evolve';
+            }
+            if (st === 'approved') return '参数已发布，可启用或等待自动启用';
+            if (st === 'culled') return '淘汰停用';
+            if (st === 'pending') return '候选待人工 approve';
+            return '';
+        }
+
         function m2EvolutionBadge(p) {
             const st = String(p.evolution_status || 'baseline');
             const cls = st === 'approved' ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
                 : st === 'culled' ? 'text-warn border-warn/35 bg-warn/10'
                 : st === 'no_candidate' ? 'text-neon-red border-neon-red/30 bg-neon-red/5'
                 : 'text-text-muted border-border/60 bg-surface-light/50';
-            return '<span class="text-[9px] px-1.5 py-0.5 rounded border font-mono ' + cls + '">' + escHtml(st) + '</span>';
+            const hint = m2EvolutionHint(st);
+            const title = hint ? ' title="' + escHtml(hint).replace(/"/g, '&quot;') + '"' : '';
+            const label = st === 'no_candidate' ? '无候选' : st;
+            return '<span class="text-[9px] px-1.5 py-0.5 rounded border font-mono ' + cls + '"' + title + '>' + escHtml(label) + '</span>';
         }
 
         function renderM2Profiles(profiles) {
