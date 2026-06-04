@@ -798,6 +798,18 @@
     <script>
         const API_BASE = resolveApiBase();
 
+        /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
+        async function fetchWithTimeout(url, options, ms) {
+            const timeoutMs = ms == null ? 12000 : ms;
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: ctrl.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
         function updateMaintTokenStatus() {
             const el = document.getElementById('maint-token-status');
             if (!el) return;
@@ -857,7 +869,8 @@
 
         const API = {
             async health() {
-                const res = await fetch(`${API_BASE}/api/health`);
+                const res = await fetchWithTimeout(`${API_BASE}/api/health`, {}, 8000);
+                if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
             async accumulationOiRadar() {
@@ -1305,14 +1318,15 @@
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
-            async m2MaintenancePost(path, query) {
+            async m2MaintenancePost(path, query, timeoutMs) {
                 const q = query && Object.keys(query).length
                     ? '?' + new URLSearchParams(query).toString()
                     : '';
-                const res = await fetch(`${API_BASE}/api/moss2/maintenance/${path}${q}`, {
-                    method: 'POST',
-                    headers: maintenanceHeaders(),
-                });
+                const res = await fetchWithTimeout(
+                    `${API_BASE}/api/moss2/maintenance/${path}${q}`,
+                    { method: 'POST', headers: maintenanceHeaders() },
+                    timeoutMs == null ? 60000 : timeoutMs
+                );
                 const text = await res.text();
                 let data;
                 try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
@@ -4953,10 +4967,23 @@
             if (maintMsg) maintMsg.textContent = label + '…';
             try {
                 const out = await runner();
-                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + escHtml(label) + ' 完成</span><pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
-                await hydrateM2Board();
+                const accepted = out && out.accepted;
+                const head = accepted
+                    ? '<span class="text-neon-green">' + escHtml(label) + ' 已提交后台</span>'
+                    : '<span class="text-neon-green">' + escHtml(label) + ' 完成</span>';
+                const note = accepted
+                    ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || '任务在服务端执行，数分钟内完成；期间 API 应保持可连接。') + '</p>'
+                    : '';
+                if (maintMsg) {
+                    maintMsg.innerHTML = head + note + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
+                }
+                if (!accepted) await hydrateM2Board();
+                else void checkConnection();
             } catch (e) {
-                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(label) + ' 失败：' + escHtml(e.message || String(e)) + '</span>';
+                const msg = (e && e.name === 'AbortError')
+                    ? '请求超时：若正在拉 CSV/建 Profile，任务可能仍在后台执行，请稍后刷新页面'
+                    : (e.message || String(e));
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(label) + ' 失败：' + escHtml(msg) + '</span>';
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -5813,7 +5840,7 @@
                     + '取消 = 仅补缺 / 刷新超过 24h 的 stale'
                 );
                 void runM2MaintAction('maint-m2-bootstrap', 'Moss2 拉 CSV', () =>
-                    API.m2MaintenancePost('bootstrap-data', { force: force ? 'true' : 'false' }));
+                    API.m2MaintenancePost('bootstrap-data', { force: force ? 'true' : 'false' }, 25000));
             });
             document.getElementById('maint-m2-auto-provision')?.addEventListener('click', () => {
                 const forceEvolve = confirm(
@@ -5822,7 +5849,7 @@
                     + '取消 = 仅常规 suggest→创建/更新→进化→启用'
                 );
                 void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () =>
-                    API.m2MaintenancePost('auto-provision', { force_evolve: forceEvolve ? 'true' : 'false' }));
+                    API.m2MaintenancePost('auto-provision', { force_evolve: forceEvolve ? 'true' : 'false' }, 25000));
             });
             document.getElementById('maint-m2-enable-approved')?.addEventListener('click', () => {
                 void runM2MaintAction('maint-m2-enable-approved', 'Moss2 启用已批准', () =>
@@ -5925,13 +5952,14 @@
                 conn.innerHTML = '<span>API 已连接</span>';
             } catch (e) {
                 conn.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15';
-                conn.innerHTML = '<span>API 连接失败</span>';
+                const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
+                conn.innerHTML = '<span>API 连接失败' + escHtml(detail) + '</span>';
             }
         }
 
         async function init() {
             // enforceDashboardLayout 已由顶部 IIFE 在 DOM 加载时跑过；此处不重复
-            await checkConnection();
+            void checkConnection();
             // 每 60s 复查一次连接，断网后状态能自动更新；后台 tab 时跳过
             setInterval(() => {
                 if (document.visibilityState === 'visible') checkConnection();
