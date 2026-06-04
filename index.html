@@ -433,6 +433,80 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="Moss2 Factory纸面" id="m2-lane-section">
+            <div class="bg-surface rounded-xl border border-neon-blue/35 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">⚡</span> Moss2 Factory
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            与 Moss1 隔离 · factory <span class="font-mono text-neon-blue">HL 1.0.27</span> /
+                            <span class="font-mono text-neon-blue">EN 1.0.3</span> · 无每日寻优 · 信号=compute_signals
+                            · 默认 <span id="m2-default-variant-label" class="font-mono">en</span>/<span id="m2-default-template-label" class="font-mono">balanced</span>（币安）
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <span id="m2-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="m2-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-blue/40 hover:text-neon-blue">刷新</button>
+                    </div>
+                </div>
+                <div id="m2-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="m2-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
+                        <span id="m2-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                    </div>
+                    <div id="m2-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
+                    <div id="m2-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto min-h-[2rem] text-xs">加载…</div>
+                </div>
+                <div id="m2-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">Profile（机器人）</h3>
+                        <span id="m2-profiles-count" class="text-[11px] font-mono text-neon-blue">启用 0/0</span>
+                    </div>
+                    <div id="m2-profiles-list" class="text-text-muted text-xs mb-2">加载…</div>
+                    <p id="m2-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-2"></p>
+                    <details class="rounded-lg border border-neon-blue/25 bg-surface/60 p-3">
+                        <summary class="text-xs font-semibold text-neon-blue cursor-pointer">新建 / 回测</summary>
+                        <datalist id="m2-symbol-datalist"></datalist>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">名称</span>
+                                <input type="text" id="m2-create-name" maxlength="64" placeholder="btc-en" class="bg-surface-light border border-border rounded-lg px-2 py-1.5" /></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">标的</span>
+                                <input type="text" id="m2-create-symbol" list="m2-symbol-datalist" placeholder="BTCUSDT" class="bg-surface-light border border-border rounded-lg px-2 py-1.5 font-mono" /></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">引擎</span>
+                                <select id="m2-create-variant" class="bg-surface-light border border-border rounded-lg px-2 py-1.5" disabled title="运维固定币安 EN">
+                                    <option value="en" selected>EN · 币安 U 本位</option>
+                                </select></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">模板</span>
+                                <select id="m2-create-template" class="bg-surface-light border border-border rounded-lg px-2 py-1.5">
+                                    <option value="balanced">balanced</option>
+                                    <option value="momentum">momentum</option>
+                                    <option value="trend">trend</option>
+                                    <option value="mean_revert">mean_revert</option>
+                                </select></label>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2 items-center">
+                            <label class="flex items-center gap-1.5 text-xs text-text-secondary">
+                                <input type="checkbox" id="m2-create-enabled" class="rounded border-border" /> 创建后启用
+                            </label>
+                            <button type="button" id="m2-suggest-fill" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="GET /api/moss2/onboarding/suggest">按 Moss2 建议填充</button>
+                            <button type="button" id="m2-create-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium">创建 Profile</button>
+                            <button type="button" id="m2-bt-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40">工厂回测</button>
+                        </div>
+                        <pre id="m2-research-out" class="mt-2 text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto whitespace-pre-wrap break-words min-h-[2rem]">回测摘要显示于此。</pre>
+                    </details>
+                </div>
+                <div class="px-4 pt-2 pb-0 border-t border-border/30">
+                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
+                </div>
+                <div id="m2-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[24rem] border-t border-border/40 lane-board-scroll">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Moss2…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6" aria-label="值得关注与重点关注归档" id="worth-history-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
@@ -495,6 +569,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-lane-section', 'Moss量化实仓'),
+                pick('m2-lane-section', 'Moss2 Factory纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ];
@@ -548,6 +623,7 @@
                         <button type="button" id="maint-mom-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/momentum/maintenance/clear-db">清理动量库</button>
                         <button type="button" id="maint-jz-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/jiezhen/maintenance/clear-db">清理接针库</button>
                         <button type="button" id="maint-mq-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-purple/30 text-neon-purple text-xs font-medium hover:bg-neon-purple/10 hover:border-neon-purple/45" title="POST /api/moss-quant/maintenance/clear-db">清理 Moss 库</button>
+                        <button type="button" id="maint-m2-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/moss2/maintenance/clear-db">清理 Moss2 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -573,6 +649,7 @@
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
+                        <button type="button" id="maint-m2-paper-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/paper-scan">Moss2 纸面</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
@@ -1125,6 +1202,101 @@
             },
             async mqDailyCoreAdd(body) {
                 return API._mqPost('/api/moss-quant/daily-core-symbols', body || {});
+            },
+            async m2Summary() {
+                const res = await fetch(`${API_BASE}/api/moss2/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2Signals() {
+                const res = await fetch(`${API_BASE}/api/moss2/signals`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2Profiles() {
+                const res = await fetch(`${API_BASE}/api/moss2/profiles`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2Catalog() {
+                const res = await fetch(`${API_BASE}/api/moss2/catalog`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2Defaults(variant, template) {
+                const q = new URLSearchParams();
+                if (variant) q.set('variant', variant);
+                if (template) q.set('template', template);
+                const res = await fetch(`${API_BASE}/api/moss2/defaults?` + q.toString());
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2OnboardingSuggest(symbol) {
+                const q = new URLSearchParams({ symbol: String(symbol || '').trim().toUpperCase() });
+                const res = await fetch(`${API_BASE}/api/moss2/onboarding/suggest?` + q.toString());
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async m2TradeableSymbols() {
+                const res = await fetch(`${API_BASE}/api/moss2/onboarding/tradeable`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2CreateProfile(body) {
+                const res = await fetch(`${API_BASE}/api/moss2/profiles`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async m2PatchProfile(profileId, body) {
+                const res = await fetch(`${API_BASE}/api/moss2/profiles/${encodeURIComponent(profileId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {}),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async m2PaperScanLatest() {
+                const res = await fetch(`${API_BASE}/api/moss2/paper-scan/latest`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2Backtest(body) {
+                return API._mqPost('/api/moss2/backtest', body);
+            },
+            async m2PaperScan() {
+                return API._mqPost('/api/moss2/paper-scan', {});
+            },
+            async m2EvolveProfile(profileId, force) {
+                const q = force ? '?force=true' : '';
+                return API._mqPost('/api/moss2/profiles/' + profileId + '/evolve' + q, {});
+            },
+            async m2ApproveCandidate(profileId) {
+                return API._mqPost('/api/moss2/profiles/' + profileId + '/approve-candidate', {});
+            },
+            async m2ClearDb() {
+                const res = await fetch(`${API_BASE}/api/moss2/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             /** ZCT VWAP 信号列表；query 为 URLSearchParams 或对象 */
             async zctVwapSignals(query) {
@@ -4281,6 +4453,327 @@
                 <p class="text-[9px] text-text-muted mt-2">持仓行的标记价与浮盈在加载时按最新 K 线刷新；收益率按杠杆计保证金收益。</p>` + laneBoardScrollHint(items.length);
         }
 
+        let _m2ProfilesCache = [];
+
+        function renderM2Summary(sum) {
+            const el = document.getElementById('m2-summary');
+            if (!el) return;
+            if (!sum || !sum.ok) {
+                el.innerHTML = '';
+                return;
+            }
+            const rt = sum.runtime || {};
+            const vLbl = document.getElementById('m2-default-variant-label');
+            const tLbl = document.getElementById('m2-default-template-label');
+            if (vLbl) vLbl.textContent = rt.ops_variant || rt.default_variant || sum.default_variant || 'en';
+            if (tLbl) tLbl.textContent = rt.default_template || sum.default_template || 'balanced';
+            const pnl = Number(sum.total_pnl_usdt) || 0;
+            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const mode = sum.mode || 'paper';
+            const live = rt.real_mode ? 'Protocol 实盘' : '纸面';
+            const autoOn = !!rt.auto_provision;
+            const autoLine = autoOn
+                ? '全自动开 · 25 核心 · auto-approve ' + (rt.evolve_auto_approve ? '是' : '否')
+                : '手动建 Profile';
+            el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-neon-blue/40 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">运行</div>
+                    <div class="text-sm font-semibold text-neon-blue">${escHtml(mode)} · ${escHtml(live)}</div>
+                    <div class="text-[10px] text-text-muted">discipline ${rt.discipline_enabled ? '开' : '关'} · evolve ${rt.evolve_enabled ? '开' : '关'}</div>
+                    <div class="text-[10px] ${autoOn ? 'text-neon-green' : 'text-text-muted'}">${escHtml(autoLine)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-neon-blue/25 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">币安 EN 数据集</div>
+                    <div class="text-lg font-semibold font-mono">${escHtml(String(sum.en_datasets ?? 0))}</div>
+                    <div class="text-[9px] text-text-muted">${escHtml(rt.protocol_venue || 'binance')} · ${escHtml(rt.ops_variant || 'en')}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">启用 Profile</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}<span class="text-sm text-text-muted font-normal">/${escHtml(String(sum.profile_count ?? 0))}</span></div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">持仓</div>
+                    <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase">已实现 PnL</div>
+                    <div class="text-lg font-semibold font-mono ${pnlCls}">${escHtml((pnl > 0 ? '+' : '') + pnl.toFixed(2))} U</div>
+                </div>`;
+            const cnt = document.getElementById('m2-profiles-count');
+            if (cnt) cnt.textContent = '启用 ' + (sum.enabled_profiles ?? 0) + '/' + (sum.profile_count ?? 0);
+        }
+
+        function renderM2Profiles(profiles) {
+            const el = document.getElementById('m2-profiles-list');
+            if (!el) return;
+            if (!profiles || !profiles.length) {
+                el.innerHTML = '<span class="text-text-muted">暂无 Profile。在下方创建（参数已按 factory schema 默认填充）。</span>';
+                return;
+            }
+            el.innerHTML = profiles.map((p) => {
+                const en = !!p.enabled;
+                const btn = en
+                    ? '<button type="button" class="m2-toggle-en text-[10px] text-warn underline" data-id="' + p.id + '" data-en="0">停用</button>'
+                    : '<button type="button" class="m2-toggle-en text-[10px] text-neon-green underline" data-id="' + p.id + '" data-en="1">启用</button>';
+                return '<div class="flex flex-wrap items-center gap-2 py-1 border-b border-border/40">'
+                    + '<span class="font-mono font-semibold">#' + escHtml(String(p.id)) + ' ' + escHtml(p.symbol) + '</span>'
+                    + '<span class="text-[10px] text-neon-blue">' + escHtml(p.variant || 'en') + ' · ' + escHtml(p.template || 'balanced') + '</span>'
+                    + '<span class="text-[10px] text-text-muted">' + escHtml(p.name || '') + '</span>'
+                    + btn + '</div>';
+            }).join('');
+        }
+
+        function renderM2Scan(scan) {
+            const meta = document.getElementById('m2-scan-meta');
+            const chips = document.getElementById('m2-scan-summary');
+            const box = document.getElementById('m2-scan-status');
+            if (!box) return;
+            if (!scan || !scan.ok) {
+                if (meta) meta.textContent = '—';
+                if (chips) chips.innerHTML = '';
+                box.textContent = '暂无扫描记录';
+                return;
+            }
+            if (meta) meta.textContent = scan.has_run ? (scan.ran_at_utc || '').slice(0, 19) + ' UTC' : '尚无扫描';
+            if (chips) {
+                chips.innerHTML = [
+                    ['扫描', scan.profiles_scanned],
+                    ['开', scan.opens],
+                    ['平', scan.closes],
+                ].map(([k, v]) => '<span class="px-2 py-0.5 rounded border border-border/60 bg-surface/50">' + escHtml(k) + ' ' + escHtml(String(v ?? 0)) + '</span>').join('');
+            }
+            const lines = (scan.lines || []).slice(-40);
+            box.innerHTML = lines.length
+                ? lines.map((ln) => '<div class="font-mono text-[10px] py-0.5 border-b border-border/30">' + escHtml(ln) + '</div>').join('')
+                : '<span class="text-text-muted">本轮无明细</span>';
+        }
+
+        function renderM2SignalsTable(items) {
+            const root = document.getElementById('m2-signals-root');
+            if (!root) return;
+            if (!items || !items.length) {
+                root.innerHTML = '<p class="text-text-muted text-sm">暂无信号。创建并启用 Profile 后等待 15m 扫描。</p>';
+                return;
+            }
+            const rows = items.map((row) => {
+                const open = !row.outcome;
+                const pnl = open ? null : row.pnl_usdt;
+                const pnlNum = pnl != null && pnl !== '' ? Number(pnl) : null;
+                const pnlCls = pnlNum == null ? 'text-text-muted' : pnlNum > 0 ? 'text-neon-green' : pnlNum < 0 ? 'text-neon-red' : 'text-text-muted';
+                return `<tr class="border-b border-border/60">
+                    <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml(String(row.id))}</td>
+                    <td class="py-1.5 pr-2 font-mono">${escHtml(row.symbol)}</td>
+                    <td class="py-1.5 pr-2">${escHtml(row.side)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${mqFormatPx(row.entry_price)}</td>
+                    <td class="py-1.5 pr-2">${open ? '持仓' : escHtml(row.outcome || '')}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? escHtml(String(pnl)) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-[10px]">${escHtml(row.exit_rule || row.regime || '')}</td>
+                </tr>`;
+            }).join('');
+            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
+                <thead><tr class="border-b border-border/80 text-text-muted text-[10px] uppercase">
+                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">标的</th><th class="py-2 pr-2">方向</th>
+                    <th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2">状态</th>
+                    <th class="py-2 pr-2 text-right">PnL U</th><th class="py-2 pr-2">备注</th>
+                </tr></thead><tbody>${rows}</tbody></table>` + laneBoardScrollHint(items.length);
+        }
+
+        async function ensureM2CatalogDatalist() {
+            const dl = document.getElementById('m2-symbol-datalist');
+            if (!dl || dl.dataset.loaded === '1') return;
+            try {
+                const syms = new Set();
+                const [cat, trade] = await Promise.all([
+                    API.m2Catalog().catch(() => ({ en: [] })),
+                    API.m2TradeableSymbols().catch(() => ({ symbols: [] })),
+                ]);
+                (cat.en || []).forEach((x) => { if (x.symbol) syms.add(x.symbol); if (x.compact) syms.add(x.compact); });
+                (trade.symbols || []).forEach((s) => syms.add(s));
+                dl.innerHTML = [...syms].sort().map((s) => '<option value="' + escHtml(s) + '"></option>').join('');
+                dl.dataset.loaded = '1';
+            } catch (e) {
+                console.warn('m2 catalog:', e);
+            }
+        }
+
+        function formatM2SuggestSummary(s) {
+            if (!s) return '无建议数据';
+            const lines = [
+                'symbol: ' + (s.symbol || '—'),
+                'reason: ' + (s.reason || '—'),
+                'regime → ' + (s.regime_hint_template || '—'),
+                '推荐模板: ' + (s.recommended_template || '—'),
+                '推荐名称: ' + (s.recommended_name || '—'),
+                '创建后启用: ' + (s.recommended_enabled ? '是（回测过关）' : '否（建议先观察）'),
+            ];
+            const mix = s.regime_recent || {};
+            const mixStr = Object.keys(mix).map((k) => k + '=' + ((mix[k] * 100) || 0).toFixed(1) + '%').join(' · ');
+            if (mixStr) lines.push('近期 regime: ' + mixStr);
+            if (s.bars_analyzed) lines.push('K 线根数: ' + s.bars_analyzed);
+            if (s.data_csv) lines.push('csv: ' + s.data_csv);
+            (s.notes || []).forEach((n) => lines.push('· ' + n));
+            const scores = s.template_scores || [];
+            if (scores.length) {
+                lines.push('— 四模板回测 —');
+                scores.forEach((row) => {
+                    if (row.error) {
+                        lines.push(row.template + ': err ' + row.error);
+                        return;
+                    }
+                    lines.push(
+                        row.template + ': score=' + (row.score ?? '—')
+                            + ' sharpe=' + (row.sharpe ?? '—')
+                            + ' ret=' + (((row.total_return || 0) * 100).toFixed(2)) + '%'
+                            + ' trades=' + (row.total_trades ?? '—')
+                            + (row.passes_discipline ? ' ✓' : '')
+                    );
+                });
+            }
+            (s.workflow || []).forEach((w) => lines.push('→ ' + w));
+            return lines.join('\n');
+        }
+
+        function applyM2SuggestToForm(s) {
+            const nameEl = document.getElementById('m2-create-name');
+            const symEl = document.getElementById('m2-create-symbol');
+            const tplEl = document.getElementById('m2-create-template');
+            const enEl = document.getElementById('m2-create-enabled');
+            if (symEl && s.symbol) symEl.value = s.symbol;
+            if (nameEl && s.recommended_name) nameEl.value = s.recommended_name;
+            if (tplEl && s.recommended_template) {
+                const opt = [...tplEl.options].find((o) => o.value === s.recommended_template);
+                if (opt) tplEl.value = s.recommended_template;
+            }
+            if (enEl) enEl.checked = !!s.recommended_enabled;
+        }
+
+        async function fillM2FromOnboardingSuggest() {
+            const msg = document.getElementById('m2-profiles-msg');
+            const out = document.getElementById('m2-research-out');
+            const symbol = (document.getElementById('m2-create-symbol')?.value || '').trim().toUpperCase() || 'BTCUSDT';
+            if (msg) msg.textContent = '读取 Moss2 建议…';
+            if (out) out.textContent = '分析 regime / 回测中…';
+            try {
+                const s = await API.m2OnboardingSuggest(symbol);
+                if (!s.ok) {
+                    if (msg) msg.innerHTML = '<span class="text-warn">' + escHtml(s.reason || '建议不可用') + '</span>';
+                    if (out) out.textContent = formatM2SuggestSummary(s);
+                    return;
+                }
+                applyM2SuggestToForm(s);
+                if (msg) msg.innerHTML = '<span class="text-neon-green">已填充 ' + escHtml(s.symbol || symbol) + ' · ' + escHtml(s.recommended_template || '') + '</span>';
+                if (out) out.textContent = formatM2SuggestSummary(s);
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+                if (out) out.textContent = e.message || String(e);
+            }
+        }
+
+        async function hydrateM2Board() {
+            const sigRoot = document.getElementById('m2-signals-root');
+            const tsEl = document.getElementById('m2-ts');
+            if (!sigRoot) return;
+            sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss2…</div>';
+            try {
+                const [sum, profiles, sig, scan] = await Promise.all([
+                    API.m2Summary(),
+                    API.m2Profiles(),
+                    API.m2Signals(),
+                    API.m2PaperScanLatest().catch(() => null),
+                ]);
+                _m2ProfilesCache = Array.isArray(profiles) ? profiles : [];
+                renderM2Summary(sum);
+                renderM2Profiles(_m2ProfilesCache);
+                renderM2Scan(scan);
+                renderM2SignalsTable(sig.signals || []);
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } catch (e) {
+                console.error('moss2:', e);
+                sigRoot.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e.message || '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
+        function initM2PanelOnce() {
+            if (initM2PanelOnce._done) return;
+            initM2PanelOnce._done = true;
+            void ensureM2CatalogDatalist();
+            document.getElementById('m2-suggest-fill')?.addEventListener('click', () => void fillM2FromOnboardingSuggest());
+            document.getElementById('m2-create-btn')?.addEventListener('click', () => void submitM2CreateProfile());
+            document.getElementById('m2-bt-run')?.addEventListener('click', () => void runM2Backtest());
+            document.getElementById('m2-profiles-list')?.addEventListener('click', (ev) => {
+                const btn = ev.target.closest('.m2-toggle-en');
+                if (!btn) return;
+                const id = btn.getAttribute('data-id');
+                const en = btn.getAttribute('data-en') === '1';
+                void toggleM2ProfileEnabled(id, en);
+            });
+        }
+
+        async function submitM2CreateProfile() {
+            const msg = document.getElementById('m2-profiles-msg');
+            const name = (document.getElementById('m2-create-name')?.value || '').trim();
+            const symbol = (document.getElementById('m2-create-symbol')?.value || '').trim().toUpperCase();
+            const variant = document.getElementById('m2-create-variant')?.value || 'en';
+            const template = document.getElementById('m2-create-template')?.value || 'balanced';
+            const enabled = !!document.getElementById('m2-create-enabled')?.checked;
+            if (!name || !symbol) {
+                if (msg) msg.innerHTML = '<span class="text-warn">请填写名称与标的</span>';
+                return;
+            }
+            if (msg) msg.textContent = '创建中…';
+            try {
+                await API.m2CreateProfile({ name, symbol, variant: 'en', template, enabled });
+                if (msg) msg.innerHTML = '<span class="text-neon-green">已创建 ' + escHtml(symbol) + '</span>';
+                await hydrateM2Board();
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            }
+        }
+
+        async function toggleM2ProfileEnabled(profileId, enable) {
+            const msg = document.getElementById('m2-profiles-msg');
+            try {
+                await API.m2PatchProfile(profileId, { enabled: !!enable });
+                if (msg) msg.innerHTML = '<span class="text-neon-green">#' + escHtml(String(profileId)) + (enable ? ' 已启用' : ' 已停用') + '</span>';
+                await hydrateM2Board();
+            } catch (e) {
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            }
+        }
+
+        async function runM2Backtest() {
+            const out = document.getElementById('m2-research-out');
+            const symbol = (document.getElementById('m2-create-symbol')?.value || '').trim().toUpperCase();
+            const template = document.getElementById('m2-create-template')?.value || 'balanced';
+            if (!symbol) {
+                if (out) out.textContent = '请填写标的';
+                return;
+            }
+            if (out) out.textContent = '回测中…';
+            try {
+                const res = await API.m2Backtest({ symbol, variant: 'en', template, limit_bars: 1500 });
+                const s = res.summary || {};
+                const d = res.discipline || s.discipline || {};
+                const ev = (d.ev || {});
+                if (out) {
+                    out.textContent = [
+                        'engine: ' + (res.engine || ''),
+                        'return: ' + ((s.total_return || 0) * 100).toFixed(2) + '%',
+                        'trades: ' + (s.total_trades || 0),
+                        'sharpe: ' + (s.sharpe || 0),
+                        'mdd: ' + ((s.max_drawdown || 0) * 100).toFixed(2) + '%',
+                        'ev/trade: ' + (ev.ev_per_trade_pct != null ? ev.ev_per_trade_pct : '—'),
+                        'half_kelly: ' + ((d.kelly || {}).half_kelly_fraction ?? '—'),
+                        'dominant: ' + ((d.signal_contrib || {}).dominant_dimension || '—'),
+                        'csv: ' + (res.data_csv || ''),
+                    ].join('\n');
+                }
+            } catch (e) {
+                if (out) out.textContent = e.message || String(e);
+            }
+        }
+
         async function hydrateMqBoard() {
             const sigRoot = document.getElementById('mq-signals-root');
             const tsEl = document.getElementById('mq-ts');
@@ -4388,6 +4881,31 @@
             });
             updateMqTemplateHint();
             void ensureMqUniverseDatalist();
+        }
+
+        async function clearM2LaneData() {
+            const maintMsg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-m2-clear-db');
+            if (!getMaintenanceToken()) {
+                const hint = '请先在维护面板保存维护令牌';
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-warn">' + escHtml(hint) + '</span>';
+                else alert(hint);
+                return;
+            }
+            if (!confirm('确定清空 Moss2（Factory）全部 Profile / 信号 / 回测 / 扫描记录？不可撤销，且不影响 Moss1。')) return;
+            if (btn) btn.disabled = true;
+            if (maintMsg) maintMsg.textContent = 'Moss2 清库请求中…';
+            try {
+                const out = await API.m2ClearDb();
+                const line = 'Moss2 已清库 · signals=' + escHtml(String(out.deleted_moss2_signals ?? 0))
+                    + ' · profiles=' + escHtml(String(out.deleted_moss2_profiles ?? 0));
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + line + '</span>';
+                await hydrateM2Board();
+            } catch (e) {
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         async function clearMqLaneData() {
@@ -5196,7 +5714,19 @@
             document.getElementById('maint-mom-clear-db')?.addEventListener('click', () => void clearMomLaneData());
             document.getElementById('maint-jz-clear-db')?.addEventListener('click', () => void clearJzLaneData());
             document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
+            document.getElementById('maint-m2-clear-db')?.addEventListener('click', () => void clearM2LaneData());
             document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
+            document.getElementById('maint-m2-paper-scan')?.addEventListener('click', async () => {
+                const msg = document.getElementById('maint-msg');
+                try {
+                    if (msg) msg.textContent = 'Moss2 纸面扫描中…';
+                    const r = await API.m2PaperScan();
+                    if (msg) msg.innerHTML = '<span class="text-neon-green">Moss2 完成：开 ' + (r.opens || 0) + ' 平 ' + (r.closes || 0) + '</span>';
+                    await hydrateM2Board();
+                } catch (e) {
+                    if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+                }
+            });
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
@@ -5277,6 +5807,7 @@
                 pick('oi-lane-section', '收筹池 OI 监控'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-lane-section', 'Moss量化实仓'),
+                pick('m2-lane-section', 'Moss2 Factory纸面'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
                 main.querySelector('section[data-s6-panel="1"]'),
             ].forEach((el) => {
@@ -5316,6 +5847,9 @@
             initMqProfilesPanelOnce();
             void hydrateMqBoard();
             document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
+            initM2PanelOnce();
+            void hydrateM2Board();
+            document.getElementById('m2-refresh')?.addEventListener('click', () => void hydrateM2Board());
             document.getElementById('zct-vwap-root')?.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest && ev.target.closest('[data-zct-manual]');
                 if (!btn) return;
