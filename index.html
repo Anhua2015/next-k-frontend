@@ -4503,24 +4503,44 @@
             if (cnt) cnt.textContent = '启用 ' + (sum.enabled_profiles ?? 0) + '/' + (sum.profile_count ?? 0);
         }
 
+        function m2EvolutionBadge(p) {
+            const st = String(p.evolution_status || 'baseline');
+            const cls = st === 'approved' ? 'text-neon-green border-neon-green/35 bg-neon-green/10'
+                : st === 'culled' ? 'text-warn border-warn/35 bg-warn/10'
+                : st === 'no_candidate' ? 'text-neon-red border-neon-red/30 bg-neon-red/5'
+                : 'text-text-muted border-border/60 bg-surface-light/50';
+            return '<span class="text-[9px] px-1.5 py-0.5 rounded border font-mono ' + cls + '">' + escHtml(st) + '</span>';
+        }
+
         function renderM2Profiles(profiles) {
             const el = document.getElementById('m2-profiles-list');
             if (!el) return;
             if (!profiles || !profiles.length) {
-                el.innerHTML = '<span class="text-text-muted">暂无 Profile。在下方创建（参数已按 factory schema 默认填充）。</span>';
+                el.innerHTML = '<span class="text-text-muted">暂无 Profile。全自动会创建 25 核心；也可在下方手动新建。</span>';
                 return;
             }
-            el.innerHTML = profiles.map((p) => {
+            const head = '<div class="hidden sm:grid sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto] gap-2 py-1 text-[9px] uppercase text-text-muted border-b border-border/50">'
+                + '<span>标的 / 名称</span><span>模板 · 进化</span><span>状态</span><span>操作</span></div>';
+            const rows = profiles.map((p) => {
                 const en = !!p.enabled;
+                const enBadge = en
+                    ? '<span class="text-[9px] text-neon-green">运行中</span>'
+                    : '<span class="text-[9px] text-text-muted">已停用</span>';
                 const btn = en
-                    ? '<button type="button" class="m2-toggle-en text-[10px] text-warn underline" data-id="' + p.id + '" data-en="0">停用</button>'
-                    : '<button type="button" class="m2-toggle-en text-[10px] text-neon-green underline" data-id="' + p.id + '" data-en="1">启用</button>';
-                return '<div class="flex flex-wrap items-center gap-2 py-1 border-b border-border/40">'
-                    + '<span class="font-mono font-semibold">#' + escHtml(String(p.id)) + ' ' + escHtml(p.symbol) + '</span>'
-                    + '<span class="text-[10px] text-neon-blue">' + escHtml(p.variant || 'en') + ' · ' + escHtml(p.template || 'balanced') + '</span>'
-                    + '<span class="text-[10px] text-text-muted">' + escHtml(p.name || '') + '</span>'
-                    + btn + '</div>';
+                    ? '<button type="button" class="m2-toggle-en text-[10px] px-2 py-0.5 rounded border border-warn/40 text-warn hover:bg-warn/10" data-id="' + p.id + '" data-en="0">停用</button>'
+                    : '<button type="button" class="m2-toggle-en text-[10px] px-2 py-0.5 rounded border border-neon-green/40 text-neon-green hover:bg-neon-green/10" data-id="' + p.id + '" data-en="1">启用</button>';
+                const ver = p.approved_params_version || p.params_version || '';
+                return '<div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto] gap-2 items-center py-2 border-b border-border/40 hover:bg-surface-light/30">'
+                    + '<div><span class="font-mono font-semibold text-sm">' + escHtml(p.symbol) + '</span>'
+                    + ' <span class="text-[10px] text-text-muted">#' + escHtml(String(p.id)) + '</span>'
+                    + '<div class="text-[10px] text-text-muted truncate">' + escHtml(p.name || '') + '</div></div>'
+                    + '<div class="text-[10px]"><span class="text-neon-blue font-mono">' + escHtml(p.template || 'balanced') + '</span>'
+                    + (ver ? ' <span class="text-text-muted">· ' + escHtml(ver) + '</span>' : '')
+                    + '<div class="mt-0.5">' + m2EvolutionBadge(p) + '</div></div>'
+                    + '<div>' + enBadge + '</div>'
+                    + '<div class="justify-self-end">' + btn + '</div></div>';
             }).join('');
+            el.innerHTML = head + rows;
         }
 
         function renderM2Scan(scan) {
