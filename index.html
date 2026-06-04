@@ -1223,13 +1223,15 @@
             async mqDailyCoreAdd(body) {
                 return API._mqPost('/api/moss-quant/daily-core-symbols', body || {});
             },
-            async m2Summary() {
-                const res = await fetch(`${API_BASE}/api/moss2/summary`);
+            async m2Summary(refreshMarks) {
+                const q = refreshMarks === false ? '?refresh=false' : '';
+                const res = await fetch(`${API_BASE}/api/moss2/summary${q}`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
-            async m2Signals() {
-                const res = await fetch(`${API_BASE}/api/moss2/signals`);
+            async m2Signals(refreshMarks) {
+                const q = refreshMarks === false ? '?refresh=false' : '';
+                const res = await fetch(`${API_BASE}/api/moss2/signals${q}`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -1289,8 +1291,9 @@
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
-            async m2PaperScanLatest() {
-                const res = await fetch(`${API_BASE}/api/moss2/paper-scan/latest`);
+            async m2PaperScanLatest(refreshMarks) {
+                const q = refreshMarks === false ? '?refresh=false' : '';
+                const res = await fetch(`${API_BASE}/api/moss2/paper-scan/latest${q}`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -1298,7 +1301,20 @@
                 return API._mqPost('/api/moss2/backtest', body);
             },
             async m2PaperScan() {
-                return API._mqPost('/api/moss2/paper-scan', {});
+                const res = await fetchWithTimeout(
+                    `${API_BASE}/api/moss2/paper-scan`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: '{}',
+                    },
+                    20000
+                );
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
             },
             async m2EvolveProfile(profileId, force) {
                 const q = force ? '?force=true' : '';
@@ -4504,35 +4520,53 @@
             if (tLbl) tLbl.textContent = rt.default_template || sum.default_template || 'balanced';
             const pnl = Number(sum.total_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
-            const mode = sum.mode || 'paper';
-            const live = rt.real_mode ? 'Protocol 实盘' : '纸面';
+            const modeLbl = sum.mode === 'paper'
+                ? (sum.real_mode ? '纸面 · 实盘通知开/平' : '纸面')
+                : String(sum.mode || '纸面');
+            const wInit = Number(sum.wallet_initial_usdt);
+            const wBal = Number(sum.wallet_balance_usdt);
+            const equity = Number(sum.equity_usdt);
+            const upnl = Number(sum.unrealized_pnl_usdt);
+            const walletInitKnown = Number.isFinite(wInit);
+            const walletBalKnown = Number.isFinite(wBal);
+            const equityKnown = Number.isFinite(equity);
+            const walletValue = equityKnown ? fmtZctPx(equity, 2) : (walletBalKnown ? fmtZctPx(wBal, 2) : '—');
+            const balCls = equityKnown && walletInitKnown
+                ? (equity >= wInit ? 'text-neon-green' : 'text-neon-red')
+                : 'text-text-primary';
+            const profileCap = Number(sum.profile_capital_usdt);
+            const profileCapTxt = Number.isFinite(profileCap) ? fmtZctPx(profileCap, 0) : '10000';
             const autoOn = !!rt.auto_provision;
+            const maxEn = rt.max_auto_enabled_profiles != null ? String(rt.max_auto_enabled_profiles) : '12';
+            const maxOpen = rt.portfolio_max_open_positions != null ? String(rt.portfolio_max_open_positions) : '6';
             const autoLine = autoOn
-                ? '全自动开 · 25 核心 · auto-approve ' + (rt.evolve_auto_approve ? '是' : '否')
+                ? '精品预设 · 启用≤' + escHtml(maxEn) + ' · 持仓≤' + escHtml(maxOpen)
                 : '手动建 Profile';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-neon-blue/40 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">运行</div>
-                    <div class="text-sm font-semibold text-neon-blue">${escHtml(mode)} · ${escHtml(live)}</div>
+                    <div class="text-sm font-semibold text-neon-blue">${escHtml(modeLbl)}</div>
                     <div class="text-[10px] text-text-muted">discipline ${rt.discipline_enabled ? '开' : '关'} · evolve ${rt.evolve_enabled ? '开' : '关'}</div>
                     <div class="text-[10px] ${autoOn ? 'text-neon-green' : 'text-text-muted'}">${escHtml(autoLine)}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-neon-blue/25 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">币安 EN 数据集</div>
-                    <div class="text-lg font-semibold font-mono">${escHtml(String(sum.en_datasets ?? 0))}</div>
-                    <div class="text-[9px] text-text-muted">${escHtml(rt.protocol_venue || 'binance')} · ${escHtml(rt.ops_variant || 'en')}</div>
+                    <div class="text-text-muted text-[10px] uppercase">纸面权益</div>
+                    <div class="text-lg font-semibold font-mono ${balCls}">${escHtml(walletValue)} U</div>
+                    <div class="text-[9px] text-text-muted">初始 ${walletInitKnown ? fmtZctPx(wInit, 0) : '—'} · 单 Profile ${escHtml(profileCapTxt)}U</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">启用 Profile</div>
+                    <div class="text-text-muted text-[10px] uppercase">启用 / 持仓</div>
                     <div class="text-lg font-semibold">${escHtml(String(sum.enabled_profiles ?? 0))}<span class="text-sm text-text-muted font-normal">/${escHtml(String(sum.profile_count ?? 0))}</span></div>
+                    <div class="text-[10px] font-mono text-text-muted">持仓 ${escHtml(String(sum.open_positions ?? 0))}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase">持仓</div>
-                    <div class="text-lg font-semibold">${escHtml(String(sum.open_positions ?? 0))}</div>
+                    <div class="text-text-muted text-[10px] uppercase">浮盈</div>
+                    <div class="text-lg font-semibold font-mono ${upnl >= 0 ? 'text-neon-green' : 'text-neon-red'}">${Number.isFinite(upnl) ? ((upnl > 0 ? '+' : '') + fmtZctPx(upnl, 2)) : '—'} U</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
                     <div class="text-text-muted text-[10px] uppercase">已实现 PnL</div>
                     <div class="text-lg font-semibold font-mono ${pnlCls}">${escHtml((pnl > 0 ? '+' : '') + pnl.toFixed(2))} U</div>
+                    <div class="text-[9px] text-text-muted">EN 数据 ${escHtml(String(sum.en_datasets ?? 0))} 套</div>
                 </div>`;
             const cnt = document.getElementById('m2-profiles-count');
             if (cnt) cnt.textContent = '启用 ' + (sum.enabled_profiles ?? 0) + '/' + (sum.profile_count ?? 0);
@@ -4620,30 +4654,48 @@
             const root = document.getElementById('m2-signals-root');
             if (!root) return;
             if (!items || !items.length) {
-                root.innerHTML = '<p class="text-text-muted text-sm">暂无信号。创建并启用 Profile 后等待 15m 扫描。</p>';
+                root.innerHTML = '<p class="text-text-muted text-sm">暂无纸面信号。创建并启用 Profile 后等待 15m 扫描或维护面板「Moss2 纸面」。</p>';
                 return;
             }
             const rows = items.map((row) => {
                 const open = !row.outcome;
-                const pnl = open ? null : row.pnl_usdt;
-                const pnlNum = pnl != null && pnl !== '' ? Number(pnl) : null;
-                const pnlCls = pnlNum == null ? 'text-text-muted' : pnlNum > 0 ? 'text-neon-green' : pnlNum < 0 ? 'text-neon-red' : 'text-text-muted';
+                const pnl = open ? row.unrealized_pnl_usdt : row.pnl_usdt;
+                const pnlCls = pxClass(Number(pnl));
+                const notional = row.virtual_notional_usdt != null
+                    ? fmtZctPx(row.virtual_notional_usdt, 0)
+                    : '—';
+                let pnlPct = row.pnl_pct != null ? Number(row.pnl_pct) : null;
+                if (open && (pnlPct == null || !Number.isFinite(pnlPct))) {
+                    pnlPct = mqMarginPnlPct(row);
+                }
+                const pnlPctTxt = pnlPct != null && Number.isFinite(pnlPct)
+                    ? (pnlPct > 0 ? '+' : '') + pnlPct.toFixed(2) + '%'
+                    : '—';
+                const pnlPctCls = pnlPct > 0 ? 'text-neon-green' : pnlPct < 0 ? 'text-neon-red' : 'text-text-muted';
                 return `<tr class="border-b border-border/60">
                     <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml(String(row.id))}</td>
+                    <td class="py-1.5 pr-2 font-mono text-[10px]">${escHtml((row.recorded_at_utc || '').slice(0, 19))}</td>
+                    <td class="py-1.5 pr-2 font-mono text-[10px] text-text-muted">p${escHtml(String(row.profile_id != null ? row.profile_id : '—'))}</td>
                     <td class="py-1.5 pr-2 font-mono">${escHtml(row.symbol)}</td>
                     <td class="py-1.5 pr-2">${escHtml(row.side)}</td>
                     <td class="py-1.5 pr-2 text-right font-mono">${mqFormatPx(row.entry_price)}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono">${open ? mqFormatPx(row.mark_price) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono text-text-muted">${notional}</td>
                     <td class="py-1.5 pr-2">${open ? '持仓' : escHtml(row.outcome || '')}</td>
-                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? escHtml(String(pnl)) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlCls}">${pnl != null ? ((Number(pnl) > 0 ? '+' : '') + fmtZctPx(pnl, 2)) : '—'}</td>
+                    <td class="py-1.5 pr-2 text-right font-mono ${pnlPctCls}">${escHtml(pnlPctTxt)}</td>
                     <td class="py-1.5 pr-2 text-[10px]">${escHtml(row.exit_rule || row.regime || '')}</td>
                 </tr>`;
             }).join('');
-            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[720px]">
+            root.innerHTML = `<table class="w-full text-left text-xs border-collapse min-w-[1060px]">
                 <thead><tr class="border-b border-border/80 text-text-muted text-[10px] uppercase">
-                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">标的</th><th class="py-2 pr-2">方向</th>
-                    <th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2">状态</th>
-                    <th class="py-2 pr-2 text-right">PnL U</th><th class="py-2 pr-2">备注</th>
-                </tr></thead><tbody>${rows}</tbody></table>` + laneBoardScrollHint(items.length);
+                    <th class="py-2 pr-2">#</th><th class="py-2 pr-2">UTC</th><th class="py-2 pr-2">机器人</th><th class="py-2 pr-2">标的</th>
+                    <th class="py-2 pr-2">方向</th><th class="py-2 pr-2 text-right">入场</th><th class="py-2 pr-2 text-right">标记</th>
+                    <th class="py-2 pr-2 text-right">名义U</th><th class="py-2 pr-2">状态</th>
+                    <th class="py-2 pr-2 text-right">浮盈U</th><th class="py-2 pr-2 text-right">收益率</th>
+                    <th class="py-2 pr-2">备注</th>
+                </tr></thead><tbody>${rows}</tbody></table>
+                <p class="text-[9px] text-text-muted mt-2">纸面持仓按最新 K 线刷新标记价与浮盈；Protocol 失败仍会记入本地纸面（与 Moss 一致）。</p>` + laneBoardScrollHint(items.length);
         }
 
         async function ensureM2CatalogDatalist() {
@@ -4744,10 +4796,10 @@
             sigRoot.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 Moss2…</div>';
             try {
                 const [sum, profiles, sig, scan] = await Promise.all([
-                    API.m2Summary(),
+                    API.m2Summary(false),
                     API.m2Profiles(),
-                    API.m2Signals(),
-                    API.m2PaperScanLatest().catch(() => null),
+                    API.m2Signals(true),
+                    API.m2PaperScanLatest(false).catch(() => null),
                 ]);
                 _m2ProfilesCache = Array.isArray(profiles) ? profiles : [];
                 renderM2Summary(sum);
@@ -4968,16 +5020,21 @@
             try {
                 const out = await runner();
                 const accepted = out && out.accepted;
-                const head = accepted
-                    ? '<span class="text-neon-green">' + escHtml(label) + ' 已提交后台</span>'
-                    : '<span class="text-neon-green">' + escHtml(label) + ' 完成</span>';
-                const note = accepted
-                    ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || '任务在服务端执行，数分钟内完成；期间 API 应保持可连接。') + '</p>'
-                    : '';
+                const failed = out && out.ok === false;
+                const head = failed
+                    ? '<span class="text-warn">' + escHtml(label) + ' 未执行</span>'
+                    : accepted
+                        ? '<span class="text-neon-green">' + escHtml(label) + ' 已提交后台</span>'
+                        : '<span class="text-neon-green">' + escHtml(label) + ' 完成</span>';
+                const note = failed
+                    ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || out.error || '') + '</p>'
+                    : accepted
+                        ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || '任务在服务端执行，数分钟内完成；期间 API 应保持可连接。完成后点 Moss2 刷新。') + '</p>'
+                        : '';
                 if (maintMsg) {
                     maintMsg.innerHTML = head + note + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
                 }
-                if (!accepted) await hydrateM2Board();
+                if (!accepted && !failed) await hydrateM2Board();
                 else void checkConnection();
             } catch (e) {
                 const msg = (e && e.name === 'AbortError')
@@ -5822,16 +5879,8 @@
             document.getElementById('maint-mq-clear-db')?.addEventListener('click', () => void clearMqLaneData());
             document.getElementById('maint-m2-clear-db')?.addEventListener('click', () => void clearM2LaneData());
             document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
-            document.getElementById('maint-m2-paper-scan')?.addEventListener('click', async () => {
-                const msg = document.getElementById('maint-msg');
-                try {
-                    if (msg) msg.textContent = 'Moss2 纸面扫描中…';
-                    const r = await API.m2PaperScan();
-                    if (msg) msg.innerHTML = '<span class="text-neon-green">Moss2 完成：开 ' + (r.opens || 0) + ' 平 ' + (r.closes || 0) + '</span>';
-                    await hydrateM2Board();
-                } catch (e) {
-                    if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
-                }
+            document.getElementById('maint-m2-paper-scan')?.addEventListener('click', () => {
+                void runM2MaintAction('maint-m2-paper-scan', 'Moss2 纸面扫描', () => API.m2PaperScan());
             });
             document.getElementById('maint-m2-bootstrap')?.addEventListener('click', () => {
                 const force = confirm(
