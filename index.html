@@ -655,6 +655,13 @@
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
                     </div>
+                    <div class="text-text-secondary text-[10px] font-medium mt-2">Moss2 Factory 运维</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">25 核心：先拉 CSV，再 suggest→建 Profile→进化→启用。耗时数分钟，请先看下方 maint-msg。</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-m2-bootstrap" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss2/maintenance/bootstrap-data · 确定=force 重拉；取消=仅补缺/stale">Moss2 拉 CSV</button>
+                        <button type="button" id="maint-m2-auto-provision" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="POST /api/moss2/maintenance/auto-provision">Moss2 全自动建 Profile</button>
+                        <button type="button" id="maint-m2-enable-approved" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/maintenance/enable-approved">Moss2 启用已批准</button>
+                    </div>
                 </div>
             </div>
             <div id="maint-mq-advanced" class="mt-4 pt-3 border-t border-border/50 space-y-3">
@@ -1289,6 +1296,20 @@
             },
             async m2ClearDb() {
                 const res = await fetch(`${API_BASE}/api/moss2/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async m2MaintenancePost(path, query) {
+                const q = query && Object.keys(query).length
+                    ? '?' + new URLSearchParams(query).toString()
+                    : '';
+                const res = await fetch(`${API_BASE}/api/moss2/maintenance/${path}${q}`, {
                     method: 'POST',
                     headers: maintenanceHeaders(),
                 });
@@ -4505,7 +4526,7 @@
 
         function m2EvolutionHint(st) {
             if (st === 'no_candidate') {
-                return '四模板回测未过闸门（成交/EV/Sharpe/回撤），系统不会自动启用；请刷新 CSV 后点「全自动建 Profile」或单币 evolve';
+                return '四模板回测未过闸门（成交/EV/Sharpe/回撤），系统不会自动启用；维护面板先「拉 CSV」再「全自动建 Profile」';
             }
             if (st === 'approved') return '参数已发布，可启用或等待自动启用';
             if (st === 'culled') return '淘汰停用';
@@ -4914,6 +4935,31 @@
             });
             updateMqTemplateHint();
             void ensureMqUniverseDatalist();
+        }
+
+        function requireMaintTokenForM2(maintMsg) {
+            if (getMaintenanceToken()) return true;
+            const hint = '请先在维护面板保存维护令牌（与 NEXT_K_MAINTENANCE_TOKEN 一致）';
+            if (maintMsg) maintMsg.innerHTML = '<span class="text-warn">' + escHtml(hint) + '</span>';
+            else alert(hint);
+            return false;
+        }
+
+        async function runM2MaintAction(btnId, label, runner) {
+            const maintMsg = document.getElementById('maint-msg');
+            const btn = document.getElementById(btnId);
+            if (!requireMaintTokenForM2(maintMsg)) return;
+            if (btn) btn.disabled = true;
+            if (maintMsg) maintMsg.textContent = label + '…';
+            try {
+                const out = await runner();
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + escHtml(label) + ' 完成</span><pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
+                await hydrateM2Board();
+            } catch (e) {
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(label) + ' 失败：' + escHtml(e.message || String(e)) + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         async function clearM2LaneData() {
@@ -5759,6 +5805,28 @@
                 } catch (e) {
                     if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
                 }
+            });
+            document.getElementById('maint-m2-bootstrap')?.addEventListener('click', () => {
+                const force = confirm(
+                    'Moss2 拉取 25 核心 CSV（90 天滚动）\n\n'
+                    + '确定 = force 重拉全部（先清理再拉，较慢）\n'
+                    + '取消 = 仅补缺 / 刷新超过 24h 的 stale'
+                );
+                void runM2MaintAction('maint-m2-bootstrap', 'Moss2 拉 CSV', () =>
+                    API.m2MaintenancePost('bootstrap-data', { force: force ? 'true' : 'false' }));
+            });
+            document.getElementById('maint-m2-auto-provision')?.addEventListener('click', () => {
+                const forceEvolve = confirm(
+                    'Moss2 全自动建 Profile（25 核心）\n\n'
+                    + '确定 = 对已存在 Profile 也强制全量 evolve\n'
+                    + '取消 = 仅常规 suggest→创建/更新→进化→启用'
+                );
+                void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () =>
+                    API.m2MaintenancePost('auto-provision', { force_evolve: forceEvolve ? 'true' : 'false' }));
+            });
+            document.getElementById('maint-m2-enable-approved')?.addEventListener('click', () => {
+                void runM2MaintAction('maint-m2-enable-approved', 'Moss2 启用已批准', () =>
+                    API.m2MaintenancePost('enable-approved', {}));
             });
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
