@@ -496,6 +496,14 @@
                             <button type="button" id="m2-create-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium">创建 Profile</button>
                             <button type="button" id="m2-bt-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40">工厂回测</button>
                         </div>
+                        <div class="mt-2 flex flex-wrap gap-2 items-center text-xs">
+                            <label class="flex items-center gap-1 text-text-muted">报告 Profile #
+                                <input type="number" id="m2-report-profile-id" min="1" placeholder="ID" class="w-16 bg-surface-light border border-border rounded px-1.5 py-1 font-mono text-text-primary" title="启用中的机器人 ID，见列表 #列" />
+                            </label>
+                            <button type="button" id="m2-report-backtest" class="btn-secondary px-2.5 py-1 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-[10px] hover:bg-neon-purple/15" title="最近回测 equity → QuantStats HTML">回测报告</button>
+                            <button type="button" id="m2-report-paper" class="btn-secondary px-2.5 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-[10px] hover:bg-neon-blue/15" title="纸面结算序列 → QuantStats HTML">纸面报告</button>
+                            <span id="m2-report-hint" class="text-[10px] text-text-muted"></span>
+                        </div>
                         <pre id="m2-research-out" class="mt-2 text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto whitespace-pre-wrap break-words min-h-[2rem]">回测摘要显示于此。</pre>
                     </details>
                 </div>
@@ -657,7 +665,7 @@
                         <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">Moss2 Factory 运维</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">25 核心：先拉 CSV，再 suggest→建 Profile→进化→启用。耗时数分钟，请先看下方 maint-msg。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">调度器<strong>默认全自动</strong>：启动/每周日拉 CSV 后链式建 Profile→启用；15m 纸面扫描。下方按钮仅补救/强制。最近自动结果：<span id="m2-auto-last-run" class="text-text-secondary">加载中…</span></p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-m2-bootstrap" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss2/maintenance/bootstrap-data · 确定=force 重拉；取消=仅补缺/stale">Moss2 拉 CSV</button>
                         <button type="button" id="maint-m2-auto-provision" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="POST /api/moss2/maintenance/auto-provision">Moss2 全自动建 Profile</button>
@@ -1300,6 +1308,35 @@
             },
             async m2Backtest(body) {
                 return API._mqPost('/api/moss2/backtest', body);
+            },
+            m2TearsheetHtmlUrl(profileId, mode, runBacktest) {
+                const q = new URLSearchParams({ mode: mode || 'backtest', format: 'html' });
+                if (runBacktest) q.set('run_backtest', 'true');
+                return `${API_BASE}/api/moss2/profiles/${encodeURIComponent(String(profileId))}/tearsheet?${q.toString()}`;
+            },
+            async m2TearsheetMeta(profileId, mode, runBacktest) {
+                const q = new URLSearchParams({ mode: mode || 'backtest', format: 'json' });
+                if (runBacktest) q.set('run_backtest', 'true');
+                const res = await fetchWithTimeout(
+                    `${API_BASE}/api/moss2/profiles/${encodeURIComponent(String(profileId))}/tearsheet?${q.toString()}`,
+                    {},
+                    120000
+                );
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async m2ReportsStatus() {
+                const res = await fetch(`${API_BASE}/api/moss2/reports/status`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async m2LastAutoRun() {
+                const res = await fetch(`${API_BASE}/api/moss2/maintenance/last-auto-run`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
             async m2PaperScan(opts) {
                 const sync = !opts || opts.sync !== false;
@@ -4990,7 +5027,28 @@
             }
         }
 
+        async function refreshM2AutoLastRun() {
+            const el = document.getElementById('m2-auto-last-run');
+            if (!el) return;
+            try {
+                const row = await API.m2LastAutoRun();
+                if (!row || !row.has_run) {
+                    el.textContent = row && row.hint ? row.hint : '尚无记录（等调度器拉 CSV 链式跑完）';
+                    return;
+                }
+                const t = (row.saved_at_utc || '').replace('T', ' ').slice(0, 19);
+                const s = row.stats || {};
+                el.textContent = (t ? t + ' UTC · ' : '')
+                    + '触发 ' + (row.trigger || '—')
+                    + ' · 新建 ' + (s.created ?? 0)
+                    + ' · 启用 ' + (s.enabled_profiles ?? 0);
+            } catch (e) {
+                el.textContent = '读取失败';
+            }
+        }
+
         async function hydrateM2Board() {
+            void refreshM2AutoLastRun();
             const sigRoot = document.getElementById('m2-signals-root');
             const tsEl = document.getElementById('m2-ts');
             if (!sigRoot) return;
@@ -5008,6 +5066,11 @@
                 renderM2Profiles(_m2ProfilesCache);
                 renderM2PaperScan(scan);
                 renderM2SignalsTable(sig.signals || []);
+                const repInp = document.getElementById('m2-report-profile-id');
+                if (repInp && !repInp.value && _m2ProfilesCache.length) {
+                    const pick = _m2ProfilesCache.find((p) => p.enabled) || _m2ProfilesCache[0];
+                    if (pick) repInp.value = String(pick.id);
+                }
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
                 console.error('moss2:', e);
@@ -5023,6 +5086,8 @@
             document.getElementById('m2-suggest-fill')?.addEventListener('click', () => void fillM2FromOnboardingSuggest());
             document.getElementById('m2-create-btn')?.addEventListener('click', () => void submitM2CreateProfile());
             document.getElementById('m2-bt-run')?.addEventListener('click', () => void runM2Backtest());
+            document.getElementById('m2-report-backtest')?.addEventListener('click', () => void openM2Tearsheet('backtest', false));
+            document.getElementById('m2-report-paper')?.addEventListener('click', () => void openM2Tearsheet('paper', false));
             document.getElementById('m2-profiles-list')?.addEventListener('click', (ev) => {
                 const btn = ev.target.closest('.m2-toggle-en');
                 if (!btn) return;
@@ -5064,17 +5129,65 @@
             }
         }
 
+        function m2ReportProfileId() {
+            const raw = document.getElementById('m2-report-profile-id')?.value;
+            const n = Number(raw);
+            return Number.isFinite(n) && n > 0 ? n : null;
+        }
+
+        async function openM2Tearsheet(mode, runBacktest) {
+            const hint = document.getElementById('m2-report-hint');
+            const pid = m2ReportProfileId();
+            if (!pid) {
+                if (hint) hint.innerHTML = '<span class="text-warn">请填写 Profile #</span>';
+                return;
+            }
+            if (hint) hint.textContent = '生成 QuantStats 报告…';
+            try {
+                const st = await API.m2ReportsStatus().catch(() => ({}));
+                if (st.quantstats_installed === false) {
+                    if (hint) hint.innerHTML = '<span class="text-warn">服务端未安装 quantstats</span>';
+                    return;
+                }
+                const meta = await API.m2TearsheetMeta(pid, mode, runBacktest);
+                const url = meta.url
+                    ? (API_BASE.replace(/\/$/, '') + meta.url)
+                    : API.m2TearsheetHtmlUrl(pid, mode, runBacktest);
+                window.open(url, '_blank', 'noopener,noreferrer');
+                const qs = meta.stats || {};
+                if (hint) {
+                    hint.innerHTML = '<span class="text-neon-green">已打开</span> · Sharpe '
+                        + escHtml(String(qs.sharpe ?? '—'))
+                        + ' · MDD ' + escHtml(String(qs.max_drawdown ?? '—'))
+                        + ' · n=' + escHtml(String(meta.observations ?? ''));
+                }
+            } catch (e) {
+                if (hint) hint.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || String(e)) + '</span>';
+            }
+        }
+
         async function runM2Backtest() {
             const out = document.getElementById('m2-research-out');
             const symbol = (document.getElementById('m2-create-symbol')?.value || '').trim().toUpperCase();
             const template = document.getElementById('m2-create-template')?.value || 'balanced';
-            if (!symbol) {
-                if (out) out.textContent = '请填写标的';
+            const profileId = m2ReportProfileId();
+            if (!symbol && !profileId) {
+                if (out) out.textContent = '请填写标的或 Profile #';
                 return;
             }
             if (out) out.textContent = '回测中…';
             try {
-                const res = await API.m2Backtest({ symbol, variant: 'en', template, limit_bars: 1500 });
+                const body = profileId
+                    ? { profile_id: profileId, limit_bars: 4500 }
+                    : { symbol, variant: 'en', template, limit_bars: 1500 };
+                const res = await API.m2Backtest(body);
+                if (profileId) {
+                    const repInp = document.getElementById('m2-report-profile-id');
+                    if (repInp) repInp.value = String(profileId);
+                } else if (res.profile_id) {
+                    const repInp = document.getElementById('m2-report-profile-id');
+                    if (repInp) repInp.value = String(res.profile_id);
+                }
                 const s = res.summary || {};
                 const d = res.discipline || s.discipline || {};
                 const ev = (d.ev || {});
@@ -5089,7 +5202,8 @@
                         'half_kelly: ' + ((d.kelly || {}).half_kelly_fraction ?? '—'),
                         'dominant: ' + ((d.signal_contrib || {}).dominant_dimension || '—'),
                         'csv: ' + (res.data_csv || ''),
-                    ].join('\n');
+                        (res.profile_id || profileId) ? '→ 点「回测报告」生成 QuantStats HTML' : '',
+                    ].filter(Boolean).join('\n');
                 }
             } catch (e) {
                 if (out) out.textContent = e.message || String(e);
@@ -5213,12 +5327,17 @@
             return false;
         }
 
-        async function runM2MaintAction(btnId, label, runner) {
+        async function runM2MaintAction(btnId, label, runner, opts) {
             const maintMsg = document.getElementById('maint-msg');
             const btn = document.getElementById(btnId);
+            const syncWait = opts && opts.syncWait;
             if (!requireMaintTokenForM2(maintMsg)) return;
             if (btn) btn.disabled = true;
-            if (maintMsg) maintMsg.textContent = label + '…';
+            if (maintMsg) {
+                maintMsg.textContent = syncWait
+                    ? label + '（同步回测中，约 5–15 分钟）…'
+                    : label + '…';
+            }
             try {
                 const out = await runner();
                 const accepted = out && out.accepted;
@@ -5233,8 +5352,12 @@
                     : accepted
                         ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || '任务在服务端执行，数分钟内完成；期间 API 应保持可连接。完成后点 Moss2 刷新。') + '</p>'
                         : '';
+                const summaryBlock = out && out.summary_text
+                    ? '<pre class="mt-2 text-[10px] text-neon-green/90 whitespace-pre-wrap break-words border border-neon-green/25 rounded p-2 bg-neon-green/5">' + escHtml(out.summary_text) + '</pre>'
+                    : '';
                 if (maintMsg) {
-                    maintMsg.innerHTML = head + note + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
+                    maintMsg.innerHTML = head + note + summaryBlock
+                        + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
                 }
                 if (!accepted && !failed) await hydrateM2Board();
                 else void checkConnection();
@@ -6143,8 +6266,16 @@
                     + '确定 = 对已存在 Profile 也强制全量 evolve\n'
                     + '取消 = 仅常规 suggest→创建/更新→进化→启用'
                 );
-                void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () =>
-                    API.m2MaintenancePost('auto-provision', { force_evolve: forceEvolve ? 'true' : 'false' }, 25000));
+                const waitSummary = confirm(
+                    '是否在服务端同步跑完并显示汇总？\n\n'
+                    + '确定 = 同步（含四模板回测，约 5–15 分钟，请勿关页）\n'
+                    + '取消 = 后台执行（完成后刷新 Moss2 看板）'
+                );
+                void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () => {
+                    const q = { force_evolve: forceEvolve ? 'true' : 'false' };
+                    if (waitSummary) q.sync = 'true';
+                    return API.m2MaintenancePost('auto-provision', q, waitSummary ? 900000 : 25000);
+                }, { syncWait: waitSummary });
             });
             document.getElementById('maint-m2-enable-approved')?.addEventListener('click', () => {
                 void runM2MaintAction('maint-m2-enable-approved', 'Moss2 启用已批准', () =>
