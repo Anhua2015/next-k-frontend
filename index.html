@@ -668,7 +668,7 @@
                     <p class="text-text-muted text-[10px] leading-relaxed">调度器<strong>默认全自动</strong>：启动/每周日拉 CSV 后链式建 Profile→启用；15m 纸面扫描。下方按钮仅补救/强制。最近自动结果：<span id="m2-auto-last-run" class="text-text-secondary">加载中…</span></p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-m2-bootstrap" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss2/maintenance/bootstrap-data · 确定=force 重拉；取消=仅补缺/stale">Moss2 拉 CSV</button>
-                        <button type="button" id="maint-m2-auto-provision" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="POST /api/moss2/maintenance/auto-provision">Moss2 全自动建 Profile</button>
+                        <button type="button" id="maint-m2-auto-provision" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="后台执行+轮询汇总（勿 sync，易超时）">Moss2 全自动建 Profile</button>
                         <button type="button" id="maint-m2-enable-approved" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/maintenance/enable-approved">Moss2 启用已批准</button>
                     </div>
                 </div>
@@ -5327,6 +5327,47 @@
             return false;
         }
 
+        async function pollM2ProvisionUntilDone(baselineUtc, maintMsg, label) {
+            const deadline = Date.now() + 35 * 60 * 1000;
+            let lastHint = '';
+            while (Date.now() < deadline) {
+                await new Promise((r) => setTimeout(r, 12000));
+                try {
+                    const row = await API.m2LastAutoRun();
+                    if (row && row.has_run && row.saved_at_utc
+                        && (!baselineUtc || row.saved_at_utc > baselineUtc)
+                        && (row.trigger === 'manual' || row.trigger === 'chain_after_bootstrap')) {
+                        const s = row.stats || {};
+                        const summary = row.summary_text || '';
+                        if (maintMsg) {
+                            maintMsg.innerHTML = '<span class="text-neon-green">' + escHtml(label) + ' 完成</span>'
+                                + '<p class="mt-1 text-[10px] text-text-muted">触发 ' + escHtml(row.trigger || '')
+                                + ' · 新建 ' + escHtml(String(s.created ?? 0))
+                                + ' · 启用 ' + escHtml(String(s.enabled_profiles ?? 0)) + '</p>'
+                                + (summary
+                                    ? '<pre class="mt-2 text-[10px] text-neon-green/90 whitespace-pre-wrap break-words border border-neon-green/25 rounded p-2 bg-neon-green/5">' + escHtml(summary) + '</pre>'
+                                    : '')
+                                + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(row, null, 2)) + '</pre>';
+                        }
+                        await hydrateM2Board();
+                        return;
+                    }
+                    lastHint = row && row.has_run
+                        ? '等待新一轮汇总（最近 ' + (row.saved_at_utc || '').slice(0, 19) + '）…'
+                        : '尚无汇总记录，任务可能仍在跑…';
+                } catch (e) {
+                    lastHint = '轮询汇总失败，任务可能仍在后台…';
+                }
+                if (maintMsg) {
+                    maintMsg.textContent = label + '（后台执行中，12s 轮询） ' + lastHint;
+                }
+            }
+            if (maintMsg) {
+                maintMsg.innerHTML = '<span class="text-warn">' + escHtml(label)
+                    + ' 轮询超时</span><p class="mt-1 text-[10px] text-text-muted">任务可能仍在服务端执行，请稍后点 Moss2 刷新或看 Railway 日志 [moss2] auto_provision</p>';
+            }
+        }
+
         async function runM2MaintAction(btnId, label, runner, opts) {
             const maintMsg = document.getElementById('maint-msg');
             const btn = document.getElementById(btnId);
@@ -5361,13 +5402,24 @@
                 }
                 if (!accepted && !failed) await hydrateM2Board();
                 else void checkConnection();
+                if (opts && opts.pollProvision && accepted) {
+                    const baseline = opts.baselineUtc || '';
+                    void pollM2ProvisionUntilDone(baseline, maintMsg, label);
+                }
             } catch (e) {
                 const msg = (e && e.name === 'AbortError')
-                    ? '请求超时：若正在拉 CSV/建 Profile，任务可能仍在后台执行，请稍后刷新页面'
+                    ? '提交超时：服务端可能繁忙，任务或已入队。请 1–2 分钟后点 Moss2 刷新，或看 maint-msg 轮询结果'
                     : (e.message || String(e));
                 if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(label) + ' 失败：' + escHtml(msg) + '</span>';
+                if (opts && opts.pollProvision) {
+                    void pollM2ProvisionUntilDone(opts.baselineUtc || '', maintMsg, label);
+                }
             } finally {
-                if (btn) btn.disabled = false;
+                if (!(opts && opts.pollProvision)) {
+                    if (btn) btn.disabled = false;
+                } else if (btn) {
+                    setTimeout(() => { btn.disabled = false; }, 60000);
+                }
             }
         }
 
@@ -6264,18 +6316,19 @@
                 const forceEvolve = confirm(
                     'Moss2 全自动建 Profile（25 核心）\n\n'
                     + '确定 = 对已存在 Profile 也强制全量 evolve\n'
-                    + '取消 = 仅常规 suggest→创建/更新→进化→启用'
+                    + '取消 = 仅常规 suggest→创建/更新→进化→启用\n\n'
+                    + '将后台执行（约 5–30 分钟），页面自动轮询汇总，勿用同步 HTTP（易超时）'
                 );
-                const waitSummary = confirm(
-                    '是否在服务端同步跑完并显示汇总？\n\n'
-                    + '确定 = 同步（含四模板回测，约 5–15 分钟，请勿关页）\n'
-                    + '取消 = 后台执行（完成后刷新 Moss2 看板）'
-                );
-                void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () => {
-                    const q = { force_evolve: forceEvolve ? 'true' : 'false' };
-                    if (waitSummary) q.sync = 'true';
-                    return API.m2MaintenancePost('auto-provision', q, waitSummary ? 900000 : 25000);
-                }, { syncWait: waitSummary });
+                let baselineUtc = '';
+                void (async () => {
+                    try {
+                        const prev = await API.m2LastAutoRun().catch(() => ({}));
+                        baselineUtc = (prev && prev.saved_at_utc) || '';
+                    } catch (e) { /* ignore */ }
+                    void runM2MaintAction('maint-m2-auto-provision', 'Moss2 全自动建 Profile', () =>
+                        API.m2MaintenancePost('auto-provision', { force_evolve: forceEvolve ? 'true' : 'false' }, 90000),
+                    { pollProvision: true, baselineUtc });
+                })();
             });
             document.getElementById('maint-m2-enable-approved')?.addEventListener('click', () => {
                 void runM2MaintAction('maint-m2-enable-approved', 'Moss2 启用已批准', () =>
