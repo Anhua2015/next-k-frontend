@@ -457,8 +457,9 @@
                         <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
                         <span id="m2-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
                     </div>
+                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；<strong class="text-text-secondary font-normal">综合分 / 阈值</strong>为距有效开仓线进度（含质量余量与多 K 确认）；持仓盈亏见下方「纸面信号」。</p>
                     <div id="m2-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
-                    <div id="m2-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-36 overflow-auto min-h-[2rem] text-xs">加载…</div>
+                    <div id="m2-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-44 overflow-auto min-h-[2rem] text-xs">加载最近一次扫描…</div>
                 </div>
                 <div id="m2-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -649,7 +650,7 @@
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
-                        <button type="button" id="maint-m2-paper-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/paper-scan">Moss2 纸面</button>
+                        <button type="button" id="maint-m2-paper-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/paper-scan?sync=true · 同步扫描并刷新看板">Moss2 纸面</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
                         <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
                         <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
@@ -1300,15 +1301,17 @@
             async m2Backtest(body) {
                 return API._mqPost('/api/moss2/backtest', body);
             },
-            async m2PaperScan() {
+            async m2PaperScan(opts) {
+                const sync = !opts || opts.sync !== false;
+                const q = sync ? '?sync=true' : '?sync=false';
                 const res = await fetchWithTimeout(
-                    `${API_BASE}/api/moss2/paper-scan`,
+                    `${API_BASE}/api/moss2/paper-scan${q}`,
                     {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: maintenanceHeaders({ 'Content-Type': 'application/json' }),
                         body: '{}',
                     },
-                    20000
+                    sync ? 120000 : 20000
                 );
                 const text = await res.text();
                 let data;
@@ -4505,6 +4508,80 @@
         }
 
         let _m2ProfilesCache = [];
+        let _m2LastPaperScan = null;
+
+        const M2_SCAN_REASON_LABELS = {
+            composite_below_threshold: '综合分未达开仓阈值',
+            long_margin_or_confirm_failed: '多头：余量或连续 K 确认未过',
+            short_margin_or_confirm_failed: '空头：余量或连续 K 确认未过',
+            confirm_bars_insufficient: 'K 线不足，无法确认',
+            composite_unavailable: '综合分不可用',
+            margin_below_threshold: '纪律：综合分低于门槛',
+            recent_ev_negative: '纪律：近期期望值为负',
+            max_consec_loss: '纪律：连续亏损过多',
+            portfolio_max_open_positions: '组合已满，暂停新开仓',
+            variant_en_disabled: '非运维 variant 已禁用',
+            variant_hl_disabled: '非运维 variant 已禁用',
+        };
+
+        const M2_SCAN_ACTION_ORDER = { open: 0, close: 1, wait: 2, error: 3, skip: 4 };
+
+        function m2ParseScanLabel(label) {
+            const raw = String(label || '');
+            const m = raw.match(/^m2:(\d+):([^:]+):/i);
+            if (!m) return { pid: '', symbol: raw, template: '' };
+            return { pid: m[1], symbol: m[2].toUpperCase(), template: '' };
+        }
+
+        function m2ScanReasonLabel(reason) {
+            const r = String(reason || '');
+            return M2_SCAN_REASON_LABELS[r] || r || '—';
+        }
+
+        function m2NormalizePaperScan(scan) {
+            if (!scan || typeof scan !== 'object') return null;
+            const out = Object.assign({}, scan);
+            const details = Array.isArray(out.details) ? out.details.slice() : [];
+            const byPid = new Map();
+            details.forEach((d) => {
+                if (d && d.profile_id != null) byPid.set(Number(d.profile_id), Object.assign({}, d));
+            });
+            (out.open_positions || []).forEach((pos) => {
+                const pid = Number(pos.profile_id);
+                if (!Number.isFinite(pid)) return;
+                const sym = String(pos.symbol || '').toUpperCase();
+                const cur = byPid.get(pid);
+                if (cur) {
+                    if (pos.entry_price != null) {
+                        cur.entry_price = pos.entry_price;
+                        cur.mark_price = pos.mark_price;
+                        cur.upnl = pos.unrealized_pnl_usdt != null ? pos.unrealized_pnl_usdt : pos.upnl;
+                        cur.side = pos.side || cur.side;
+                        if (pos.virtual_notional_usdt != null) cur.notional = pos.virtual_notional_usdt;
+                        if (pos.composite != null) cur.composite = pos.composite;
+                        if (pos.regime) cur.regime = pos.regime;
+                    }
+                    if (!cur.action || cur.action === 'wait' || cur.action === 'error') cur.action = 'hold';
+                    byPid.set(pid, cur);
+                } else {
+                    byPid.set(pid, {
+                        profile_id: pid,
+                        symbol: sym,
+                        label: 'm2:' + pid + ':' + sym + ':',
+                        action: 'hold',
+                        side: pos.side,
+                        entry_price: pos.entry_price,
+                        mark_price: pos.mark_price,
+                        upnl: pos.unrealized_pnl_usdt,
+                        notional: pos.virtual_notional_usdt,
+                        composite: pos.composite,
+                        regime: pos.regime,
+                    });
+                }
+            });
+            out.details = Array.from(byPid.values());
+            return out;
+        }
 
         function renderM2Summary(sum) {
             const el = document.getElementById('m2-summary');
@@ -4625,29 +4702,153 @@
             el.innerHTML = head + rows;
         }
 
-        function renderM2Scan(scan) {
+        function renderM2PaperScan(scan) {
+            const root = document.getElementById('m2-scan-status');
+            const summaryEl = document.getElementById('m2-scan-summary');
             const meta = document.getElementById('m2-scan-meta');
-            const chips = document.getElementById('m2-scan-summary');
-            const box = document.getElementById('m2-scan-status');
-            if (!box) return;
-            if (!scan || !scan.ok) {
-                if (meta) meta.textContent = '—';
-                if (chips) chips.innerHTML = '';
-                box.textContent = '暂无扫描记录';
+            if (!root) return;
+            scan = m2NormalizePaperScan(scan);
+            const hasDetails = scan && Array.isArray(scan.details) && scan.details.length > 0;
+            if (!scan || !scan.ok || (!scan.has_run && !hasDetails)) {
+                if (meta) meta.textContent = '尚无扫描记录';
+                if (summaryEl) summaryEl.innerHTML = '';
+                root.innerHTML = '<p class="text-[10px] text-text-muted py-1">尚无 15m Moss2 扫描记录。请启用 Profile 并等待定时任务，或在维护面板触发「Moss2 纸面」。</p>';
                 return;
             }
-            if (meta) meta.textContent = scan.has_run ? (scan.ran_at_utc || '').slice(0, 19) + ' UTC' : '尚无扫描';
-            if (chips) {
-                chips.innerHTML = [
-                    ['扫描', scan.profiles_scanned],
-                    ['开', scan.opens],
-                    ['平', scan.closes],
-                ].map(([k, v]) => '<span class="px-2 py-0.5 rounded border border-border/60 bg-surface/50">' + escHtml(k) + ' ' + escHtml(String(v ?? 0)) + '</span>').join('');
+            const ts = (scan.ran_at_utc || '').slice(0, 19).replace('T', ' ');
+            const modeLbl = scan.real_mode ? '实盘通知' : '纸面';
+            if (meta) {
+                const posNote = (!scan.has_run && hasDetails) ? '（仅有持仓，待扫描）· ' : '';
+                const holdN = scan.open_hold_count != null
+                    ? Number(scan.open_hold_count)
+                    : (scan.open_positions || []).length;
+                meta.textContent = (modeLbl ? modeLbl + ' · ' : '')
+                    + posNote
+                    + (ts ? ts + ' UTC · ' : '')
+                    + '扫描 ' + (scan.profiles_scanned ?? 0) + ' 个'
+                    + ' · 持仓 ' + holdN
+                    + ' · 本轮开 ' + (scan.opens ?? 0)
+                    + ' · 本轮平 ' + (scan.closes ?? 0);
             }
-            const lines = (scan.lines || []).slice(-40);
-            box.innerHTML = lines.length
-                ? lines.map((ln) => '<div class="font-mono text-[10px] py-0.5 border-b border-border/30">' + escHtml(ln) + '</div>').join('')
-                : '<span class="text-text-muted">本轮无明细</span>';
+            const details = (scan.details || []).filter((d) => d && typeof d === 'object');
+            if (!details.length) {
+                if (summaryEl) summaryEl.innerHTML = '';
+                root.innerHTML = '<p class="text-[10px] text-text-muted py-1">（本次扫描无明细）</p>';
+                return;
+            }
+
+            const counts = { wait: 0, hold: 0, open: 0, close: 0, error: 0, skip: 0 };
+            details.forEach((d) => {
+                const a = String(d.action || '').toLowerCase();
+                if (counts[a] != null) counts[a] += 1;
+            });
+            if (summaryEl) {
+                const chips = [
+                    ['观望', counts.wait, 'text-text-muted border-border/70'],
+                    ['持仓', counts.hold, 'text-neon-blue border-neon-blue/30'],
+                    ['开仓', counts.open, 'text-neon-green border-neon-green/30'],
+                    ['平仓', counts.close, 'text-neon-yellow border-neon-yellow/30'],
+                ];
+                if (counts.error) chips.push(['错误', counts.error, 'text-neon-red border-neon-red/30']);
+                if (counts.skip) chips.push(['跳过', counts.skip, 'text-text-muted border-border/50']);
+                summaryEl.innerHTML = chips
+                    .filter((c) => c[1] > 0 || c[0] === '观望')
+                    .map((c) => '<span class="px-2 py-0.5 rounded border ' + c[2] + ' bg-surface/50">' + escHtml(c[0]) + ' <b>' + c[1] + '</b></span>')
+                    .join('');
+            }
+
+            const holdSyms = details
+                .filter((d) => String(d.action || '').toLowerCase() === 'hold')
+                .map((d) => String(d.symbol || m2ParseScanLabel(d.label || '').symbol || '').toUpperCase())
+                .filter(Boolean);
+
+            const tableRows = details.filter((d) => {
+                const act = String(d.action || '').toLowerCase();
+                return act !== 'hold' && act !== 'skip';
+            });
+
+            const sorted = tableRows.slice().sort((a, b) => {
+                const oa = M2_SCAN_ACTION_ORDER[String(a.action || '').toLowerCase()] ?? 9;
+                const ob = M2_SCAN_ACTION_ORDER[String(b.action || '').toLowerCase()] ?? 9;
+                if (oa !== ob) return oa - ob;
+                const la = m2ParseScanLabel(a.label || '');
+                const lb = m2ParseScanLabel(b.label || '');
+                return la.symbol.localeCompare(lb.symbol);
+            });
+
+            let bodyHtml = '';
+            if (holdSyms.length) {
+                bodyHtml += '<p class="text-[10px] text-text-muted py-1 mb-2">'
+                    + '持仓 <b class="text-neon-blue font-mono">' + holdSyms.length + '</b> 笔'
+                    + '（' + escHtml(holdSyms.join('、')) + '）→ 见下方<b class="text-text-secondary">纸面信号</b>。'
+                    + '</p>';
+            }
+
+            if (!sorted.length) {
+                bodyHtml += '<p class="text-[10px] text-text-muted py-1">'
+                    + (counts.wait
+                        ? '本轮无开/平仓事件。'
+                        : '本轮全部已持仓，无观望标的。')
+                    + '</p>';
+            } else {
+                const rows = sorted.map((d) => {
+                    const parsed = m2ParseScanLabel(d.label || d.symbol || '');
+                    const sym = String(d.symbol || parsed.symbol || '').toUpperCase();
+                    const tpl = String(d.template || parsed.template || '').toLowerCase();
+                    const tplLabel = MQ_TEMPLATE_LABELS[tpl] || tpl || '—';
+                    const act = String(d.action || '').toLowerCase();
+                    let note = '';
+                    if (act === 'open') {
+                        note = escHtml(String(d.side || '')) + ' · 开仓 '
+                            + escHtml(mqFormatPx(d.entry_price))
+                            + (d.notional_usdt != null ? ' · ' + escHtml(String(d.notional_usdt)) + ' U' : '');
+                    } else if (act === 'close') {
+                        const pnl = Number(d.pnl_usdt != null ? d.pnl_usdt : d.pnl);
+                        const pnlTxt = Number.isFinite(pnl)
+                            ? (pnl > 0 ? '+' : '') + fmtZctPx(pnl, 2) + ' U'
+                            : String(d.pnl_usdt ?? d.pnl ?? '—');
+                        note = escHtml(String(d.side || '')) + ' · '
+                            + escHtml(String(d.rule || '平仓')) + ' · ' + escHtml(pnlTxt);
+                    } else if (act === 'wait') {
+                        let extra = m2ScanReasonLabel(d.reason);
+                        if (d.margin != null && Number.isFinite(Number(d.margin))) {
+                            const gap = Number(d.margin);
+                            extra += gap <= 0
+                                ? ' · 已触线'
+                                : ' · 还差 ' + escHtml(gap.toFixed(3));
+                        }
+                        if (d.confirm_bars > 1) extra += ' · ' + escHtml(String(d.confirm_bars)) + 'K确认';
+                        note = escHtml(extra);
+                    } else if (act === 'error') {
+                        note = '<span class="text-neon-red">' + escHtml(String(d.error || d.protocol_error || d.message || '')) + '</span>';
+                    }
+                    const thBar = d.entry_threshold_eff != null ? d.entry_threshold_eff : d.entry_threshold;
+                    const compositeCell = (act === 'wait' || act === 'open')
+                        ? mqCompositeBarHtml(d.composite, thBar)
+                        : '<span class="text-text-muted">—</span>';
+                    return `<tr class="border-b border-border/40 hover:bg-surface-light/25 align-top">
+                        <td class="py-1.5 pr-2 font-mono text-[11px] whitespace-nowrap">${escHtml(sym)}</td>
+                        <td class="py-1.5 pr-2 text-[10px] whitespace-nowrap">${escHtml(tplLabel)}</td>
+                        <td class="py-1.5 pr-2">${mqScanActionBadge(act)}</td>
+                        <td class="py-1.5 pr-2">${compositeCell}</td>
+                        <td class="py-1.5 pr-2">${mqRegimeBadgeHtml(d.regime)}</td>
+                        <td class="py-1.5 pr-2 text-[10px] text-text-muted min-w-[6rem]">${note}</td>
+                    </tr>`;
+                }).join('');
+                bodyHtml += `<table class="w-full text-left border-collapse min-w-[520px]">
+                    <thead><tr class="text-text-muted text-[10px] uppercase border-b border-border/70">
+                        <th class="py-1 pr-2 font-medium">标的</th>
+                        <th class="py-1 pr-2 font-medium">模板</th>
+                        <th class="py-1 pr-2 font-medium">状态</th>
+                        <th class="py-1 pr-2 font-medium">综合分 / 阈值</th>
+                        <th class="py-1 pr-2 font-medium">行情</th>
+                        <th class="py-1 pr-2 font-medium">说明</th>
+                    </tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+            }
+
+            root.innerHTML = bodyHtml;
         }
 
         function renderM2SignalsTable(items) {
@@ -4799,12 +5000,13 @@
                     API.m2Summary(false),
                     API.m2Profiles(),
                     API.m2Signals(true),
-                    API.m2PaperScanLatest(false).catch(() => null),
+                    API.m2PaperScanLatest(true).catch(() => null),
                 ]);
                 _m2ProfilesCache = Array.isArray(profiles) ? profiles : [];
+                _m2LastPaperScan = scan;
                 renderM2Summary(sum);
                 renderM2Profiles(_m2ProfilesCache);
-                renderM2Scan(scan);
+                renderM2PaperScan(scan);
                 renderM2SignalsTable(sig.signals || []);
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } catch (e) {
@@ -5027,7 +5229,7 @@
                         ? '<span class="text-neon-green">' + escHtml(label) + ' 已提交后台</span>'
                         : '<span class="text-neon-green">' + escHtml(label) + ' 完成</span>';
                 const note = failed
-                    ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || out.error || '') + '</p>'
+                    ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || out.error || out.reason || '') + '</p>'
                     : accepted
                         ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(out.hint || '任务在服务端执行，数分钟内完成；期间 API 应保持可连接。完成后点 Moss2 刷新。') + '</p>'
                         : '';
@@ -5041,6 +5243,47 @@
                     ? '请求超时：若正在拉 CSV/建 Profile，任务可能仍在后台执行，请稍后刷新页面'
                     : (e.message || String(e));
                 if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + escHtml(label) + ' 失败：' + escHtml(msg) + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function runM2PaperScanMaint() {
+            const maintMsg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-m2-paper-scan');
+            if (!requireMaintTokenForM2(maintMsg)) return;
+            if (btn) btn.disabled = true;
+            if (maintMsg) maintMsg.textContent = 'Moss2 纸面扫描执行中（同步，约 10–60 秒）…';
+            try {
+                const out = await API.m2PaperScan({ sync: true });
+                if (!out || out.ok === false) {
+                    const hint = out && (out.hint || out.error || out.reason || '');
+                    if (maintMsg) {
+                        maintMsg.innerHTML = '<span class="text-warn">Moss2 纸面扫描未执行</span>'
+                            + (hint ? '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(hint) + '</p>' : '')
+                            + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
+                    }
+                    return;
+                }
+                await hydrateM2Board();
+                const summary = '扫描 ' + (out.profiles_scanned ?? 0)
+                    + ' · 开 ' + (out.opens ?? 0)
+                    + ' · 平 ' + (out.closes ?? 0);
+                if (maintMsg) {
+                    maintMsg.innerHTML = '<span class="text-neon-green">Moss2 纸面扫描完成</span>'
+                        + '<p class="mt-1 text-[10px] text-text-muted">' + escHtml(summary)
+                        + ' · 已刷新 Moss2 看板 15m 摘要</p>'
+                        + '<pre class="mt-1 text-[10px] text-text-secondary whitespace-pre-wrap break-words">' + escHtml(JSON.stringify(out, null, 2)) + '</pre>';
+                }
+                const m2Section = document.getElementById('m2-lane-section');
+                if (m2Section && typeof m2Section.scrollIntoView === 'function') {
+                    m2Section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            } catch (e) {
+                const msg = (e && e.name === 'AbortError')
+                    ? '扫描超时（>120s）：服务端可能仍在执行，请稍后点 Moss2「刷新」'
+                    : (e.message || String(e));
+                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">Moss2 纸面扫描失败：' + escHtml(msg) + '</span>';
             } finally {
                 if (btn) btn.disabled = false;
             }
@@ -5697,6 +5940,9 @@
                 jz_trail: '接针移动止盈检查',
                 moss_quant_scan: 'Moss 量化实仓扫描',
                 mq_paper: 'Moss 量化实仓扫描',
+                moss2_paper_scan: 'Moss2 纸面扫描',
+                moss2_scan: 'Moss2 纸面扫描',
+                m2_paper: 'Moss2 纸面扫描',
                 powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
             };
@@ -5880,7 +6126,7 @@
             document.getElementById('maint-m2-clear-db')?.addEventListener('click', () => void clearM2LaneData());
             document.getElementById('maint-mq-daily-optimize')?.addEventListener('click', () => void runMqDailyOptimize());
             document.getElementById('maint-m2-paper-scan')?.addEventListener('click', () => {
-                void runM2MaintAction('maint-m2-paper-scan', 'Moss2 纸面扫描', () => API.m2PaperScan());
+                void runM2PaperScanMaint();
             });
             document.getElementById('maint-m2-bootstrap')?.addEventListener('click', () => {
                 const force = confirm(
