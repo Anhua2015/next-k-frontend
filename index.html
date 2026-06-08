@@ -321,6 +321,7 @@
                     <div class="text-text-muted text-sm animate-pulse">加载当日提示…</div>
                 </div>
                 <div id="orb-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="orb-bots" class="px-4 pb-2 flex flex-wrap gap-2 shrink-0"></div>
                 <div id="orb-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/40 lane-board-scroll" data-lane-max-rows="20">
                     <div class="text-text-muted text-sm animate-pulse">加载 ORB 纸面…</div>
                 </div>
@@ -2716,16 +2717,27 @@
 
         function renderOrbSummary(sum) {
             const el = document.getElementById('orb-summary');
+            const botsEl = document.getElementById('orb-bots');
             if (!el) return;
-            if (!sum || !sum.ok) { el.innerHTML = ''; return; }
+            if (!sum || !sum.ok) {
+                el.innerHTML = '';
+                if (botsEl) botsEl.innerHTML = '';
+                return;
+            }
             const pnl = Number(sum.sum_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             const wr = sum.touch_win_rate != null ? (Number(sum.touch_win_rate) * 100).toFixed(1) + '%' : '—';
             const skipTag = sum.today && sum.today.skip_new_entries
                 ? '<span class="text-neon-red text-[10px] ml-1">不新开仓</span>' : '';
+            const botEq = sum.symbol_bot_equity_usdt != null ? fmtZctPx(sum.symbol_bot_equity_usdt, 0) : '10k';
             el.innerHTML = `
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
-                    <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓${skipTag}</div>
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">机器人${skipTag}</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.symbol_bot_count ?? sum.per_symbol?.length ?? 0))}</div>
+                    <div class="text-[10px] text-text-muted">每 bot ${escHtml(botEq)} U · 1% 风险定仓</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓</div>
                     <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.open_positions ?? 0))}</div>
                 </div>
                 <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
@@ -2744,6 +2756,27 @@
                     <div class="text-text-muted text-[10px] tracking-wide">宏观过滤</div>
                     <div class="text-sm font-semibold ${sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted'}">${sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启'}</div>
                 </div>`;
+            if (botsEl) {
+                const rows = Array.isArray(sum.per_symbol) ? sum.per_symbol : [];
+                if (!rows.length) {
+                    botsEl.innerHTML = '';
+                } else {
+                    botsEl.innerHTML = rows.map((b) => {
+                        const sym = escHtml(b.symbol || '—');
+                        const wallet = Number(b.wallet_balance_usdt) || 0;
+                        const rp = Number(b.realized_pnl_usdt) || 0;
+                        const rpCls = rp >= 0 ? 'text-neon-green' : 'text-neon-red';
+                        const open = b.open_side ? escHtml(String(b.open_side)) : '—';
+                        const wrS = b.touch_win_rate != null ? (Number(b.touch_win_rate) * 100).toFixed(0) + '%' : '—';
+                        const off = b.enabled === false ? ' opacity-50' : '';
+                        return '<div class="rounded-lg border border-border/70 bg-surface-light/25 px-2.5 py-1.5 text-[10px] leading-snug min-w-[7.5rem]' + off + '">'
+                            + '<div class="font-semibold text-text-primary">' + sym + '</div>'
+                            + '<div class="text-text-muted">钱包 <span class="font-mono text-text-secondary">' + fmtZctPx(wallet, 0) + '</span> U</div>'
+                            + '<div class="' + rpCls + ' font-mono">盈亏 ' + fmtZctPx(rp, 2) + ' · 胜率 ' + escHtml(wrS) + '</div>'
+                            + '<div class="text-text-muted">持仓 ' + open + '</div></div>';
+                    }).join('');
+                }
+            }
         }
 
         function orbDisplayStatus(row) {
@@ -2826,7 +2859,7 @@
             const btn = document.getElementById('maint-orb-clear-db');
             if (btn) btn.disabled = true;
             try {
-                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs，不可撤销。')) return;
+                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs、orb_symbol_bots，不可撤销。')) return;
                 const out = await API.orbClearDb();
                 if (msg) {
                     msg.innerHTML = '<span class="text-neon-green">ORB 已清库</span> signals='
