@@ -293,6 +293,40 @@
             </div>
         </section>
 
+        <section class="mb-6" aria-label="ORB开盘区间纸面" id="orb-lane-section">
+            <div class="bg-surface rounded-xl border border-accent/25 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">📈</span> ORB 开盘区间突破
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            美股 ETF · 15m OR + 5m 突破 · 5%ATR 止损 · EoD 平仓
+                            · <span id="orb-session-meta" class="font-mono text-text-secondary">—</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="orb-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="orb-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="orb-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="orb-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="orb-today-alerts" class="px-4 py-3 border-b border-border/40 bg-surface-light/[0.12] flex flex-col gap-2 shrink-0">
+                    <div class="text-text-muted text-sm animate-pulse">加载当日提示…</div>
+                </div>
+                <div id="orb-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="orb-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/40 lane-board-scroll" data-lane-max-rows="20">
+                    <div class="text-text-muted text-sm animate-pulse">加载 ORB 纸面…</div>
+                </div>
+            </div>
+        </section>
+
         <section class="mb-6 hidden" aria-label="接针策略纸面" id="jz-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -576,6 +610,7 @@
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('zct-lane-section', 'ZCT 量化'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
+                pick('orb-lane-section', 'ORB开盘区间纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-lane-section', 'Moss量化实仓'),
                 pick('m2-lane-section', 'Moss2 Factory纸面'),
@@ -633,6 +668,7 @@
                         <button type="button" id="maint-jz-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/jiezhen/maintenance/clear-db">清理接针库</button>
                         <button type="button" id="maint-mq-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-purple/30 text-neon-purple text-xs font-medium hover:bg-neon-purple/10 hover:border-neon-purple/45" title="POST /api/moss-quant/maintenance/clear-db">清理 Moss 库</button>
                         <button type="button" id="maint-m2-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/moss2/maintenance/clear-db">清理 Moss2 库</button>
+                        <button type="button" id="maint-orb-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/orb/maintenance/clear-db">清理 ORB 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -657,6 +693,7 @@
                         <button type="button" data-maint-cron="mom_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="动量移动止盈检查">动量止盈</button>
                         <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
                         <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
+                        <button type="button" data-maint-cron="orb_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="ORB 美股纸面扫描">ORB 扫描</button>
                         <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
                         <button type="button" id="maint-m2-paper-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/paper-scan?sync=true · 同步扫描并刷新看板">Moss2 纸面</button>
                         <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
@@ -1092,6 +1129,32 @@
             },
             async jzClearDb() {
                 const res = await fetch(`${API_BASE}/api/jiezhen/maintenance/clear-db`, {
+                    method: 'POST',
+                    headers: maintenanceHeaders(),
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async orbSummary() {
+                const res = await fetch(`${API_BASE}/api/orb/summary`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async orbSignals() {
+                const res = await fetch(`${API_BASE}/api/orb/signals?limit=200`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async orbSessionToday() {
+                const res = await fetch(`${API_BASE}/api/orb/session/today`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async orbClearDb() {
+                const res = await fetch(`${API_BASE}/api/orb/maintenance/clear-db`, {
                     method: 'POST',
                     headers: maintenanceHeaders(),
                 });
@@ -2605,6 +2668,219 @@
                 if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
             } else {
                 console.error('momentum signals:', sigRes.reason);
+                const e = sigRes.reason;
+                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
+                if (tsEl) tsEl.textContent = '--';
+            }
+        }
+
+        function orbAlertPanelClass(severity) {
+            if (severity === 'block') return 'border-neon-red/45 bg-neon-red/10';
+            if (severity === 'warn') return 'border-warn/45 bg-warn/10';
+            return 'border-neon-blue/35 bg-neon-blue/10';
+        }
+
+        function orbAlertTitleClass(severity) {
+            if (severity === 'block') return 'text-neon-red';
+            if (severity === 'warn') return 'text-warn/90';
+            return 'text-neon-blue';
+        }
+
+        function renderOrbTodayAlerts(today) {
+            const el = document.getElementById('orb-today-alerts');
+            const meta = document.getElementById('orb-session-meta');
+            if (!el) return;
+            if (!today || !today.ok) {
+                el.innerHTML = '<div class="text-text-muted text-xs">无法加载当日提示</div>';
+                if (meta) meta.textContent = '—';
+                return;
+            }
+            const wd = today.weekday ? ' · ' + today.weekday : '';
+            const close = today.session_close_time ? ' · 收盘 ' + today.session_close_time + ' ET' : '';
+            if (meta) meta.textContent = '会话日 ' + (today.session_date || '—') + wd + close;
+            const alerts = today.alerts || [];
+            if (!alerts.length) {
+                el.innerHTML = '<div class="rounded-lg border border-neon-green/35 bg-neon-green/[0.08] px-3 py-2.5 text-xs leading-relaxed">'
+                    + '<b class="text-neon-green font-medium">今日可交易</b>'
+                    + '<span class="text-text-secondary"> · 非休市日，无 FOMC / CPI 宏观事件</span></div>';
+                return;
+            }
+            el.innerHTML = alerts.map((a) => {
+                const panel = orbAlertPanelClass(a.severity);
+                const titleCls = orbAlertTitleClass(a.severity);
+                return '<div class="rounded-lg border px-3 py-2.5 text-xs leading-relaxed ' + panel + '">'
+                    + '<b class="block font-semibold mb-0.5 ' + titleCls + '">' + escHtml(a.title || a.kind || '提示') + '</b>'
+                    + '<span class="text-text-secondary">' + escHtml(a.message || '') + '</span></div>';
+            }).join('');
+        }
+
+        function renderOrbSummary(sum) {
+            const el = document.getElementById('orb-summary');
+            if (!el) return;
+            if (!sum || !sum.ok) { el.innerHTML = ''; return; }
+            const pnl = Number(sum.sum_pnl_usdt) || 0;
+            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
+            const wr = sum.touch_win_rate != null ? (Number(sum.touch_win_rate) * 100).toFixed(1) + '%' : '—';
+            const skipTag = sum.today && sum.today.skip_new_entries
+                ? '<span class="text-neon-red text-[10px] ml-1">不新开仓</span>' : '';
+            el.innerHTML = `
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">持仓${skipTag}</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.open_positions ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">已结算</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(String(sum.settled_trades ?? 0))}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] uppercase tracking-wide">累计 U</div>
+                    <div class="text-lg font-semibold font-mono ${pnlCls}">${fmtZctPx(pnl, 4)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2">
+                    <div class="text-text-muted text-[10px] tracking-wide">胜率</div>
+                    <div class="text-lg font-semibold text-text-primary">${escHtml(wr)}</div>
+                </div>
+                <div class="bg-surface-light/30 rounded-lg border border-border/70 px-3 py-2 col-span-2 sm:col-span-1">
+                    <div class="text-text-muted text-[10px] tracking-wide">宏观过滤</div>
+                    <div class="text-sm font-semibold ${sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted'}">${sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启'}</div>
+                </div>`;
+        }
+
+        function orbDisplayStatus(row) {
+            if (row && row.status) return String(row.status);
+            const side = String(row.side || '').toUpperCase();
+            if (!row.outcome && (side === 'LONG' || side === 'SHORT') && row.sl_price != null) return '持仓中';
+            if (row.outcome) return String(row.outcome);
+            return '观望';
+        }
+
+        function renderOrbTable(items, totalHint) {
+            const root = document.getElementById('orb-root');
+            if (!root) return;
+            const total = (items && items.length) || 0;
+            const head = `
+                <table class="w-full text-left text-xs border-collapse min-w-[1100px]">
+                    <thead>
+                        <tr class="border-b border-border/80 text-text-muted uppercase tracking-wide text-[10px]">
+                            <th class="py-2 pr-2">#</th>
+                            <th class="py-2 pr-2">UTC</th>
+                            <th class="py-2 pr-2">标的</th>
+                            <th class="py-2 pr-2">状态</th>
+                            <th class="py-2 pr-2">方向</th>
+                            <th class="py-2 pr-2 text-right">入场</th>
+                            <th class="py-2 pr-2 text-right">止损</th>
+                            <th class="py-2 pr-2 text-right">止盈</th>
+                            <th class="py-2 pr-2 text-right">OR高</th>
+                            <th class="py-2 pr-2 text-right">OR低</th>
+                            <th class="py-2 pr-2 text-right">量比</th>
+                            <th class="py-2 pr-2 text-right">盈亏U</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            if (!items || !items.length) {
+                root.innerHTML = head + '</tbody></table><p class="text-text-muted text-xs mt-2">'
+                    + escHtml(totalHint || '暂无记录；维护面板可「ORB 扫描」') + '</p>';
+                return;
+            }
+            const rows = items.map((row) => {
+                const st = orbDisplayStatus(row);
+                const pnl = row.pnl_usdt != null ? Number(row.pnl_usdt) : null;
+                const pnlCls = pnl != null ? pxClass(pnl) : 'text-text-muted';
+                const volRatio = (row.volume && row.vol_ma) ? (Number(row.volume) / Number(row.vol_ma)).toFixed(2) : '—';
+                const tp = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : 'EoD';
+                return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
+                    <td class="py-2 pr-2 font-mono">${escHtml(String(row.id ?? '—'))}</td>
+                    <td class="py-2 pr-2 font-mono text-[11px]">${escHtml(String(row.recorded_at_utc || '').replace('T',' ').replace('Z',''))}</td>
+                    <td class="py-2 pr-2 font-mono">${escHtml(row.symbol)}</td>
+                    <td class="py-2 pr-2">${escHtml(st)}</td>
+                    <td class="py-2 pr-2 ${zctSideClass(row.side)}">${escHtml(row.side || '—')}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.entry_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.sl_price, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${tp}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.or_high, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${fmtZctPx(row.or_low, 4)}</td>
+                    <td class="py-2 pr-2 font-mono text-right">${escHtml(volRatio)}</td>
+                    <td class="py-2 pr-2 font-mono text-right ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
+                </tr>`;
+            }).join('');
+            root.innerHTML = head + rows + '</tbody></table>' + laneBoardScrollHint(total);
+        }
+
+        let _orbSignalsCache = [];
+
+        function applyOrbTableFilters() {
+            const root = document.getElementById('orb-root');
+            if (!root) return;
+            const stEl = document.getElementById('orb-filter-status');
+            const symEl = document.getElementById('orb-filter-symbol');
+            const filtered = laneFilterRows(
+                _orbSignalsCache,
+                stEl ? stEl.value : 'all',
+                symEl ? symEl.value : '',
+            );
+            renderOrbTable(filtered, _orbSignalsCache.length ? '共 ' + _orbSignalsCache.length + ' 条' : '');
+        }
+
+        async function clearOrbLaneData() {
+            const msg = document.getElementById('maint-msg');
+            const btn = document.getElementById('maint-orb-clear-db');
+            if (btn) btn.disabled = true;
+            try {
+                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs，不可撤销。')) return;
+                const out = await API.orbClearDb();
+                if (msg) {
+                    msg.innerHTML = '<span class="text-neon-green">ORB 已清库</span> signals='
+                        + escHtml(String(out.deleted_signals ?? 0))
+                        + ' settlements=' + escHtml(String(out.deleted_settlements ?? 0))
+                        + ' runs=' + escHtml(String(out.deleted_runs ?? 0));
+                }
+                await hydrateOrbBoard();
+            } catch (e) {
+                console.error(e);
+                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '失败') + '</span>';
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function initOrbPanelOnce() {
+            if (initOrbPanelOnce._done) return;
+            initOrbPanelOnce._done = true;
+            document.getElementById('orb-refresh')?.addEventListener('click', () => void hydrateOrbBoard());
+            document.getElementById('orb-filter-status')?.addEventListener('change', () => applyOrbTableFilters());
+            document.getElementById('orb-filter-symbol')?.addEventListener('input', () => {
+                clearTimeout(initOrbPanelOnce._symTimer);
+                initOrbPanelOnce._symTimer = setTimeout(() => applyOrbTableFilters(), 280);
+            });
+            document.getElementById('maint-orb-clear-db')?.addEventListener('click', () => void clearOrbLaneData());
+        }
+
+        async function hydrateOrbBoard() {
+            const root = document.getElementById('orb-root');
+            const tsEl = document.getElementById('orb-ts');
+            if (!root) return;
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 ORB 纸面…</div>';
+            const [sumRes, sigRes] = await Promise.allSettled([API.orbSummary(), API.orbSignals()]);
+            if (sumRes.status === 'fulfilled') {
+                renderOrbTodayAlerts(sumRes.value.today);
+                renderOrbSummary(sumRes.value);
+            } else {
+                console.error('orb summary:', sumRes.reason);
+                renderOrbTodayAlerts(null);
+                renderOrbSummary(null);
+                try {
+                    renderOrbTodayAlerts(await API.orbSessionToday());
+                } catch (e2) {
+                    console.error('orb session today:', e2);
+                }
+            }
+            if (sigRes.status === 'fulfilled') {
+                _orbSignalsCache = sigRes.value.signals || [];
+                applyOrbTableFilters();
+                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            } else {
+                console.error('orb signals:', sigRes.reason);
+                _orbSignalsCache = [];
                 const e = sigRes.reason;
                 root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
                 if (tsEl) tsEl.textContent = '--';
@@ -6127,6 +6403,7 @@
                 moss2_paper_scan: 'Moss2 纸面扫描',
                 moss2_scan: 'Moss2 纸面扫描',
                 m2_paper: 'Moss2 纸面扫描',
+                orb_scan: 'ORB 美股纸面扫描',
                 powder_keg: '火药桶宏观雷达（收筹池扫描 + Top5 入库）',
                 touch_pool_4h: '触轨池 6h 回测（全宇宙 walk + 写库）',
             };
@@ -6421,6 +6698,7 @@
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('zct-lane-section', 'ZCT 量化'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
+                pick('orb-lane-section', 'ORB开盘区间纸面'),
                 pick('mq-daily-board-section', 'Moss每日最优看板'),
                 pick('mq-lane-section', 'Moss量化实仓'),
                 pick('m2-lane-section', 'Moss2 Factory纸面'),
@@ -6464,6 +6742,8 @@
             initMqProfilesPanelOnce();
             void hydrateMqBoard();
             document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
+            initOrbPanelOnce();
+            void hydrateOrbBoard();
             initM2PanelOnce();
             void hydrateM2Board();
             document.getElementById('m2-refresh')?.addEventListener('click', () => void hydrateM2Board());
