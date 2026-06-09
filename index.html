@@ -482,7 +482,7 @@
         .orb-stat-card {
             position: relative;
             overflow: hidden;
-            border-radius: var(--radius-md);
+            border-radius: 2px;
             border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
             background: color-mix(in srgb, var(--surface-light) 40%, var(--surface));
             padding: 0.65rem 0.75rem;
@@ -515,7 +515,7 @@
             color: var(--text-muted);
         }
         .orb-bot-card {
-            border-radius: var(--radius-md);
+            border-radius: 2px;
             transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
         .orb-bot-card:hover {
@@ -539,10 +539,13 @@
             font-size: 0.75rem;
         }
         .orb-table-wrap {
-            border-radius: var(--radius-md);
+            border-radius: 0;
             border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
             background: color-mix(in srgb, var(--surface-light) 25%, var(--surface));
             overflow: hidden;
+        }
+        .orb-table-wrap table {
+            border-collapse: collapse;
         }
         .orb-table-wrap thead th {
             position: sticky;
@@ -551,6 +554,24 @@
             background: color-mix(in srgb, var(--surface-light) 92%, var(--surface));
             backdrop-filter: blur(6px);
             box-shadow: 0 1px 0 var(--border);
+            font-size: 0.625rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 0.5rem 0.55rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .orb-table-wrap tbody td {
+            padding: 0.45rem 0.55rem;
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            font-size: 0.75rem;
+        }
+        .orb-table-wrap tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .orb-table-wrap tbody tr:hover td {
+            background: var(--hover-bg);
         }
         .orb-empty {
             display: flex;
@@ -560,7 +581,7 @@
             gap: 0.5rem;
             padding: 2.5rem 1rem;
             margin-top: 0.5rem;
-            border-radius: var(--radius-md);
+            border-radius: 2px;
             border: 1px dashed color-mix(in srgb, var(--border) 95%, transparent);
             background: color-mix(in srgb, var(--surface-light) 35%, transparent);
             text-align: center;
@@ -579,13 +600,14 @@
         .orb-pill {
             display: inline-flex;
             align-items: center;
-            padding: 0.15rem 0.45rem;
-            border-radius: 9999px;
-            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 2px;
+            font-size: 0.625rem;
             font-weight: 600;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.03em;
             border: 1px solid transparent;
             white-space: nowrap;
+            line-height: 1.35;
         }
         .orb-pill-open { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 28%, transparent); }
         .orb-pill-win { background: color-mix(in srgb, var(--neon-green) 14%, transparent); color: var(--neon-green); border-color: color-mix(in srgb, var(--neon-green) 28%, transparent); }
@@ -1660,14 +1682,14 @@
                         : (rp < 0 ? 'border-neon-red/25 bg-neon-red/[0.04]' : 'border-border/70 bg-surface-light/30'));
                 let posHtml;
                 if (side === 'LONG') {
-                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wide bg-neon-green/15 text-neon-green border border-neon-green/30">LONG</span>';
+                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold tracking-wide bg-neon-green/15 text-neon-green border border-neon-green/30" style="border-radius:2px">LONG</span>';
                 } else if (side === 'SHORT') {
-                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-semibold tracking-wide bg-neon-red/15 text-neon-red border border-neon-red/30">SHORT</span>';
+                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold tracking-wide bg-neon-red/15 text-neon-red border border-neon-red/30" style="border-radius:2px">SHORT</span>';
                 } else {
-                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-medium tracking-wide bg-surface-light/80 text-text-muted border border-border/60">空闲</span>';
+                    posHtml = '<span class="inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium tracking-wide bg-surface-light/80 text-text-muted border border-border/60" style="border-radius:2px">空闲</span>';
                 }
                 const off = b.enabled === false ? ' opacity-45 grayscale-[0.2]' : '';
-                return '<article class="orb-bot-card rounded-xl border px-3 py-2.5 flex flex-col gap-2 min-w-0 ' + cardTint + off + '">'
+                return '<article class="orb-bot-card border px-3 py-2.5 flex flex-col gap-2 min-w-0 ' + cardTint + off + '">'
                     + '<div class="flex items-start justify-between gap-2 min-w-0">'
                     + '<div class="font-semibold text-sm text-text-primary tracking-tight truncate" title="' + escHtml(symRaw) + '">' + sym + '</div>'
                     + posHtml
@@ -1738,21 +1760,21 @@
             const total = (items && items.length) || 0;
             const head = `
                 <div class="orb-table-wrap overflow-x-auto">
-                <table class="data-table min-w-[1100px]">
+                <table class="min-w-[1100px] w-full">
                     <thead>
-                        <tr class="text-text-muted uppercase tracking-wide text-[10px]">
-                            <th class="py-2.5 px-2 font-medium">#</th>
-                            <th class="py-2.5 px-2 font-medium">UTC</th>
-                            <th class="py-2.5 px-2 font-medium">标的</th>
-                            <th class="py-2.5 px-2 font-medium">状态</th>
-                            <th class="py-2.5 px-2 font-medium">方向</th>
-                            <th class="py-2.5 px-2 font-medium text-right">入场</th>
-                            <th class="py-2.5 px-2 font-medium text-right">止损</th>
-                            <th class="py-2.5 px-2 font-medium text-right">止盈</th>
-                            <th class="py-2.5 px-2 font-medium text-right">OR高</th>
-                            <th class="py-2.5 px-2 font-medium text-right">OR低</th>
-                            <th class="py-2.5 px-2 font-medium text-right">量比</th>
-                            <th class="py-2.5 px-2 font-medium text-right">盈亏U</th>
+                        <tr>
+                            <th>#</th>
+                            <th>UTC</th>
+                            <th>标的</th>
+                            <th>状态</th>
+                            <th>方向</th>
+                            <th class="text-right">入场</th>
+                            <th class="text-right">止损</th>
+                            <th class="text-right">止盈</th>
+                            <th class="text-right">OR高</th>
+                            <th class="text-right">OR低</th>
+                            <th class="text-right">量比</th>
+                            <th class="text-right">盈亏U</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -1772,19 +1794,19 @@
                 const volRatio = (row.volume && row.vol_ma) ? (Number(row.volume) / Number(row.vol_ma)).toFixed(2) : '—';
                 const tpHtml = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : '<span class="text-text-muted">—</span>';
                 const symShort = escHtml(orbBotBaseSymbol(row.symbol));
-                return `<tr class="border-b border-border/50 hover:bg-surface-light/40 transition-colors">
-                    <td class="py-2 px-2 font-mono text-text-muted">${escHtml(String(row.id ?? '—'))}</td>
-                    <td class="py-2 px-2 font-mono text-[11px] text-text-secondary">${escHtml(String(row.recorded_at_utc || '').replace('T',' ').replace('Z',''))}</td>
-                    <td class="py-2 px-2"><span class="font-semibold text-text-primary">${symShort}</span></td>
-                    <td class="py-2 px-2">${orbStatusPill(st)}</td>
-                    <td class="py-2 px-2">${orbSidePill(row.side)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${fmtZctPx(row.entry_price, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-neon-red/90">${fmtZctPx(row.sl_price, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${tpHtml}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_high, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_low, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${escHtml(volRatio)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums font-semibold ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
+                return `<tr>
+                    <td class="font-mono text-text-muted">${escHtml(String(row.id ?? '—'))}</td>
+                    <td class="font-mono text-[11px] text-text-secondary">${escHtml(String(row.recorded_at_utc || '').replace('T',' ').replace('Z',''))}</td>
+                    <td><span class="font-semibold text-text-primary">${symShort}</span></td>
+                    <td>${orbStatusPill(st)}</td>
+                    <td>${orbSidePill(row.side)}</td>
+                    <td class="font-mono text-right tabular-nums">${fmtZctPx(row.entry_price, 4)}</td>
+                    <td class="font-mono text-right tabular-nums text-neon-red/90">${fmtZctPx(row.sl_price, 4)}</td>
+                    <td class="font-mono text-right tabular-nums">${tpHtml}</td>
+                    <td class="font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_high, 4)}</td>
+                    <td class="font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_low, 4)}</td>
+                    <td class="font-mono text-right tabular-nums">${escHtml(volRatio)}</td>
+                    <td class="font-mono text-right tabular-nums font-semibold ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
                 </tr>`;
             }).join('');
             root.innerHTML = head + rows + '</tbody></table></div>' + laneBoardScrollHint(total);
