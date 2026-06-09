@@ -1,4 +1,3 @@
-    <script>
         const API_BASE = resolveApiBase();
 
         /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
@@ -5947,4 +5946,3 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
-    </script>
