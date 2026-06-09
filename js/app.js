@@ -5946,3 +5946,17 @@
         }
 
         document.addEventListener('DOMContentLoaded', init);
+
+function toggleTheme() {
+    var isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    var btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = isDark ? '☀' : '☽';
+}
+(function initTheme() {
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+        var btn = document.getElementById('theme-btn');
+        if (btn) btn.textContent = '☀';
+    }
+})();
