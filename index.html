@@ -219,9 +219,64 @@
         .orb-lane-header {
             background: linear-gradient(
                 90deg,
-                color-mix(in srgb, var(--accent) 6%, transparent) 0%,
-                transparent 55%
+                color-mix(in srgb, var(--accent) 4%, transparent) 0%,
+                transparent 48%
             );
+        }
+        .orb-head-icon {
+            flex-shrink: 0;
+            width: 1.75rem;
+            height: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+            border-radius: var(--radius-sm);
+            background: color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
+        }
+        .orb-head-icon svg {
+            width: 0.95rem;
+            height: 0.95rem;
+        }
+        .orb-head-kicker {
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+        .orb-head-title {
+            margin-top: 0.2rem;
+            font-family: "Noto Serif SC", Georgia, serif;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .orb-head-meta {
+            margin-top: 0.35rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.6875rem;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+        .orb-head-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.06rem 0.32rem;
+            font-size: 0.5625rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            border-radius: 2px;
+            border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+            color: color-mix(in srgb, var(--accent) 88%, var(--text-secondary));
+            background: color-mix(in srgb, var(--accent) 5%, transparent);
         }
         .orb-toolbar {
             display: flex;
@@ -420,18 +475,23 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="美股ETF纸面" id="orb-lane-section">
+        <section class="mb-6" aria-label="美股权益模拟" id="orb-lane-section">
             <div class="orb-lane-shell bg-surface rounded-xl border border-accent/20 overflow-hidden card-hover min-w-0 flex flex-col shadow-[0_8px_32px_-16px_var(--shadow-color)]">
                 <div class="orb-lane-header px-4 py-3.5 border-b border-border/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
-                    <div class="min-w-0">
-                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight text-base sm:text-lg">
-                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 text-base" aria-hidden="true">📈</span>
-                            美股 ETF 纸面
-                        </h2>
-                        <p class="text-text-muted text-xs mt-1.5 leading-relaxed pl-[2.35rem]">
-                            纸面信号跟踪
-                            · <span id="orb-session-meta" class="font-mono text-text-secondary">—</span>
-                        </p>
+                    <div class="flex items-start gap-2.5 min-w-0">
+                        <div class="orb-head-icon mt-0.5" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19V11M9 19V7M14 19v-5M19 19V4"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="orb-head-kicker">US Equities</div>
+                            <h2 class="orb-head-title">模拟交易台</h2>
+                            <p class="orb-head-meta">
+                                <span class="orb-head-tag">SIM</span>
+                                <span id="orb-session-meta" class="font-mono text-text-secondary tracking-normal">—</span>
+                            </p>
+                        </div>
                     </div>
                     <div class="orb-toolbar shrink-0">
                         <select id="orb-filter-status" class="text-xs bg-transparent border-0 rounded-md px-2 py-1.5 text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer">
@@ -489,7 +549,7 @@
             const blocks = [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('orb-lane-section', '美股ETF纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
+                pick('orb-lane-section', '美股权益模拟'),                pick('worth-history-section', '值得关注与重点关注归档'),
             ];
             blocks.forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
@@ -1367,8 +1427,8 @@
                 return;
             }
             const wd = today.weekday ? ' · ' + today.weekday : '';
-            const close = today.session_close_time ? ' · 收盘 ' + today.session_close_time + ' ET' : '';
-            if (meta) meta.textContent = '会话日 ' + (today.session_date || '—') + wd + close;
+            const close = today.session_close_time ? ' · Close ' + today.session_close_time + ' ET' : '';
+            if (meta) meta.textContent = (today.session_date || '—') + wd + close;
             const alerts = today.alerts || [];
             if (!alerts.length) {
                 el.innerHTML = '<div class="orb-alert-banner border border-neon-green/35 bg-neon-green/[0.07] text-xs leading-relaxed">'
@@ -2081,7 +2141,7 @@
             [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('orb-lane-section', '美股ETF纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
+                pick('orb-lane-section', '美股权益模拟'),                pick('worth-history-section', '值得关注与重点关注归档'),
             ].forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
             });
