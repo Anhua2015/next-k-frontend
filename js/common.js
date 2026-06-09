@@ -1,8 +1,6 @@
 /* Next K — 共享基础设施 */
 const API_BASE = resolveApiBase();
 
-        const API_BASE = resolveApiBase();
-
         /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
         async function fetchWithTimeout(url, options, ms) {
             const timeoutMs = ms == null ? 12000 : ms;
