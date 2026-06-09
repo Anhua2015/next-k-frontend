@@ -4,128 +4,843 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Next K · 总览</title>
+    <link rel="stylesheet" href="css/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script>
         tailwind.config = {
-            theme: { extend: {
-                fontFamily: { serif: ['"Noto Serif SC"', 'Georgia', 'serif'], sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'] },
-                colors: {
-                    background: 'var(--bg)', surface: 'var(--surface)', 'surface-light': 'var(--surface-light)',
-                    border: 'var(--border)', accent: 'var(--accent)', 'neon-green': 'var(--neon-green)',
-                    'neon-red': 'var(--neon-red)', 'neon-purple': 'var(--neon-purple)',
-                    'neon-blue': 'var(--neon-blue)', 'neon-yellow': 'var(--neon-yellow)', warn: 'var(--warn)',
-                    'text-primary': 'var(--text-primary)', 'text-secondary': 'var(--text-secondary)', 'text-muted': 'var(--text-muted)',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
+                        sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        /* 暖色禅意 · CSS 变量驱动，支持亮/暗双主题 */
+                        background: 'var(--bg)',
+                        surface: 'var(--surface)',
+                        'surface-light': 'var(--surface-light)',
+                        border: 'var(--border)',
+                        accent: 'var(--accent)',
+                        'neon-green': 'var(--neon-green)',
+                        'neon-red': 'var(--neon-red)',
+                        'neon-purple': 'var(--neon-purple)',
+                        'neon-blue': 'var(--neon-blue)',
+                        'neon-yellow': 'var(--neon-yellow)',
+                        warn: 'var(--warn)',
+                        'text-primary': 'var(--text-primary)',
+                        'text-secondary': 'var(--text-secondary)',
+                        'text-muted': 'var(--text-muted)',
+                    },
                 }
-            }}
+            }
         }
     </script>
-    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        :root {
+            --bg: #F9F8F6;
+            --surface: #FFFFFF;
+            --surface-light: #F5F1EB;
+            --border: #E8E4D8;
+            --accent: #8E4A49;
+            --neon-green: #8A9A5B;
+            --neon-red: #B2665E;
+            --neon-purple: #C5A059;
+            --neon-blue: #778899;
+            --neon-yellow: #C5A059;
+            --warn: #C5A059;
+            --text-primary: #4A4A4A;
+            --text-secondary: #706B67;
+            --text-muted: #9A928C;
+            --scrollbar-track: #F5F1EB;
+            --scrollbar-thumb: #D4CCC0;
+            --scrollbar-thumb-hover: #BDB5A8;
+            --shadow-color: rgba(74, 74, 74, 0.08);
+            --hover-bg: color-mix(in srgb, var(--surface-light) 65%, transparent);
+            --card-glow: rgba(197, 160, 89, 0.08);
+            --btn-hover-bg: #FAF7F4;
+            --oi-hover: #F5F1EB;
+            --code-bg: #F5F1EB;
+            --hero-bg-start: #FDFCFA;
+            --hero-bg-mid: #F5F0E8;
+            --hero-bg-end: #EDE8DF;
+            --hero-shadow: rgba(74, 74, 74, 0.1);
+            --hero-inner-glow: rgba(255, 255, 255, 0.9);
+        }
+        .dark {
+            --bg: #161618;
+            --surface: #1E1E20;
+            --surface-light: #27272A;
+            --border: #3A3A3E;
+            --accent: #C56B6A;
+            --neon-green: #9CB56A;
+            --neon-red: #D4807A;
+            --neon-purple: #D4B46A;
+            --neon-blue: #8899A5;
+            --neon-yellow: #D4B46A;
+            --warn: #D4B46A;
+            --text-primary: #E4E4E6;
+            --text-secondary: #A0A0A4;
+            --text-muted: #707074;
+            --scrollbar-track: #2D2D30;
+            --scrollbar-thumb: #555558;
+            --scrollbar-thumb-hover: #6A6A6E;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --hover-bg: rgba(45, 45, 48, 0.65);
+            --card-glow: rgba(197, 160, 89, 0.03);
+            --btn-hover-bg: #2D2D30;
+            --oi-hover: #2D2D30;
+            --code-bg: #2D2D30;
+            --hero-bg-start: #252528;
+            --hero-bg-mid: #222225;
+            --hero-bg-end: #1E1E20;
+            --hero-shadow: rgba(0, 0, 0, 0.3);
+            --hero-inner-glow: rgba(255, 255, 255, 0.03);
+        }
+        body {
+            color: var(--text-primary);
+            font-family: "Source Sans 3", system-ui, sans-serif;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -10%, var(--card-glow), transparent 55%),
+                radial-gradient(ellipse 60% 40% at 100% 20%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 50%),
+                linear-gradient(180deg, var(--surface) 0%, var(--bg) 40%);
+            background-attachment: fixed;
+        }
+        h1, h2, h3, .hl-title {
+            font-family: "Noto Serif SC", Georgia, serif;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+        ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text-primary); }
+        .card-hover {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 20px -6px var(--shadow-color), 0 1px 3px var(--shadow-color);
+        }
+        .card-hover:hover {
+            border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+            box-shadow: 0 10px 28px -8px color-mix(in srgb, var(--shadow-color) 150%, transparent), 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent);
+        }
+        .highlights-hero {
+            background: linear-gradient(145deg, var(--hero-bg-start, #FDFCFA) 0%, var(--hero-bg-mid, #F5F0E8) 48%, var(--hero-bg-end, #EDE8DF) 100%);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px -12px color-mix(in srgb, var(--shadow-color) 125%, transparent), inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, transparent);
+        }
+        .highlights-hero .hl-title {
+            color: var(--text-primary);
+            background: none;
+            -webkit-text-fill-color: var(--text-primary);
+        }
+        .section-accent-heat {
+            border-top: 1px solid color-mix(in srgb, var(--neon-green) 35%, transparent);
+        }
+        .section-accent-ambush {
+            border-top: 1px solid color-mix(in srgb, var(--neon-purple) 40%, transparent);
+        }
+        .section-accent-patrick {
+            border-top: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+        }
+        .btn-secondary {
+            transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+        }
+        .btn-secondary:hover {
+            background-color: var(--btn-hover-bg);
+        }
+        .oi-radar-pick:hover {
+            background-color: var(--oi-hover) !important;
+        }
+        #worth-history-tab-bar button[aria-selected="true"] {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        table tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+        code {
+            background: var(--code-bg);
+            color: var(--text-secondary);
+            padding: 0.1em 0.35em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 0.6rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            z-index: 999;
+            animation: fadein 0.2s ease;
+        }
+        .toast-ok  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 30%, transparent); color: var(--neon-green); }
+        .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
+        @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
 </head>
 <body class="min-h-screen">
 <header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(232,228,216,0.9)_inset]">
-    <div class="max-w-7xl mx-auto px-4 py-3">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-[0_4px_14px_-4px_rgba(142,74,73,0.28)] flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-[0_4px_14px_-4px_rgba(142,74,73,0.28)] flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-text-primary tracking-tight font-serif">
+                            Next <span class="text-accent">K</span>
+                        </h1>
+                    </div>
                 </div>
-                <h1 class="text-xl font-bold text-text-primary tracking-tight font-serif">Next <span class="text-accent">K</span></h1>
-            </div>
-            <div class="flex items-center gap-1.5 bg-surface-light rounded-lg p-1 border border-border/70">
-                <a href="index.html" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-accent/12 text-accent">总览</a>
-                <a href="research.html" class="px-3 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-accent hover:bg-accent/[0.06] transition-colors">研究</a>
-                <a href="live.html" class="px-3 py-1.5 rounded-md text-xs font-medium text-text-secondary hover:text-accent hover:bg-accent/[0.06] transition-colors">实盘</a>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
-                <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15">
-                    <span>连接中…</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1 bg-surface-light rounded-lg p-1 border border-border/70">
+                        <a href="index.html" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-accent/12 text-accent">总览</a>
+                        <a href="research.html" class="px-2.5 py-1 rounded-md text-xs font-medium text-text-secondary hover:text-accent transition-colors">研究</a>
+                        <a href="live.html" class="px-2.5 py-1 rounded-md text-xs font-medium text-text-secondary hover:text-accent transition-colors">实盘</a>
+                    </div>
+                    <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
+                    <div id="connection-status" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-neon-red/[0.09] text-neon-red border border-neon-red/15">
+                        <span>连接中…</span>
+                    </div>
                 </div>
             </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6" data-layout-rev="4" data-theme="zen-warm">
+        <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
+            <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
+                <div class="highlights-hero rounded-xl p-4 md:p-5 flex-1 flex flex-col justify-center">
+                    <div class="text-text-muted text-sm animate-pulse">加载值得关注…</div>
+                </div>
+            </div>
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
+                        <p class="text-text-muted text-xs mt-0.5">近 2 日 </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="s2-signals-body" class="p-4 overflow-x-auto overflow-y-auto flex-1 min-h-0">
+                    <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6 hidden" aria-label="ZCT 量化" id="zct-lane-section">
+            <div id="zct-lane-wrap" class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end w-full sm:w-auto sm:ml-auto">
+                        <select id="zct-vwap-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="zct-vwap-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="zct-vwap-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="zct-vwap-refresh" title="刷新列表" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="zct-vwap-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="zct-vwap-root" class="p-4 pt-2 overflow-x-auto">
+                    <div class="text-text-muted text-sm animate-pulse">加载 ZCT…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="收筹池 OI 监控" id="oi-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="oi-radar-body" class="p-4 overflow-x-auto">
+                <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="ORB开盘区间纸面" id="orb-lane-section">
+            <div class="bg-surface rounded-xl border border-accent/25 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">📈</span> ORB 开盘区间突破
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            美股 ETF · 15m OR + 5m 突破 · 5%ATR 止损 · EoD 平仓
+                            · <span id="orb-session-meta" class="font-mono text-text-secondary">—</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="orb-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="orb-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="orb-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="orb-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="orb-today-alerts" class="px-4 py-3 border-b border-border/40 bg-surface-light/[0.12] flex flex-col gap-2 shrink-0">
+                    <div class="text-text-muted text-sm animate-pulse">加载当日提示…</div>
+                </div>
+                <div id="orb-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="orb-bots" class="px-4 pb-2 flex flex-wrap gap-2 shrink-0"></div>
+                <div id="orb-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/40 lane-board-scroll" data-lane-max-rows="20">
+                    <div class="text-text-muted text-sm animate-pulse">加载 ORB 纸面…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6 hidden" aria-label="接针策略纸面" id="jz-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">📌</span> Pin insertion strategy
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">严选 <code class="text-[10px]">jz_universe</code>（Patrick+收筹）· EMA+ATR · <code class="text-[10px]">jz_signals</code></p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="jz-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-blue/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="jz-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-neon-blue/50" />
+                        <button type="button" id="jz-universe-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40 hover:text-neon-blue" title="查看严选 jz_universe">严选池</button>
+                        <span id="jz-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="jz-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-blue/40 hover:text-neon-blue">刷新</button>
+                    </div>
+                </div>
+                <p id="jz-universe-hint" class="hidden px-4 pt-2 text-[11px] leading-relaxed border-b border-border/30 text-text-muted font-mono"></p>
+                <div id="jz-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 shrink-0"></div>
+                <div id="jz-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/40 lane-board-scroll" data-lane-max-rows="20">
+                    <div class="text-text-muted text-sm animate-pulse">加载接针纸面…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6 hidden" aria-label="动量多一空一纸面" id="mom-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">⚡</span> Momentum Long-Short Strategy
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">TopMovers · 多 PULLBACK / 空 RALLY · 纸面 <code class="text-[10px]">Signals</code></p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <select id="mom-filter-status" class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-accent/50">
+                            <option value="all">全部</option>
+                            <option value="open">持仓中</option>
+                            <option value="settled">已结算</option>
+                        </select>
+                        <input type="text" id="mom-filter-symbol" placeholder="筛选标的" autocomplete="off"
+                            class="text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary w-[7.5rem] placeholder:text-text-muted focus:outline-none focus:border-accent/50" />
+                        <span id="mom-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="mom-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div id="mom-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 shrink-0"></div>
+                <div id="mom-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/40 lane-board-scroll" data-lane-max-rows="20">
+                    <div class="text-text-muted text-sm animate-pulse">加载动量纸面…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="Moss每日最优看板" id="mq-daily-board-section">
+            <div class="bg-surface rounded-xl border border-neon-yellow/25 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div class="min-w-0 flex-1">
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">📊</span> 每日寻优看板
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
+                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 全市场寻优
+                            · 纸面最多 <span id="mq-gov-max-enabled" class="font-mono">5</span> 个机器人
+                        </p>
+                    </div>
+                    <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted shrink-0">—</span>
+                </div>
+                <div class="px-4 py-2.5 border-b border-border/30 bg-neon-yellow/5 text-xs text-text-secondary leading-relaxed">
+                    <b class="text-text-primary">只记一句：</b>看每行最粗的「本批结论」——
+                    <span class="text-neon-green">会更新</span> = 已启用的机器人将换成这批参数；
+                    <span class="text-warn/90">不更新</span> = 继续用旧参数，下面小字是原因。
+                </div>
+                <div id="mq-daily-summary-chips" class="px-4 py-2 flex flex-wrap gap-2 text-[10px] font-mono border-b border-border/30"></div>
+                <div id="mq-daily-filter" class="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-border/30 text-xs">
+                    <span class="text-text-muted mr-1">筛选</span>
+                    <span data-mq-filter-hint class="text-[10px] text-text-muted mr-2"></span>
+                    <button type="button" data-mq-daily-filter="all" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-neon-yellow/40 bg-neon-yellow/15 text-neon-yellow">全部</button>
+                    <button type="button" data-mq-daily-filter="sync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-neon-green/40">会更新机器人</button>
+                    <button type="button" data-mq-daily-filter="nosync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-warn/40">不更新</button>
+                </div>
+                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[36rem] min-h-[6rem]">加载寻优结果…</div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="Moss量化实仓" id="mq-lane-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">🧬</span> Moss Quant (Live)
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">纸面账本（原工程）· 每机器人 <span id="mq-profile-cap-label" class="font-mono">1000</span>U · 1x · 开平同步币安限价 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="mq-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-purple/40 hover:text-neon-purple">刷新</button>
+                    </div>
+                </div>
+                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="mq-robot-pnl-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.18] shrink-0">
+                    <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide mb-2">各机器人盈亏</h3>
+                    <div id="mq-robot-pnl" class="flex flex-wrap gap-2 text-xs min-h-[2.5rem]">
+                        <span class="text-text-muted animate-pulse">加载…</span>
+                    </div>
+                </div>
+                <div id="mq-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
+                        <span id="mq-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                    </div>
+                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；持仓盈亏、入场价见下方「实仓信号」。</p>
+                    <div id="mq-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
+                    <div id="mq-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto min-h-[2rem] text-xs">加载最近一次扫描…</div>
+                </div>
+                <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">实仓 Profile（机器人配置）</h3>
+                            <p class="text-[10px] text-text-muted mt-0.5">盈亏见上方「各机器人」卡片与下表；15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
+                        </div>
+                        <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/43</span>
+                    </div>
+                    <div id="mq-profiles-list" class="text-text-muted text-xs mb-2">加载 Profile…</div>
+                    <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-1"></p>
+                </div>
+                <div class="px-4 pt-2 pb-0 border-t border-border/30">
+                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">实仓信号</h3>
+                </div>
+                <div id="mq-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[28rem] border-t border-border/40 lane-board-scroll">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Moss 实仓…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="Moss2 Factory纸面" id="m2-lane-section">
+            <div class="bg-surface rounded-xl border border-neon-blue/35 overflow-hidden card-hover min-w-0 flex flex-col">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
+                            <span aria-hidden="true">⚡</span> Moss2 Factory
+                        </h2>
+                        <p class="text-text-muted text-xs mt-0.5">
+                            与 Moss1 隔离 · factory <span class="font-mono text-neon-blue">HL 1.0.27</span> /
+                            <span class="font-mono text-neon-blue">EN 1.0.3</span> · 无每日寻优 · 信号=compute_signals
+                            · 默认 <span id="m2-default-variant-label" class="font-mono">en</span>/<span id="m2-default-template-label" class="font-mono">balanced</span>（币安）
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        <span id="m2-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
+                        <button type="button" id="m2-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-blue/40 hover:text-neon-blue">刷新</button>
+                    </div>
+                </div>
+                <div id="m2-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
+                <div id="m2-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
+                        <span id="m2-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
+                    </div>
+                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；<strong class="text-text-secondary font-normal">综合分 / 阈值</strong>为距有效开仓线进度（含质量余量与多 K 确认）；持仓盈亏与止损/止盈见「纸面信号」。</p>
+                    <div id="m2-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
+                    <div id="m2-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-44 overflow-auto min-h-[2rem] text-xs">加载最近一次扫描…</div>
+                </div>
+                <div id="m2-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">Profile（机器人）</h3>
+                        <span id="m2-profiles-count" class="text-[11px] font-mono text-neon-blue">启用 0/0</span>
+                    </div>
+                    <div id="m2-profiles-list" class="text-text-muted text-xs mb-2">加载…</div>
+                    <p id="m2-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-2"></p>
+                    <details class="rounded-lg border border-neon-blue/25 bg-surface/60 p-3">
+                        <summary class="text-xs font-semibold text-neon-blue cursor-pointer">新建 / 回测</summary>
+                        <datalist id="m2-symbol-datalist"></datalist>
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">名称</span>
+                                <input type="text" id="m2-create-name" maxlength="64" placeholder="btc-en" class="bg-surface-light border border-border rounded-lg px-2 py-1.5" /></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">标的</span>
+                                <input type="text" id="m2-create-symbol" list="m2-symbol-datalist" placeholder="BTCUSDT" class="bg-surface-light border border-border rounded-lg px-2 py-1.5 font-mono" /></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">引擎</span>
+                                <select id="m2-create-variant" class="bg-surface-light border border-border rounded-lg px-2 py-1.5" disabled title="运维固定币安 EN">
+                                    <option value="en" selected>EN · 币安 U 本位</option>
+                                </select></label>
+                            <label class="flex flex-col gap-1"><span class="text-text-muted">模板</span>
+                                <select id="m2-create-template" class="bg-surface-light border border-border rounded-lg px-2 py-1.5">
+                                    <option value="balanced">balanced</option>
+                                    <option value="momentum">momentum</option>
+                                    <option value="trend">trend</option>
+                                    <option value="mean_revert">mean_revert</option>
+                                </select></label>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2 items-center">
+                            <label class="flex items-center gap-1.5 text-xs text-text-secondary">
+                                <input type="checkbox" id="m2-create-enabled" class="rounded border-border" /> 创建后启用
+                            </label>
+                            <button type="button" id="m2-suggest-fill" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="GET /api/moss2/onboarding/suggest">按 Moss2 建议填充</button>
+                            <button type="button" id="m2-create-btn" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium">创建 Profile</button>
+                            <button type="button" id="m2-bt-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-blue/40">工厂回测</button>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2 items-center text-xs">
+                            <label class="flex items-center gap-1 text-text-muted">报告 Profile #
+                                <input type="number" id="m2-report-profile-id" min="1" placeholder="ID" class="w-16 bg-surface-light border border-border rounded px-1.5 py-1 font-mono text-text-primary" title="启用中的机器人 ID，见列表 #列" />
+                            </label>
+                            <button type="button" id="m2-report-backtest" class="btn-secondary px-2.5 py-1 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-[10px] hover:bg-neon-purple/15" title="最近回测 equity → QuantStats HTML">回测报告</button>
+                            <button type="button" id="m2-report-paper" class="btn-secondary px-2.5 py-1 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-[10px] hover:bg-neon-blue/15" title="纸面结算序列 → QuantStats HTML">纸面报告</button>
+                            <span id="m2-report-hint" class="text-[10px] text-text-muted"></span>
+                        </div>
+                        <pre id="m2-research-out" class="mt-2 text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto whitespace-pre-wrap break-words min-h-[2rem]">回测摘要显示于此。</pre>
+                    </details>
+                </div>
+                <div class="px-4 pt-2 pb-0 border-t border-border/30">
+                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">纸面信号</h3>
+                </div>
+                <div id="m2-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[24rem] border-t border-border/40 lane-board-scroll">
+                    <div class="text-text-muted text-sm animate-pulse">加载 Moss2…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-6" aria-label="值得关注与重点关注归档" id="worth-history-section">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
+                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2">💡 值得关注 · 历史记录</h2>
+                    </div>
+                </div>
+                <div id="worth-watch-boards-root" class="flex flex-col min-w-0">
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="重点关注与值得关注七类"></div>
+                    <div class="px-4 pb-4 pt-3 min-w-0">
+                        <div id="worth-history-tab-panels">
+                            <div class="text-text-muted text-sm animate-pulse">加载历史记录…</div>
+                        </div>
+                        <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 临时隐藏：期货 Alpha 模拟盘（与 main.py S6_FUTURES_ALPHA_SCHEDULER_ENABLED 一并恢复） -->
+        <section class="mb-6 hidden" aria-label="S6 期货 Alpha" id="s6-lane-section" data-s6-panel="1">
+            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
+                <div class="px-4 py-3 border-b border-border flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-text-primary font-semibold flex items-center gap-2">🤖 期货 </h2>
+                        <p class="text-text-muted text-xs mt-0.5">近 2 日每小时扫描归档 · 当前持仓与权益</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span id="s6-alpha-ts" class="text-text-muted text-xs font-mono">--</span>
+                        <button type="button" onclick="loadS6AutonomousAlpha()" id="s6-alpha-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
+                    </div>
+                </div>
+                <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">扫描记录</h3>
+                        <div id="s6-signals-body" class="overflow-x-auto overflow-y-auto max-h-[min(360px,50vh)] rounded-lg border border-border/60 bg-surface-light/20 p-2">
+                            <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-text-secondary text-xs font-medium uppercase tracking-wide mb-2">模拟持仓</h3>
+                        <div id="s6-positions-body" class="overflow-x-auto overflow-y-auto max-h-[min(360px,50vh)] rounded-lg border border-border/60 bg-surface-light/20 p-2">
+                            <div class="text-text-muted text-sm animate-pulse">加载中…</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        /** 强制主区板块顺序（兼容旧缓存 HTML，无 id 时用 aria-label） */
+        (function enforceDashboardLayoutEarly() {
+            const main = document.querySelector('main');
+            if (!main) return;
+            const pick = (id, aria) =>
+                document.getElementById(id) || main.querySelector('section[aria-label="' + aria + '"]');
+            const blocks = [
+                main.querySelector('section[aria-label="优先信号"]'),
+                pick('zct-lane-section', 'ZCT 量化'),
+                pick('oi-lane-section', '收筹池 OI 监控'),
+                pick('orb-lane-section', 'ORB开盘区间纸面'),
+                pick('mq-daily-board-section', 'Moss每日最优看板'),
+                pick('mq-lane-section', 'Moss量化实仓'),
+                pick('m2-lane-section', 'Moss2 Factory纸面'),
+                pick('worth-history-section', '值得关注与重点关注归档'),
+                main.querySelector('section[data-s6-panel="1"]'),
+            ];
+            blocks.forEach((el) => {
+                if (el && el.parentNode === main) main.appendChild(el);
+            });
+        })();
+    </script>
+
+    <footer class="border-t border-border py-6 mt-auto select-none">
+        <div class="max-w-7xl mx-auto px-4 text-center text-text-muted text-xs">
+            <p id="footer-brand-line" class="cursor-default">Next K</p>
+            <p class="mt-1 text-text-muted/60">仅供研究参考，不构成投资建议</p>
+        </div>
+    </footer>
+
+    <!-- 隐藏维护：地址栏 ?maint=1 或快速在页脚「Next K」上连点 5 次（1 秒内）打开 -->
+    <div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-border bg-surface/98 backdrop-blur-md shadow-[0_-12px_40px_rgba(74,74,74,0.12)] max-h-[min(88vh,920px)] overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-4 py-3 pb-6">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                    <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「刷新」与 ZCT 手动改单无需维护令牌（OI 刷新有约 2 分钟冷却）。下方清库 / 手动 Cron / 数据导出需先在「维护令牌」处保存。清库后可点上方「刷新」拉快照。</p>
+                </div>
+                <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
+            </div>
+            <div class="mb-3 p-3 rounded-lg border border-border/60 bg-surface-light/40 space-y-2">
+                <div class="text-text-secondary text-xs font-semibold">维护令牌</div>
+                <p class="text-text-muted text-[10px] leading-relaxed">与服务端环境变量 <code class="text-[10px]">NEXT_K_MAINTENANCE_TOKEN</code> 相同，仅保存在本浏览器，用于下方清库、手动 Cron 与数据卷导出。</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="password" id="maint-token-input" autocomplete="off" spellcheck="false" placeholder="粘贴维护令牌" class="flex-1 min-w-[12rem] max-w-md px-2.5 py-1.5 rounded-lg bg-background/80 border border-border/90 text-text-primary text-xs font-mono placeholder:text-text-muted/70 focus:border-accent/50 focus:outline-none" />
+                    <button type="button" id="maint-token-save" class="btn-secondary px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/35 text-accent text-xs font-medium hover:bg-accent/15">保存</button>
+                    <button type="button" id="maint-token-clear" class="btn-secondary px-3 py-1.5 rounded-lg border border-border/90 text-text-secondary text-xs hover:border-warn/40 hover:text-warn">清除</button>
+                    <span id="maint-token-status" class="text-[10px] text-text-muted"></span>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
+                <!-- 左栏：清理 -->
+                <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
+                    <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、大户多空快照、ZCT 纸面库；<strong class="text-text-secondary font-normal">动量 / 接针</strong>为两套独立策略 lane，清库在下方分组。清盘后请在主界面点「刷新」。</p>
+                    <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
+                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
+                        <button type="button" id="maint-top-trader-clear" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="POST /api/accumulation/maintenance/clear-top-trader">清理大户多空</button>
+                        <button type="button" id="maint-zct-vwap-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs hover:bg-warn/10 hover:border-warn/45" title="POST /api/zct-vwap/maintenance/clear-db">清理 ZCT 库</button>
+                    </div>
+                    <div class="text-text-secondary text-[10px] font-medium mt-2">纸面策略（独立 lane）</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-mom-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/momentum/maintenance/clear-db">清理动量库</button>
+                        <button type="button" id="maint-jz-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/jiezhen/maintenance/clear-db">清理接针库</button>
+                        <button type="button" id="maint-mq-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-purple/30 text-neon-purple text-xs font-medium hover:bg-neon-purple/10 hover:border-neon-purple/45" title="POST /api/moss-quant/maintenance/clear-db">清理 Moss 库</button>
+                        <button type="button" id="maint-m2-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-neon-blue/30 text-neon-blue text-xs font-medium hover:bg-neon-blue/10 hover:border-neon-blue/45" title="POST /api/moss2/maintenance/clear-db">清理 Moss2 库</button>
+                        <button type="button" id="maint-orb-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/orb/maintenance/clear-db">清理 ORB 库</button>
+                    </div>
+                </div>
+                <!-- 右栏：手动触发 -->
+                <div class="min-w-0 space-y-3 md:pl-1">
+                    <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
+                    <div class="text-accent/85 text-[11px] font-medium">定时任务（与 Cron 相同，后台执行）</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">与 <code class="text-[10px]">trigger-cron</code> 对齐。需先保存维护令牌。接针依赖 <code class="text-[10px]">worth_watch_hot_oi</code>，请先跑 oi。</p>
+                    <div class="text-text-secondary text-[10px] font-medium">雷达 / 池 / ZCT</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
+                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                        <button type="button" data-maint-cron="top_trader" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="大户多空+Taker（公开 fapi）">大户多空</button>
+                        <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                        <button type="button" data-maint-cron="powder_keg" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-warn/35 text-warn text-xs font-medium hover:border-warn/55 hover:bg-warn/10" title="火药桶扫描">火药桶扫描</button>
+                        <button type="button" data-maint-cron="touch_pool_4h" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs font-medium hover:border-accent/55 hover:bg-accent/10" title="触轨池 6h 回测">触轨池回测</button>
+                        <button type="button" data-maint-cron="zct_vwap" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 扫描</button>
+                        <button type="button" data-maint-cron="zct_vwap_resolve" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">ZCT VWAP 结算</button>
+                    </div>
+                    <div class="text-text-secondary text-[10px] font-medium mt-2">动量 · 接针（独立策略）</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" data-maint-cron="mom_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="动量 topMovers 纸面扫描">动量扫描</button>
+                        <button type="button" data-maint-cron="mom_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="动量移动止盈检查">动量止盈</button>
+                        <button type="button" data-maint-cron="jiezhen_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针 hot_oi 纸面扫描">接针扫描</button>
+                        <button type="button" data-maint-cron="jiezhen_trail" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="接针移动止盈检查">接针止盈</button>
+                        <button type="button" data-maint-cron="orb_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="ORB 美股纸面扫描">ORB 扫描</button>
+                        <button type="button" data-maint-cron="moss_quant_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-purple/35 text-neon-purple text-xs hover:border-neon-purple/55 hover:bg-neon-purple/10" title="Moss 量化实仓扫描">Moss 实仓</button>
+                        <button type="button" id="maint-m2-paper-scan" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/paper-scan?sync=true · 同步扫描并刷新看板">Moss2 纸面</button>
+                        <button type="button" id="maint-mq-daily-optimize" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15" title="POST /api/moss-quant/daily-optimize/run · 全市场寻优，约 30–45 分钟">Moss 全量寻优</button>
+                        <button type="button" id="maint-vp-sample" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan">VP 试水 BTC/ETH/SOL</button>
+                        <button type="button" id="maint-vp-watchlist" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/vp-regime/scan watchlist">VP 收筹池扫描</button>
+                        <button type="button" id="maint-zct-touch-pool" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="POST /api/zct-vwap/touch-pool-scan：同步 6h walk，页面等待并展示入选/淘汰摘要；默认落库">触轨池试跑</button>
+                    </div>
+                    <div class="text-text-secondary text-[10px] font-medium mt-2">Moss2 Factory 运维</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">调度器<strong>默认全自动</strong>：启动/每周日拉 CSV 后链式建 Profile→启用；15m 纸面扫描。下方按钮仅补救/强制。最近自动结果：<span id="m2-auto-last-run" class="text-text-secondary">加载中…</span></p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" id="maint-m2-bootstrap" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/40 text-neon-blue text-xs font-medium hover:bg-neon-blue/15" title="POST /api/moss2/maintenance/bootstrap-data · 确定=force 重拉；取消=仅补缺/stale">Moss2 拉 CSV</button>
+                        <button type="button" id="maint-m2-auto-provision" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-green/10 border border-neon-green/40 text-neon-green text-xs font-medium hover:bg-neon-green/15" title="后台执行+轮询汇总（勿 sync，易超时）">Moss2 全自动建 Profile</button>
+                        <button type="button" id="maint-m2-enable-approved" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-blue/35 text-neon-blue text-xs hover:border-neon-blue/55 hover:bg-neon-blue/10" title="POST /api/moss2/maintenance/enable-approved">Moss2 启用已批准</button>
+                    </div>
+                </div>
+            </div>
+            <div id="maint-mq-advanced" class="mt-4 pt-3 border-t border-border/50 space-y-3">
+                <div class="text-neon-purple/90 text-xs font-semibold tracking-wide">Moss 高级 · Profile / 回测</div>
+                <p class="text-text-muted text-[10px] leading-relaxed">手动创建实仓 Profile、单标的回测与进化流水线。主看盘仅保留 Profile 列表与看板「加入实仓」。</p>
+                <datalist id="mq-symbol-datalist"></datalist>
+                <div class="rounded-lg border border-border/80 bg-surface/60 p-3 space-y-2">
+                    <div class="text-text-muted text-[10px] font-medium uppercase tracking-wide">新建 Profile</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <label class="block min-w-0">
+                            <span class="text-[10px] text-text-muted">名称</span>
+                            <input type="text" id="mq-create-name" maxlength="64" placeholder="如 btc-balanced" autocomplete="off"
+                                class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                        </label>
+                        <label class="block min-w-0">
+                            <span class="text-[10px] text-text-muted">标的（币安 USDT 永续）</span>
+                            <input type="text" id="mq-create-symbol" list="mq-symbol-datalist" placeholder="BTCUSDT" autocomplete="off"
+                                class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                        </label>
+                        <label class="block min-w-0">
+                            <span class="text-[10px] text-text-muted">策略模板</span>
+                            <select id="mq-create-template"
+                                class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50">
+                                <option value="balanced">均衡 balanced</option>
+                                <option value="momentum">动量 momentum</option>
+                                <option value="trend">趋势 trend</option>
+                                <option value="mean_revert">均值回归 mean_revert</option>
+                            </select>
+                        </label>
+                        <label class="block min-w-0">
+                            <span class="text-[10px] text-text-muted">实仓预算 U</span>
+                            <input type="number" id="mq-create-equity" min="100" step="100" placeholder="10000"
+                                class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                        </label>
+                    </div>
+                    <p id="mq-template-hint" class="text-[10px] text-text-muted leading-relaxed">均衡：五维权重均衡，适合多数币种。</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <label class="inline-flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+                            <input type="checkbox" id="mq-create-enabled" checked class="rounded border-border text-neon-purple focus:ring-neon-purple/30" />
+                            创建后立即启用（参与 15m 实仓扫描）
+                        </label>
+                        <button type="button" id="mq-create-btn"
+                            class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">
+                            创建 Profile
+                        </button>
+                    </div>
+                </div>
+                <details id="mq-research-panel" class="rounded-lg border border-neon-purple/25 bg-surface/60 group">
+                    <summary class="cursor-pointer select-none px-3 py-2 text-text-muted text-[10px] font-medium uppercase tracking-wide list-none flex items-center justify-between gap-2 hover:text-text-secondary">
+                        <span>回测 / 进化</span>
+                        <span class="text-[9px] font-normal normal-case text-text-muted group-open:hidden">展开</span>
+                        <span class="text-[9px] font-normal normal-case text-neon-purple hidden group-open:inline">收起</span>
+                    </summary>
+                    <div class="px-3 pb-3 pt-1 space-y-2 border-t border-border/50">
+                        <p class="text-[10px] text-text-muted leading-relaxed">顺序：① 全量回测（可选）→ ② 分段 baseline → ③ LLM reflect → ④ 进化 run。耗时可 1–3 分钟，请勿重复点击。<b class="text-text-secondary">默认支持任意 XXXUSDT 标的</b>（如 XVGUSDT，不限 Moss 内置列表，K 线走币安）；选 Profile 时用其模板与战术参数。</p>
+                        <div class="flex flex-wrap gap-2 items-end">
+                            <label class="block min-w-[9rem] flex-1">
+                                <span class="text-[10px] text-text-muted">标的（USDT 永续）</span>
+                                <input type="text" id="mq-research-symbol" list="mq-symbol-datalist" placeholder="HYPEUSDT" autocomplete="off"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-primary focus:outline-none focus:border-neon-purple/50" />
+                            </label>
+                            <label class="block min-w-[8rem]">
+                                <span class="text-[10px] text-text-muted">策略模板</span>
+                                <select id="mq-research-template"
+                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50"
+                                    title="未选 Profile 时用于回测/寻优的默认性格">
+                                    <option value="balanced">均衡 balanced</option>
+                                    <option value="momentum">动量 momentum</option>
+                                    <option value="trend">趋势 trend</option>
+                                    <option value="mean_revert">均值回归 mean_revert</option>
+                                </select>
+                            </label>
+                            <label class="block min-w-[10rem]">
+                                <span class="text-[10px] text-text-muted">Profile（可选）</span>
+                                <select id="mq-research-profile"
+                                    class="mt-0.5 w-full text-xs bg-surface-light border border-border rounded-lg px-2 py-1.5 text-text-secondary focus:outline-none focus:border-neon-purple/50"
+                                    title="选中后回测使用该 Profile 的参数；并用于「应用到 Profile」">
+                                    <option value="">— 仅按标的 —</option>
+                                </select>
+                            </label>
+                            <label class="block w-24">
+                                <span class="text-[10px] text-text-muted">资金 U</span>
+                                <input type="number" id="mq-research-capital" min="100" step="100" placeholder="10000"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                            </label>
+                            <label class="block w-28">
+                                <span class="text-[10px] text-text-muted">段长 bars</span>
+                                <input type="number" id="mq-research-segment-bars" min="96" step="96" placeholder="672"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" title="15m 约 672=7天/段" />
+                            </label>
+                            <label class="block w-28">
+                                <span class="text-[10px] text-text-muted">baseline run_id</span>
+                                <input type="number" id="mq-baseline-run-id" min="1" step="1" placeholder="自动填入"
+                                    class="mt-0.5 w-full text-xs font-mono bg-surface-light border border-border rounded-lg px-2 py-1.5" />
+                            </label>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="mq-bt-backtest" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-neon-purple/40 hover:text-neon-purple">全量回测</button>
+                            <button type="button" id="mq-bt-baseline" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">② baseline</button>
+                            <button type="button" id="mq-bt-reflect" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15" title="需 Railway 配置 GROQ_API_KEY">③ reflect</button>
+                            <button type="button" id="mq-bt-evolve-run" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-purple/10 border border-neon-purple/35 text-neon-purple text-xs font-medium hover:bg-neon-purple/15">④ evolve run</button>
+                            <button type="button" id="mq-bt-apply-params" disabled
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-green/35 text-neon-green text-xs font-medium hover:bg-neon-green/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="将最近一次 baseline/evolve 的 final_params 写入下方所选 Profile">
+                                应用 final_params → Profile
+                            </button>
+                            <button type="button" id="mq-bt-optimize"
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-yellow/10 border border-neon-yellow/40 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/15"
+                                title="网格搜索 4 模板 × 战术参数（约 96 组），按回测收益排序，耗时 1–3 分钟">
+                                自动寻优
+                            </button>
+                            <button type="button" id="mq-bt-apply-optimize" disabled
+                                class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-neon-yellow/35 text-neon-yellow text-xs font-medium hover:bg-neon-yellow/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                title="将寻优最优战术参数写入下方所选 Profile（不换模板）">
+                                应用寻优战术 → Profile
+                            </button>
+                        </div>
+                        <pre id="mq-research-out" class="text-[10px] font-mono text-text-secondary bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words min-h-[2.5rem]">填写标的或选择 Profile 后点击按钮；结果摘要显示于此。</pre>
+                    </div>
+                </details>
+            </div>
+            <div class="mt-4 pt-3 border-t border-border/50 space-y-2">
+                <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据备份</div>
+                <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（持久化数据卷）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需维护令牌与 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
+                </div>
+            </div>
+            <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
         </div>
     </div>
-</header>
 
-<main class="max-w-7xl mx-auto px-4 py-6">
-    <!-- 首屏：值得关注 + S2 费率转负 -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
-        <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
-            <div class="highlights-hero rounded-xl p-4 md:p-5 flex-1 flex flex-col justify-center">
-                <div class="text-text-muted text-sm animate-pulse">加载值得关注…</div>
-            </div>
-        </div>
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
-            <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div><h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨</h2><p class="text-text-muted text-xs mt-0.5">近 2 日</p></div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
-                    <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                </div>
-            </div>
-            <div id="s2-signals-body" class="p-4 overflow-x-auto overflow-y-auto flex-1 min-h-0">
-                <div class="text-text-muted text-sm animate-pulse">加载中…</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 收筹池 OI 监控 -->
-    <section class="mb-6" aria-label="收筹池 OI 监控" id="oi-lane-section">
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
-            <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                <div><h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">📊 收筹池 · OI 监控</h2></div>
-                <div class="flex items-center gap-2 shrink-0">
-                    <span id="oi-radar-ts" class="text-text-muted text-xs font-mono">--</span>
-                    <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                </div>
-            </div>
-            <div id="oi-radar-body" class="p-4 overflow-x-auto">
-                <div class="text-text-muted text-sm animate-pulse">加载中…</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 火药桶雷达 -->
-    <section class="mb-6" id="powder-keg-section">
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
-            <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                <div><h2 class="text-text-primary font-semibold font-serif tracking-tight">🧨 火药桶雷达</h2><p class="text-text-muted text-xs mt-0.5">多周期 VWAP 信号 · Top5</p></div>
-                <div class="flex items-center gap-2 shrink-0"><span id="pk-ts" class="text-text-muted text-xs font-mono">--</span></div>
-            </div>
-            <div id="pk-body" class="p-4 overflow-x-auto"><div class="text-text-muted text-sm animate-pulse">加载中…</div></div>
-        </div>
-    </section>
-
-    <!-- Top Trader 大户 -->
-    <section class="mb-6" id="top-trader-section">
-        <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0">
-            <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2">
-                <div><h2 class="text-text-primary font-semibold font-serif tracking-tight">🐋 大户追踪</h2><p class="text-text-muted text-xs mt-0.5">15m 多空比</p></div>
-                <div class="flex items-center gap-2 shrink-0"><span id="tt-ts" class="text-text-muted text-xs font-mono">--</span></div>
-            </div>
-            <div id="tt-body" class="p-4 overflow-x-auto"><div class="text-text-muted text-sm animate-pulse">加载中…</div></div>
-        </div>
-    </section>
-</main>
-
-<footer class="border-t border-border py-6 mt-auto select-none">
-    <div class="max-w-7xl mx-auto px-4 text-center text-text-muted text-xs">
-        <p id="footer-brand-line" class="cursor-default">Next K</p>
-        <p class="mt-1 text-text-muted/60">仅供研究参考，不构成投资建议</p>
-    </div>
-</footer>
-
-<!-- 维护面板 -->
-<div id="maint-panel" class="hidden fixed inset-x-0 bottom-0 z-[70] border-t border-border bg-surface/98 backdrop-blur-md shadow-[0_-12px_40px_rgba(74,74,74,0.12)] max-h-[min(88vh,920px)] overflow-y-auto">
-    <div class="max-w-7xl mx-auto px-4 py-3 pb-6" id="maint-panel-inner"></div>
-</div>
-
-<script src="api-base.js"></script>
-<script src="js/ui.js" defer></script>
-<script src="js/app.js" defer></script>
+    <script src="api-base.js"></script>
+<script src="js/app.js"></script>
 </body>
-</html>
