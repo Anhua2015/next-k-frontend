@@ -5927,9 +5927,7 @@
             loadAccumulationOiRadar();
             loadS2FundingSignals();
             /* ZCT / 接针 / 动量主看板已隐藏；维护面板仍可清库/触轨 */
-            initMqProfilesPanelOnce();
-            void hydrateMqBoard();
-            document.getElementById('mq-refresh')?.addEventListener('click', () => void hydrateMqBoard());
+            /* Moss v1 已停用 (active_lane=moss2) */
             initOrbPanelOnce();
             void hydrateOrbBoard();
             initM2PanelOnce();
