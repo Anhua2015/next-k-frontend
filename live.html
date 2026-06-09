@@ -231,35 +231,6 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6" data-layout-rev="4" data-theme="zen-warm">
         <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-stretch" aria-label="优先信号">
-            <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
-                <div class="highlights-hero rounded-xl p-4 md:p-5 flex-1 flex flex-col justify-center">
-                    <div class="text-text-muted text-sm animate-pulse">加载值得关注…</div>
-                </div>
-            </div>
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div>
-                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">⚡ 费率转负 + OI 涨 </h2>
-                        <p class="text-text-muted text-xs mt-0.5">近 2 日 </p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span id="s2-signals-ts" class="text-text-muted text-xs font-mono">--</span>
-                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                    </div>
-                </div>
-                <div id="s2-signals-body" class="p-4 overflow-x-auto overflow-y-auto flex-1 min-h-0">
-                    <div class="text-text-muted text-sm animate-pulse">加载中…</div>
-                </div>
-            </div>
-        </section>
-
-
-
-
-
-
-
         <section class="mb-6" aria-label="Moss量化实仓" id="mq-lane-section">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
