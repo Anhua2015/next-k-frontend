@@ -347,39 +347,6 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="Moss每日最优看板" id="mq-daily-board-section">
-            <div class="bg-surface rounded-xl border border-neon-yellow/25 overflow-hidden card-hover min-w-0 flex flex-col">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div class="min-w-0 flex-1">
-                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
-                            <span aria-hidden="true">📊</span> 每日寻优看板
-                        </h2>
-                        <p class="text-text-muted text-xs mt-0.5">
-                            <span id="mq-daily-enabled-badge" class="text-neon-green">每日定时已开启</span>
-                            · 北京 <span id="mq-daily-schedule" class="font-mono">06:30</span> 全市场寻优
-                            · 纸面最多 <span id="mq-gov-max-enabled" class="font-mono">5</span> 个机器人
-                        </p>
-                    </div>
-                    <span id="mq-daily-meta" class="text-[10px] font-mono text-text-muted shrink-0">—</span>
-                </div>
-                <div class="px-4 py-2.5 border-b border-border/30 bg-neon-yellow/5 text-xs text-text-secondary leading-relaxed">
-                    <b class="text-text-primary">只记一句：</b>看每行最粗的「本批结论」——
-                    <span class="text-neon-green">会更新</span> = 已启用的机器人将换成这批参数；
-                    <span class="text-warn/90">不更新</span> = 继续用旧参数，下面小字是原因。
-                </div>
-                <div id="mq-daily-summary-chips" class="px-4 py-2 flex flex-wrap gap-2 text-[10px] font-mono border-b border-border/30"></div>
-                <div id="mq-daily-filter" class="px-4 py-2 flex flex-wrap gap-2 items-center border-b border-border/30 text-xs">
-                    <span class="text-text-muted mr-1">筛选</span>
-                    <span data-mq-filter-hint class="text-[10px] text-text-muted mr-2"></span>
-                    <button type="button" data-mq-daily-filter="all" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-neon-yellow/40 bg-neon-yellow/15 text-neon-yellow">全部</button>
-                    <button type="button" data-mq-daily-filter="sync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-neon-green/40">会更新机器人</button>
-                    <button type="button" data-mq-daily-filter="nosync" class="mq-daily-filter-btn px-2.5 py-1 rounded border border-border/70 text-text-muted hover:border-warn/40">不更新</button>
-                </div>
-                <div id="mq-daily-table" class="px-4 py-3 text-text-muted text-xs overflow-auto max-h-[36rem] min-h-[6rem]">加载寻优结果…</div>
-            </div>
-        </section>
-
-
         <section class="mb-6" aria-label="Moss2 Factory纸面" id="m2-lane-section">
             <div class="bg-surface rounded-xl border border-neon-blue/35 overflow-hidden card-hover min-w-0 flex flex-col">
                 <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">

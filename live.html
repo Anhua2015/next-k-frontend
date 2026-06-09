@@ -231,58 +231,6 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6" data-layout-rev="4" data-theme="zen-warm">
         <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
-        <section class="mb-6" aria-label="Moss量化实仓" id="mq-lane-section">
-            <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover min-w-0 flex flex-col">
-                <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex flex-wrap items-center justify-between gap-2 shrink-0">
-                    <div>
-                        <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight">
-                            <span aria-hidden="true">🧬</span> Moss Quant (Live)
-                        </h2>
-                        <p class="text-text-muted text-xs mt-0.5">纸面账本（原工程）· 每机器人 <span id="mq-profile-cap-label" class="font-mono">1000</span>U · 1x · 开平同步币安限价 · K 线 <span id="mq-data-source-label" class="font-mono text-neon-purple">—</span></p>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                        <span id="mq-ts" class="text-text-muted text-xs font-mono whitespace-nowrap">--</span>
-                        <button type="button" id="mq-refresh" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-neon-purple/40 hover:text-neon-purple">刷新</button>
-                    </div>
-                </div>
-                <div id="mq-summary" class="px-4 pt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0"></div>
-                <div id="mq-robot-pnl-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.18] shrink-0">
-                    <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide mb-2">各机器人盈亏</h3>
-                    <div id="mq-robot-pnl" class="flex flex-wrap gap-2 text-xs min-h-[2.5rem]">
-                        <span class="text-text-muted animate-pulse">加载…</span>
-                    </div>
-                </div>
-                <div id="mq-scan-panel" class="px-4 py-2 border-t border-border/40 bg-surface-light/[0.12] shrink-0">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                        <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">15m 扫描摘要</h3>
-                        <span id="mq-scan-meta" class="text-[10px] font-mono text-text-muted">—</span>
-                    </div>
-                    <p class="text-[10px] text-text-muted mb-1.5 leading-relaxed">仅展示<strong class="text-text-secondary font-normal">观望</strong>与<strong class="text-text-secondary font-normal">本轮开/平</strong>；持仓盈亏、入场价见下方「实仓信号」。</p>
-                    <div id="mq-scan-summary" class="flex flex-wrap gap-2 mb-2 text-[10px] font-mono"></div>
-                    <div id="mq-scan-status" class="bg-surface-light/50 border border-border/60 rounded-lg p-2 max-h-40 overflow-auto min-h-[2rem] text-xs">加载最近一次扫描…</div>
-                </div>
-                <div id="mq-profiles-panel" class="px-4 py-3 border-t border-border/40 bg-surface-light/[0.15] shrink-0">
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                        <div>
-                            <h3 class="text-text-secondary text-xs font-semibold uppercase tracking-wide">实仓 Profile（机器人配置）</h3>
-                            <p class="text-[10px] text-text-muted mt-0.5">盈亏见上方「各机器人」卡片与下表；15m 扫描仅跑<b class="text-text-secondary">已启用</b>与<b class="text-text-secondary">仍有持仓</b>的标的。</p>
-                        </div>
-                        <span id="mq-profiles-count" class="text-[11px] font-mono text-neon-purple">启用 0/43</span>
-                    </div>
-                    <div id="mq-profiles-list" class="text-text-muted text-xs mb-2">加载 Profile…</div>
-                    <p id="mq-profiles-msg" class="text-[11px] font-mono min-h-[1rem] mb-1"></p>
-                </div>
-                <div class="px-4 pt-2 pb-0 border-t border-border/30">
-                    <h3 class="text-text-muted text-[10px] uppercase tracking-wide font-medium">实仓信号</h3>
-                </div>
-                <div id="mq-signals-root" class="p-4 pt-2 overflow-x-auto overflow-y-auto max-h-[28rem] border-t border-border/40 lane-board-scroll">
-                    <div class="text-text-muted text-sm animate-pulse">加载 Moss 实仓…</div>
-                </div>
-            </div>
-        </section>
-
-
-
         <!-- 临时隐藏：期货 Alpha 模拟盘（与 main.py S6_FUTURES_ALPHA_SCHEDULER_ENABLED 一并恢复） -->
         <section class="mb-6 hidden" aria-label="S6 期货 Alpha" id="s6-lane-section" data-s6-panel="1">
             <div class="bg-surface rounded-xl border border-border overflow-hidden card-hover">
