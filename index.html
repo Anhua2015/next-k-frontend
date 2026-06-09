@@ -420,16 +420,16 @@
             </div>
         </section>
 
-        <section class="mb-6" aria-label="ORB开盘区间纸面" id="orb-lane-section">
+        <section class="mb-6" aria-label="美股ETF纸面" id="orb-lane-section">
             <div class="orb-lane-shell bg-surface rounded-xl border border-accent/20 overflow-hidden card-hover min-w-0 flex flex-col shadow-[0_8px_32px_-16px_var(--shadow-color)]">
                 <div class="orb-lane-header px-4 py-3.5 border-b border-border/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
                     <div class="min-w-0">
                         <h2 class="text-text-primary font-semibold font-serif flex items-center gap-2 tracking-tight text-base sm:text-lg">
                             <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 text-base" aria-hidden="true">📈</span>
-                            ORB 开盘区间突破
+                            美股 ETF 纸面
                         </h2>
                         <p class="text-text-muted text-xs mt-1.5 leading-relaxed pl-[2.35rem]">
-                            美股 ETF · 15m OR + 5m 突破 · 5%ATR 止损 · EoD 平仓
+                            纸面信号跟踪
                             · <span id="orb-session-meta" class="font-mono text-text-secondary">—</span>
                         </p>
                     </div>
@@ -456,7 +456,7 @@
                     <div id="orb-bots" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2.5"></div>
                 </div>
                 <div id="orb-root" class="p-4 pt-3 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/35 lane-board-scroll" data-lane-max-rows="20">
-                    <div class="text-text-muted text-sm animate-pulse py-6 text-center">加载 ORB 纸面…</div>
+                    <div class="text-text-muted text-sm animate-pulse py-6 text-center">加载纸面…</div>
                 </div>
             </div>
         </section>
@@ -489,7 +489,7 @@
             const blocks = [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('orb-lane-section', 'ORB开盘区间纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
+                pick('orb-lane-section', '美股ETF纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
             ];
             blocks.forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
@@ -1462,7 +1462,7 @@
                 + '</div>'
             );
             el.innerHTML = [
-                stat('机器人', escHtml(String(botCount)), '每 bot ' + escHtml(botEq) + ' U · 1% 风险定仓', 'var(--accent)', '', skipTag),
+                stat('机器人', escHtml(String(botCount)), '每 bot ' + escHtml(botEq) + ' U', 'var(--accent)', '', skipTag),
                 stat('持仓', escHtml(String(sum.open_positions ?? 0)), '', 'var(--warn)', '', ''),
                 stat('已结算', escHtml(String(sum.settled_trades ?? 0)), '', 'var(--neon-blue)', '', ''),
                 stat('累计 U', fmtZctPx(pnl, 4), '', pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
@@ -1511,7 +1511,7 @@
                     + '<div class="orb-empty">'
                     + '<div class="orb-empty-icon" aria-hidden="true">📋</div>'
                     + '<p class="text-text-secondary text-sm font-medium">暂无交易记录</p>'
-                    + '<p class="text-text-muted text-xs max-w-sm">' + escHtml(totalHint || '维护面板可触发「ORB 扫描」生成纸面信号') + '</p>'
+                    + '<p class="text-text-muted text-xs max-w-sm">' + escHtml(totalHint || '维护面板可触发纸面扫描') + '</p>'
                     + '</div>';
                 return;
             }
@@ -1520,7 +1520,7 @@
                 const pnl = row.pnl_usdt != null ? Number(row.pnl_usdt) : null;
                 const pnlCls = pnl != null ? pxClass(pnl) : 'text-text-muted';
                 const volRatio = (row.volume && row.vol_ma) ? (Number(row.volume) / Number(row.vol_ma)).toFixed(2) : '—';
-                const tpHtml = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : '<span class="text-text-muted">EoD</span>';
+                const tpHtml = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : '<span class="text-text-muted">—</span>';
                 const symShort = escHtml(orbBotBaseSymbol(row.symbol));
                 return `<tr class="border-b border-border/50 hover:bg-surface-light/40 transition-colors">
                     <td class="py-2 px-2 font-mono text-text-muted">${escHtml(String(row.id ?? '—'))}</td>
@@ -1593,7 +1593,7 @@
             const root = document.getElementById('orb-root');
             const tsEl = document.getElementById('orb-ts');
             if (!root) return;
-            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 ORB 纸面…</div>';
+            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载纸面…</div>';
             const [sumRes, sigRes] = await Promise.allSettled([API.orbSummary(), API.orbSignals()]);
             if (sumRes.status === 'fulfilled') {
                 renderOrbTodayAlerts(sumRes.value.today);
@@ -2081,7 +2081,7 @@
             [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('orb-lane-section', 'ORB开盘区间纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
+                pick('orb-lane-section', '美股ETF纸面'),                pick('worth-history-section', '值得关注与重点关注归档'),
             ].forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
             });
