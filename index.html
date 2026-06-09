@@ -33,6 +33,15 @@
                         'text-secondary': 'var(--text-secondary)',
                         'text-muted': 'var(--text-muted)',
                     },
+                    borderRadius: {
+                        sm: '0.125rem',
+                        DEFAULT: '0.2rem',
+                        md: '0.25rem',
+                        lg: '0.375rem',
+                        xl: '0.5rem',
+                        '2xl': '0.625rem',
+                        '3xl': '0.75rem',
+                    },
                 }
             }
         }
@@ -67,6 +76,9 @@
             --hero-bg-end: #EDE8DF;
             --hero-shadow: rgba(74, 74, 74, 0.1);
             --hero-inner-glow: rgba(255, 255, 255, 0.9);
+            --radius-sm: 0.25rem;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
         }
         .dark {
             --bg: #161618;
@@ -113,7 +125,7 @@
         }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
         ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text-primary); }
         .card-hover {
@@ -163,7 +175,7 @@
             background: var(--code-bg);
             color: var(--text-secondary);
             padding: 0.1em 0.35em;
-            border-radius: 4px;
+            border-radius: 3px;
             font-size: 0.9em;
         }
         .theme-toggle {
@@ -171,7 +183,7 @@
             align-items: center;
             justify-content: center;
             width: 32px; height: 32px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background: var(--surface-light);
             color: var(--text-secondary);
@@ -185,7 +197,7 @@
             bottom: 1.5rem;
             right: 1.5rem;
             padding: 0.6rem 1.1rem;
-            border-radius: 0.6rem;
+            border-radius: var(--radius-sm);
             font-size: 0.82rem;
             font-weight: 500;
             z-index: 999;
@@ -217,14 +229,14 @@
             align-items: center;
             gap: 0.35rem;
             padding: 0.25rem;
-            border-radius: 0.65rem;
+            border-radius: var(--radius-md);
             border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
             background: color-mix(in srgb, var(--surface-light) 55%, var(--surface));
         }
         .orb-stat-card {
             position: relative;
             overflow: hidden;
-            border-radius: 0.75rem;
+            border-radius: var(--radius-md);
             border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
             background: color-mix(in srgb, var(--surface-light) 40%, var(--surface));
             padding: 0.65rem 0.75rem;
@@ -258,7 +270,7 @@
             color: var(--text-muted);
         }
         .orb-bot-card {
-            border-radius: 0.85rem;
+            border-radius: var(--radius-md);
             transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
         }
         .orb-bot-card:hover {
@@ -269,7 +281,7 @@
             display: flex;
             align-items: flex-start;
             gap: 0.65rem;
-            border-radius: 0.75rem;
+            border-radius: var(--radius-md);
             padding: 0.65rem 0.85rem;
         }
         .orb-alert-icon {
@@ -283,7 +295,7 @@
             font-size: 0.75rem;
         }
         .orb-table-wrap {
-            border-radius: 0.75rem;
+            border-radius: var(--radius-md);
             border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
             background: color-mix(in srgb, var(--surface-light) 25%, var(--surface));
             overflow: hidden;
@@ -304,7 +316,7 @@
             gap: 0.5rem;
             padding: 2.5rem 1rem;
             margin-top: 0.5rem;
-            border-radius: 0.75rem;
+            border-radius: var(--radius-md);
             border: 1px dashed color-mix(in srgb, var(--border) 95%, transparent);
             background: color-mix(in srgb, var(--surface-light) 35%, transparent);
             text-align: center;
@@ -1445,7 +1457,7 @@
             const stat = (label, value, sub, accent, extraCls, suffixHtml) => (
                 '<div class="orb-stat-card" style="--orb-stat-accent:' + accent + '">'
                 + '<div class="text-text-muted text-[10px] uppercase tracking-wider pl-1">' + label + (suffixHtml || '') + '</div>'
-                + '<div class="orb-stat-value text-xl font-semibold text-text-primary pl-1 mt-0.5 ' + (extraCls || '') + '">' + value + '</div>'
+                + '<div class="orb-stat-value text-sm font-semibold text-text-primary pl-1 mt-0.5 ' + (extraCls || '') + '">' + value + '</div>'
                 + (sub ? '<div class="text-[10px] text-text-muted pl-1 mt-0.5 leading-snug">' + sub + '</div>' : '')
                 + '</div>'
             );
