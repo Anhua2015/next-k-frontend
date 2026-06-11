@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>实盘看板 · Next K</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="theme.css" />
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script>
         tailwind.config = {
@@ -45,67 +46,19 @@
     </script>
     <style>
         :root {
-            --bg: #F9F8F6;
-            --surface: #FFFFFF;
-            --surface-light: #F5F1EB;
-            --border: #E8E4D8;
-            --accent: #8E4A49;
-            --neon-green: #8A9A5B;
-            --neon-red: #B2665E;
-            --neon-purple: #C5A059;
-            --neon-blue: #778899;
-            --neon-yellow: #C5A059;
-            --warn: #C5A059;
-            --text-primary: #4A4A4A;
-            --text-secondary: #706B67;
-            --text-muted: #9A928C;
-            --scrollbar-track: #F5F1EB;
-            --scrollbar-thumb: #D4CCC0;
-            --shadow-color: rgba(74, 74, 74, 0.08);
-            --hover-bg: rgba(245, 241, 235, 0.7);
-            --card-glow: rgba(197, 160, 89, 0.08);
-            --radius-sm: 0.25rem;
-            --radius-md: 0.375rem;
-            --radius-lg: 0.5rem;
+            /* tokens in theme.css — local aliases only */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
         }
-        .dark {
-            --bg: #161618;
-            --surface: #1E1E20;
-            --surface-light: #27272A;
-            --border: #3A3A3E;
-            --accent: #C56B6A;
-            --neon-green: #9CB56A;
-            --neon-red: #D4807A;
-            --neon-purple: #D4B46A;
-            --neon-blue: #8899A5;
-            --neon-yellow: #D4B46A;
-            --warn: #D4B46A;
-            --text-primary: #E4E4E6;
-            --text-secondary: #A0A0A4;
-            --text-muted: #707074;
-            --scrollbar-track: #2D2D30;
-            --scrollbar-thumb: #555558;
-            --shadow-color: rgba(0, 0, 0, 0.3);
-            --hover-bg: rgba(45, 45, 48, 0.7);
-            --card-glow: rgba(197, 160, 89, 0.03);
-        }
-        body {
-            color: var(--text-primary);
-            font-family: "Source Sans 3", system-ui, sans-serif;
-            background-color: var(--bg);
-            background-image:
-                radial-gradient(ellipse 80% 50% at 50% -10%, var(--card-glow), transparent 55%),
-                linear-gradient(180deg, var(--surface) 0%, var(--bg) 40%);
-            background-attachment: fixed;
-        }
-        h1, h2 { font-family: "Noto Serif SC", Georgia, serif; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
-        ::selection { background: color-mix(in srgb, var(--accent) 18%, transparent); }
         .card {
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 20px -6px var(--shadow-color);
+            transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+            box-shadow: var(--card-shadow);
+            border-radius: var(--radius-lg);
+        }
+        .card:hover {
+            border-color: color-mix(in srgb, var(--gold) 22%, var(--border));
+            box-shadow: var(--card-shadow-hover);
         }
         .btn-secondary { transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease; }
         .pnl-pos { color: var(--neon-green); }
@@ -184,25 +137,33 @@
 <body class="min-h-screen">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 bg-surface/92 backdrop-blur-md border-b border-border ">
-    <div class="max-w-7xl mx-auto px-4 py-3">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <a href="index.html" class="flex items-center gap-2 group">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent/80 shadow-[0_4px_14px_-4px_rgba(142,74,73,0.28)] flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+<header class="app-header sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-2.5">
+        <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4 min-w-0">
+                <a href="index.html" class="flex items-center gap-2.5 shrink-0 group">
+                    <div class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                     </div>
-                    <span class="text-xl font-bold text-text-primary tracking-tight group-hover:text-accent transition-colors">Next <span class="text-accent">K</span></span>
+                    <div>
+                        <span class="brand-title text-text-primary group-hover:text-accent transition-colors">Next <span class="text-accent">K</span></span>
+                        <div class="brand-subtitle hidden sm:block">Live Terminal</div>
+                    </div>
                 </a>
-                <span class="text-text-muted text-sm">/</span>
-                <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
-                <span class="text-text-secondary text-sm font-medium">实盘看板</span>
+                <nav class="hidden md:flex items-center gap-1.5" aria-label="主导航">
+                    <a href="index.html" class="nav-pill">策略看板</a>
+                    <a href="binance.html" class="nav-pill nav-pill-active" aria-current="page">实盘看板</a>
+                </nav>
             </div>
-            <div class="flex items-center gap-2">
-                <button type="button" onclick="refreshAll()" class="btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs font-medium hover:border-accent/40 hover:text-accent">刷新</button>
-                <div id="status-badge" class="badge badge-disabled">离线</div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span id="header-et-clock" class="header-clock hidden lg:inline" title="美东时间">--:-- ET</span>
+                <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
+                <button type="button" onclick="refreshAll()" class="btn-ghost">刷新</button>
+                <div id="status-badge" class="status-pill status-pill-err bg-neon-red/[0.08] text-neon-red border-neon-red/20">
+                    <span class="status-dot"></span><span>离线</span>
+                </div>
             </div>
         </div>
     </div>
@@ -218,7 +179,10 @@
         <!-- Status card -->
         <div class="bg-surface rounded-xl border border-border card p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-text-primary font-semibold text-sm">系统状态</h2>
+                <div>
+                    <div class="panel-kicker">System</div>
+                    <h2 class="panel-title mt-1">系统状态</h2>
+                </div>
             </div>
             <div id="status-body" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
@@ -228,7 +192,10 @@
         <!-- Binance config editor -->
         <div class="bg-surface rounded-xl border border-border card p-4">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="text-text-primary font-semibold text-sm">交易配置</h2>
+                <div>
+                    <div class="panel-kicker">Config</div>
+                    <h2 class="panel-title mt-1">交易配置</h2>
+                </div>
                 <button id="btn-save-config" type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25 disabled:opacity-50 disabled:cursor-not-allowed">保存配置</button>
             </div>
             <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
@@ -405,6 +372,34 @@ function signalStatusBadge(s) {
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
+function setBinanceStatusPill(el, state, text) {
+    var classes = {
+        ok: 'status-pill status-pill-ok bg-neon-green/[0.08] text-neon-green border-neon-green/20',
+        warn: 'status-pill status-pill-warn bg-neon-yellow/[0.08] text-neon-yellow border-neon-yellow/22',
+        err: 'status-pill status-pill-err bg-neon-red/[0.08] text-neon-red border-neon-red/20',
+    };
+    el.className = classes[state] || classes.err;
+    el.innerHTML = '<span class="status-dot"></span><span>' + text + '</span>';
+}
+
+function tickHeaderClock() {
+    var el = document.getElementById('header-et-clock');
+    if (!el) return;
+    try {
+        var parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/New_York',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).formatToParts(new Date());
+        var h = (parts.find(function(p) { return p.type === 'hour'; }) || {}).value || '--';
+        var m = (parts.find(function(p) { return p.type === 'minute'; }) || {}).value || '--';
+        el.textContent = h + ':' + m + ' ET';
+    } catch (e) {
+        el.textContent = '--:-- ET';
+    }
+}
+
 async function loadStatus() {
     try {
         var d = await apiFetch('/api/binance/status');
@@ -412,8 +407,15 @@ async function loadStatus() {
         var testnet  = d.testnet  === 'true' || d.testnet  === true;
 
         var badge = document.getElementById('status-badge');
-        badge.className = 'badge ' + (enabled ? 'badge-enabled' : 'badge-disabled');
-        badge.textContent = enabled ? (testnet ? 'TESTNET' : '实盘') : '已禁用';
+        if (badge) {
+            if (!enabled) {
+                setBinanceStatusPill(badge, 'err', '已禁用');
+            } else if (testnet) {
+                setBinanceStatusPill(badge, 'warn', 'TESTNET');
+            } else {
+                setBinanceStatusPill(badge, 'ok', '实盘');
+            }
+        }
 
         var items = [
             ['状态',     enabled ? '<span class="badge badge-enabled">启用</span>' : '<span class="badge badge-disabled">禁用</span>'],
@@ -432,8 +434,7 @@ async function loadStatus() {
         document.getElementById('status-body').innerHTML =
             '<div class="col-span-3" style="color:var(--neon-red);font-size:0.75rem">无法连接：' + e.message + '</div>';
         var badge = document.getElementById('status-badge');
-        badge.className = 'badge badge-disabled';
-        badge.textContent = '离线';
+        if (badge) setBinanceStatusPill(badge, 'err', '离线');
     }
 }
 
@@ -645,6 +646,8 @@ function toggleTheme() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', function() {
+    tickHeaderClock();
+    setInterval(tickHeaderClock, 30000);
     refreshAll();
     setInterval(function() {
         if (document.visibilityState === 'visible') {
