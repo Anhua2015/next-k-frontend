@@ -572,7 +572,10 @@
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
                     <div id="connection-status" class="status-pill bg-neon-red/[0.07] text-neon-red border-neon-red/18">
-                        <span>连接中…</span>
+                        <span>API 连接中…</span>
+                    </div>
+                    <div id="protocol-status" class="status-pill bg-neon-red/[0.07] text-neon-red border-neon-red/18">
+                        <span>Protocol 连接中…</span>
                     </div>
                 </div>
             </div>
@@ -769,8 +772,10 @@
     </div>
 
     <script src="api-base.js"></script>
+    <script src="binance-api-base.js"></script>
     <script>
         const API_BASE = resolveApiBase();
+        const PROTOCOL_BASE = resolveProtocolApiBase();
 
         /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
         async function fetchWithTimeout(url, options, ms) {
@@ -2218,17 +2223,55 @@
             });
         }
 
+        function setStatusPill(el, state, text) {
+            const classes = {
+                ok: 'status-pill bg-neon-green/[0.07] text-neon-green border-neon-green/18',
+                warn: 'status-pill bg-neon-yellow/[0.07] text-neon-yellow border-neon-yellow/18',
+                err: 'status-pill bg-neon-red/[0.07] text-neon-red border-neon-red/18',
+            };
+            el.className = classes[state] || classes.err;
+            el.innerHTML = '<span>' + text + '</span>';
+        }
+
+        async function protocolHealth() {
+            const res = await fetchWithTimeout(`${PROTOCOL_BASE}/api/binance/health`, {}, 8000);
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+        }
+
         async function checkConnection() {
             const conn = document.getElementById('connection-status');
-            if (!conn) return;
-            try {
-                await API.health();
-                conn.className = 'status-pill bg-neon-green/[0.07] text-neon-green border-neon-green/18';
-                conn.innerHTML = '<span>API 已连接</span>';
-            } catch (e) {
-                conn.className = 'status-pill bg-neon-red/[0.07] text-neon-red border-neon-red/18';
-                const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
-                conn.innerHTML = '<span>API 连接失败' + escHtml(detail) + '</span>';
+            const protoEl = document.getElementById('protocol-status');
+            if (!conn && !protoEl) return;
+
+            const [apiRes, protoRes] = await Promise.allSettled([
+                API.health(),
+                protocolHealth(),
+            ]);
+
+            if (conn) {
+                if (apiRes.status === 'fulfilled') {
+                    setStatusPill(conn, 'ok', 'API 已连接');
+                } else {
+                    const e = apiRes.reason;
+                    const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
+                    setStatusPill(conn, 'err', 'API 连接失败' + escHtml(detail));
+                }
+            }
+
+            if (protoEl) {
+                if (protoRes.status === 'fulfilled') {
+                    const d = protoRes.value;
+                    if (d && d.status === 'ok') {
+                        setStatusPill(protoEl, 'ok', 'Protocol 已连接');
+                    } else {
+                        setStatusPill(protoEl, 'warn', 'Protocol 降级');
+                    }
+                } else {
+                    const e = protoRes.reason;
+                    const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
+                    setStatusPill(protoEl, 'err', 'Protocol 连接失败' + escHtml(detail));
+                }
             }
         }
 
