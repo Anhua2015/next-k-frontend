@@ -15,27 +15,6 @@ function resolveApiBase() {
     return 'https://next-k-api-production.up.railway.app';
 }
 
-function getMaintenanceToken() {
-    try {
-        const ls = localStorage.getItem('NEXT_K_MAINTENANCE_TOKEN');
-        if (ls && String(ls).trim()) return String(ls).trim();
-    } catch (e) { /* ignore */ }
-    return '';
-}
-
-function setMaintenanceToken(tok) {
-    const t = String(tok || '').trim();
-    if (!t) return false;
-    try {
-        localStorage.setItem('NEXT_K_MAINTENANCE_TOKEN', t);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
-
-function clearMaintenanceToken() {
-    try {
-        localStorage.removeItem('NEXT_K_MAINTENANCE_TOKEN');
-    } catch (e) { /* ignore */ }
-}
+try {
+    localStorage.removeItem('NEXT_K_MAINTENANCE_TOKEN');
+} catch (e) { /* ignore */ }

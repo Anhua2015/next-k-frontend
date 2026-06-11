@@ -15,27 +15,6 @@ function resolveProtocolApiBase() {
     return 'https://next-k-protocol-production.up.railway.app';
 }
 
-function getProtocolToken() {
-    try {
-        const ls = localStorage.getItem('PROTOCOL_MAINTENANCE_TOKEN');
-        if (ls && String(ls).trim()) return String(ls).trim();
-    } catch (e) { /* ignore */ }
-    return '';
-}
-
-function setProtocolToken(tok) {
-    const t = String(tok || '').trim();
-    if (!t) return false;
-    try {
-        localStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', t);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
-
-function clearProtocolToken() {
-    try {
-        localStorage.removeItem('PROTOCOL_MAINTENANCE_TOKEN');
-    } catch (e) { /* ignore */ }
-}
+try {
+    localStorage.removeItem('PROTOCOL_MAINTENANCE_TOKEN');
+} catch (e) { /* ignore */ }
