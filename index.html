@@ -1507,7 +1507,7 @@
                 stat('宏观过滤', sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启', '', 'var(--neon-purple)', sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted', ''),
             ].join('');
             if (botsEl) {
-                const rows = Array.isArray(sum.robots) ? sum.robots : (Array.isArray(sum.per_symbol) ? sum.per_symbol : []);
+                const rows = Array.isArray(sum.robots) ? sum.robots : [];
                 botsEl.innerHTML = rows.length ? renderOrbRobotCards(rows) : '<div class="col-span-full text-text-muted text-xs py-2">暂无 Robot 配置</div>';
             }
         }
@@ -1597,13 +1597,14 @@
             const btn = document.getElementById('maint-orb-clear-db');
             if (btn) btn.disabled = true;
             try {
-                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs、orb_robots 等，不可撤销。')) return;
+                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_v2_runs、orb_robots 等，不可撤销。')) return;
                 const out = await API.orbClearDb();
                 if (msg) {
                     msg.innerHTML = '<span class="text-neon-green">ORB 已清库</span> signals='
                         + escHtml(String(out.deleted_signals ?? 0))
                         + ' settlements=' + escHtml(String(out.deleted_settlements ?? 0))
-                        + ' runs=' + escHtml(String(out.deleted_runs ?? 0));
+                        + ' v2_runs=' + escHtml(String(out.deleted_v2_runs ?? 0))
+                        + ' robots=' + escHtml(String(out.deleted_robots ?? 0));
                 }
                 await hydrateOrbBoard();
             } catch (e) {
