@@ -256,6 +256,26 @@
             color: color-mix(in srgb, var(--accent) 88%, var(--text-secondary));
             background: color-mix(in srgb, var(--accent) 5%, transparent);
         }
+        .orb-head-tag-warn {
+            border-color: color-mix(in srgb, var(--warn) 35%, transparent);
+            color: color-mix(in srgb, var(--warn) 92%, var(--text-secondary));
+            background: color-mix(in srgb, var(--warn) 8%, transparent);
+        }
+        .orb-head-tag-ok {
+            border-color: color-mix(in srgb, var(--neon-green) 35%, transparent);
+            color: color-mix(in srgb, var(--neon-green) 92%, var(--text-secondary));
+            background: color-mix(in srgb, var(--neon-green) 8%, transparent);
+        }
+        .orb-head-tag-err {
+            border-color: color-mix(in srgb, var(--neon-red) 35%, transparent);
+            color: color-mix(in srgb, var(--neon-red) 92%, var(--text-secondary));
+            background: color-mix(in srgb, var(--neon-red) 8%, transparent);
+        }
+        .orb-live-bundle-banner {
+            font-size: 0.6875rem;
+            line-height: 1.45;
+            letter-spacing: 0.02em;
+        }
         .orb-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -444,6 +464,7 @@
                             <h2 class="orb-head-title">Next K 交易桌</h2>
                             <p class="orb-head-meta">
                                 <span class="orb-head-tag">SIM</span>
+                                <span id="orb-live-bundle-tag" class="orb-head-tag hidden" title="Live 模型包状态">Live 包</span>
                                 <span id="orb-session-meta" class="font-mono text-text-secondary tracking-normal">—</span>
                             </p>
                         </div>
@@ -462,6 +483,7 @@
                         <button type="button" id="orb-refresh" class="btn-ghost text-accent border-accent/22 bg-accent/[0.06] hover:bg-accent/10 hover:border-accent/35">刷新</button>
                     </div>
                 </div>
+                <div id="orb-live-bundle-banner" class="orb-live-bundle-banner px-4 py-2 border-b border-border/35 shrink-0 hidden" aria-live="polite"></div>
                 <div id="orb-today-alerts" class="px-4 py-3 border-b border-border/35 shrink-0">
                     <div class="text-text-muted text-sm animate-pulse">加载当日提示…</div>
                 </div>
@@ -534,12 +556,11 @@
                 <!-- 左栏：清理 -->
                 <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
                     <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表、大户多空快照；纸面策略 lane 清库在下方分组。清盘后请在主界面点「刷新」。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表；纸面策略 lane 清库在下方分组。清盘后请在主界面点「刷新」。</p>
                     <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
                         <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
-                        <button type="button" id="maint-top-trader-clear" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="POST /api/accumulation/maintenance/clear-top-trader">清理大户多空</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">纸面策略（独立 lane）</div>
                     <div class="flex flex-wrap gap-2">
@@ -555,7 +576,6 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
-                        <button type="button" data-maint-cron="top_trader" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent" title="大户多空+Taker（公开 fapi）">大户多空</button>
                         <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">ORB</div>
@@ -724,17 +744,6 @@
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
-            async topTraderClear() {
-                const res = await fetch(`${API_BASE}/api/accumulation/maintenance/clear-top-trader`, {
-                    method: 'POST',
-                    headers: maintenanceHeaders(),
-                });
-                const text = await res.text();
-                let data;
-                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
-                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
-                return data;
-            },
             async orbSummary() {
                 const res = await fetch(`${API_BASE}/api/orb/summary`);
                 if (!res.ok) throw new Error(await res.text());
@@ -747,6 +756,11 @@
             },
             async orbSessionToday() {
                 const res = await fetch(`${API_BASE}/api/orb/session/today`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async orbLiveBundle() {
+                const res = await fetch(`${API_BASE}/api/orb/live-bundle`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -1260,33 +1274,6 @@
                 + LANE_BOARD_MAX_ROWS + ' 行视口）</p>';
         }
 
-        async function clearTopTraderData() {
-            const maintMsg = document.getElementById('maint-msg');
-            const btn = document.getElementById('maint-top-trader-clear');
-            if (!confirm(
-                '确定清空大户多空快照？\n'
-                    + '将删除 top_trader_snapshots 表与 top_trader_snapshot.json，不可撤销。',
-            )) {
-                return;
-            }
-            if (btn) btn.disabled = true;
-            if (maintMsg) maintMsg.textContent = '大户多空清库请求中…';
-            try {
-                const out = await API.topTraderClear();
-                const line = '大户多空已清库 · rows='
-                    + escHtml(String(out.deleted_top_trader_rows ?? 0))
-                    + ' · disk='
-                    + escHtml(out.disk_snapshot_removed ? '已删' : '无');
-                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-green">' + line + '</span>';
-            } catch (e) {
-                console.error(e);
-                const err = escHtml(e && e.message ? String(e.message) : '清库失败');
-                if (maintMsg) maintMsg.innerHTML = '<span class="text-neon-red">' + err + '</span>';
-            } finally {
-                if (btn) btn.disabled = false;
-            }
-        }
-
         function laneDisplayStatus(row) {
             if (!row || !row.outcome) return '持仓中';
             if (row.outcome === 'win') return '盈利';
@@ -1334,6 +1321,56 @@
             if (s === 'LONG') return '<span class="text-neon-green font-semibold">LONG</span>';
             if (s === 'SHORT') return '<span class="text-neon-red font-semibold">SHORT</span>';
             return '<span class="text-text-muted">—</span>';
+        }
+
+        function renderOrbLiveBundle(hint) {
+            const tag = document.getElementById('orb-live-bundle-tag');
+            const banner = document.getElementById('orb-live-bundle-banner');
+            if (!tag && !banner) return;
+            if (!hint || !hint.ok) {
+                if (tag) {
+                    tag.textContent = 'Live 包 ?';
+                    tag.className = 'orb-head-tag orb-head-tag-warn';
+                    tag.title = '无法加载 Live 包状态';
+                    tag.classList.remove('hidden');
+                }
+                if (banner) {
+                    banner.classList.remove('hidden');
+                    banner.innerHTML = '<div class="orb-alert-banner border border-border/60 bg-surface-light/40 text-xs text-text-muted">'
+                        + '<span class="orb-alert-icon bg-surface-light border border-border/70">?</span>'
+                        + '<span>无法加载 Live 模型包状态</span></div>';
+                }
+                return;
+            }
+            const sev = String(hint.severity || 'ok');
+            const tagCls = sev === 'block' ? 'orb-head-tag-err' : (sev === 'warn' ? 'orb-head-tag-warn' : 'orb-head-tag-ok');
+            const tagLabel = sev === 'block' ? 'Live 包缺失' : (sev === 'warn' ? 'Live 包回退' : 'Live 包就绪');
+            if (tag) {
+                tag.textContent = tagLabel;
+                tag.className = 'orb-head-tag ' + tagCls;
+                tag.title = String(hint.message || '');
+                tag.classList.remove('hidden');
+            }
+            if (banner) {
+                if (sev === 'ok') {
+                    banner.classList.add('hidden');
+                    banner.innerHTML = '';
+                    return;
+                }
+                const panel = orbAlertPanelClass(sev === 'block' ? 'block' : 'warn');
+                const titleCls = orbAlertTitleClass(sev === 'block' ? 'block' : 'warn');
+                const icon = sev === 'block' ? '⛔' : '⚠';
+                const detail = [
+                    hint.gate_exists ? 'Gate ✓' : 'Gate ✗',
+                    hint.gbm_exists ? 'GBM ✓' : 'GBM ✗',
+                    hint.profiles_exists ? 'Profiles ✓' : 'Profiles ✗',
+                ].join(' · ');
+                banner.classList.remove('hidden');
+                banner.innerHTML = '<div class="orb-alert-banner border text-xs leading-relaxed ' + panel + '">'
+                    + '<span class="orb-alert-icon bg-surface/60 border border-border/50 ' + titleCls + '">' + icon + '</span>'
+                    + '<div><b class="block font-semibold mb-0.5 ' + titleCls + '">' + escHtml(hint.message || tagLabel) + '</b>'
+                    + '<span class="text-text-secondary">' + escHtml(hint.root || 'data/orb/live') + ' · ' + escHtml(detail) + '</span></div></div>';
+            }
         }
 
         function renderOrbTodayAlerts(today) {
@@ -1582,7 +1619,13 @@
             const tsEl = document.getElementById('orb-ts');
             if (!root) return;
             root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载纸面…</div>';
-            const [sumRes, sigRes] = await Promise.allSettled([API.orbSummary(), API.orbSignals()]);
+            const [sumRes, sigRes, lbRes] = await Promise.allSettled([
+                API.orbSummary(),
+                API.orbSignals(),
+                API.orbLiveBundle(),
+            ]);
+            renderOrbLiveBundle(lbRes.status === 'fulfilled' ? lbRes.value : null);
+            if (lbRes.status === 'rejected') console.error('orb live-bundle:', lbRes.reason);
             if (sumRes.status === 'fulfilled') {
                 renderOrbTodayAlerts(sumRes.value.today);
                 renderOrbSummary(sumRes.value);
@@ -1947,8 +1990,6 @@
                 });
             });
 
-
-            document.getElementById('maint-top-trader-clear')?.addEventListener('click', () => void clearTopTraderData());
 
             document.getElementById('maint-export-volume')?.addEventListener('click', async () => {
                 const btn = document.getElementById('maint-export-volume');
