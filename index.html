@@ -36,12 +36,12 @@
                     },
                     borderRadius: {
                         sm: '0.125rem',
-                        DEFAULT: '0.2rem',
-                        md: '0.25rem',
-                        lg: '0.375rem',
-                        xl: '0.5rem',
-                        '2xl': '0.625rem',
-                        '3xl': '0.75rem',
+                        DEFAULT: '0.1875rem',
+                        md: '0.1875rem',
+                        lg: '0.25rem',
+                        xl: '0.3125rem',
+                        '2xl': '0.375rem',
+                        '3xl': '0.4375rem',
                     },
                 }
             }
@@ -389,7 +389,6 @@
                     </div>
                     <nav class="hidden md:flex items-center gap-1.5 shrink-0" aria-label="主导航">
                         <a href="index.html" class="nav-pill nav-pill-active" aria-current="page">策略看板</a>
-                        <a href="binance.html" class="nav-pill">实盘看板</a>
                     </nav>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -398,7 +397,7 @@
                     <div id="connection-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18">
                         <span class="status-dot"></span><span>API 连接中…</span>
                     </div>
-                    <div id="protocol-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18">
+                    <div id="protocol-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18 hidden" aria-hidden="true">
                         <span class="status-dot"></span><span>Protocol 连接中…</span>
                     </div>
                 </div>
@@ -410,7 +409,7 @@
         <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7 items-stretch" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
-                <div class="highlights-hero rounded-lg p-4 md:p-5 flex-1 flex flex-col justify-center">
+                <div class="highlights-hero p-4 md:p-5 flex-1 flex flex-col justify-center">
                     <div class="state-muted animate-pulse">加载值得关注…</div>
                 </div>
             </div>
@@ -559,12 +558,12 @@
                     <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表；纸面策略 lane 清库在下方分组。清盘后请在主界面点「刷新」。</p>
                     <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
-                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
+                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
+                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">纸面策略（独立 lane）</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" id="maint-orb-clear-db" class="btn-secondary px-3 py-1.5 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/orb/maintenance/clear-db">清理 ORB 库</button>
+                        <button type="button" id="maint-orb-clear-db" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/orb/maintenance/clear-db">清理 ORB 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -574,13 +573,13 @@
                     <p class="text-text-muted text-[10px] leading-relaxed">与 <code class="text-[10px]">trigger-cron</code> 对齐。</p>
                     <div class="text-text-secondary text-[10px] font-medium">雷达 / 池</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
-                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
-                        <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
+                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
+                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                        <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">ORB</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" data-maint-cron="orb_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-lg bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="ORB 美股纸面扫描">ORB 扫描</button>
+                        <button type="button" data-maint-cron="orb_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="ORB 美股纸面扫描">ORB 扫描</button>
                     </div>
 </div>
             </div>
@@ -588,7 +587,7 @@
                 <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据备份</div>
                 <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（持久化数据卷）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-lg bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
+                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-sm bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
@@ -854,7 +853,7 @@
             const perpPair = perpSymToPairLabel(sym);
             if (!perpPair) return `<div class="text-xs text-text-secondary leading-relaxed py-0.5">${innerLineHtml}</div>`;
             const safe = perpPair.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded-lg hover:bg-surface-light/55 transition-colors cursor-pointer border border-transparent hover:border-border/60" data-perp-pair="${safe}">${innerLineHtml}</div>`;
+            return `<div role="button" tabindex="0" class="oi-radar-pick w-full text-left text-xs text-text-secondary leading-relaxed py-0.5 px-1 -mx-1 rounded-sm hover:bg-surface-light/55 transition-colors cursor-pointer border border-transparent hover:border-border/60" data-perp-pair="${safe}">${innerLineHtml}</div>`;
         }
 
         function openBinanceFuturesByPair(perpPair) {
@@ -1083,7 +1082,7 @@
                 }
                 const hiddenAttr = active ? '' : ' hidden';
                 return `<div role="tabpanel" id="worth-panel-${key}" aria-labelledby="worth-tab-${key}"${hiddenAttr}
-                    class="rounded-lg border border-border/70 bg-surface-light/[0.15] overflow-hidden">
+                    class="rounded-sm border border-border/70 bg-surface-light/[0.15] overflow-hidden">
                     <div class="p-3 min-w-0${key !== 'focus_watch' ? ' ' + HISTORY_TABLE_SCROLL_WRAP : ''}">${inner}</div>
                 </div>`;
             }).join('');
@@ -1506,14 +1505,6 @@
                 stat('累计 U', fmtZctPx(pnl, 4), '', pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
                 stat('Gate', gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—', gateSub, 'var(--gold)', '', ''),
                 stat('宏观过滤', sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启', '', 'var(--neon-purple)', sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted', ''),
-                stat(
-                    '币安通知',
-                    sum.live_notify_binance ? '已开启' : '已关闭',
-                    'Railway: ORB_LIVE_ENABLED',
-                    sum.live_notify_binance ? 'var(--neon-green)' : 'var(--text-muted)',
-                    sum.live_notify_binance ? 'text-neon-green' : 'text-text-muted',
-                    '',
-                ),
             ].join('');
             if (botsEl) {
                 const rows = Array.isArray(sum.robots) ? sum.robots : (Array.isArray(sum.per_symbol) ? sum.per_symbol : []);
@@ -1750,7 +1741,7 @@
                 </div>`;
 
             const highlightsHtml = `
-                <div class="highlights-hero rounded-lg p-4 md:p-5 h-full min-h-[160px] min-w-0 flex flex-col">
+                <div class="highlights-hero rounded-sm p-4 md:p-5 h-full min-h-[160px] min-w-0 flex flex-col">
                     <div class="mb-3 shrink-0">
                         <div class="panel-kicker">Priority Signal</div>
                         <h3 class="hl-title text-text-primary mt-1">值得关注</h3>
@@ -1787,7 +1778,7 @@
                 body.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(msg) + '</div>';
                 if (hl) {
                     hl.innerHTML =
-                        '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">' +
+                        '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">' +
                         escHtml(msg) +
                         '</div>';
                 }
@@ -1797,7 +1788,7 @@
                 if (j.busy) {
                     body.innerHTML = '<div class="text-warn text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">收筹快照扫描排队中，值得关注稍后更新。</div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">收筹快照扫描排队中，值得关注稍后更新。</div>';
                     }
                 }
                 return;
@@ -1805,7 +1796,7 @@
             for (let i = 0; i < 45; i++) {
                 body.innerHTML = `<div class="text-text-muted text-sm py-3">后台扫描中（约 1–2 分钟）… 已等待 ${i + 1}/45 轮</div>`;
                 if (hl) {
-                    hl.innerHTML = `<div class="rounded-xl border border-border bg-surface-light/30 p-4 text-text-muted text-sm">后台扫描中… 已等待 ${i + 1}/45 轮<br/><span class="text-xs text-text-muted/80">值得关注将在完成后显示在首屏左侧</span></div>`;
+                    hl.innerHTML = `<div class="rounded-sm border border-border bg-surface-light/30 p-4 text-text-muted text-sm">后台扫描中… 已等待 ${i + 1}/45 轮<br/><span class="text-xs text-text-muted/80">值得关注将在完成后显示在首屏左侧</span></div>`;
                 }
                 await new Promise((r) => setTimeout(r, 4000));
                 const data = await API.accumulationOiRadar();
@@ -1816,7 +1807,7 @@
             }
             body.innerHTML = '<div class="text-warn text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
             if (hl) {
-                hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
+                hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
             }
             void hydrateWorthHighlightBoards(null);
         }
@@ -1859,7 +1850,7 @@
                 if (forceRefresh) {
                     tsEl.textContent = '…';
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-xl border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在刷新收筹快照…</div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在刷新收筹快照…</div>';
                     }
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
@@ -1868,7 +1859,7 @@
                 tsEl.textContent = '…';
                 body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载快照…</div>';
                 if (hl) {
-                    hl.innerHTML = '<div class="rounded-xl border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">加载值得关注…</div>';
+                    hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">加载值得关注…</div>';
                 }
                 const data = await API.accumulationOiRadar();
 
@@ -1879,18 +1870,18 @@
 
                 tsEl.textContent = '';
                 if (data.error === 'no_snapshot') {
-                    body.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
+                    body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
                     }
                     void hydrateWorthHighlightBoards(null);
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
-                body.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 if (hl) {
-                    hl.innerHTML = `<div class="rounded-xl border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                    hl.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
                 }
                 void hydrateWorthHighlightBoards(data);
             } catch (e) {
@@ -2144,11 +2135,12 @@
         async function checkConnection() {
             const conn = document.getElementById('connection-status');
             const protoEl = document.getElementById('protocol-status');
-            if (!conn && !protoEl) return;
+            const protoLive = protoEl && !protoEl.classList.contains('hidden');
+            if (!conn && !protoLive) return;
 
             const [apiRes, protoRes] = await Promise.allSettled([
                 API.health(),
-                protocolHealth(),
+                protoLive ? protocolHealth() : Promise.reject(new Error('hidden')),
             ]);
 
             if (conn) {
@@ -2161,7 +2153,7 @@
                 }
             }
 
-            if (protoEl) {
+            if (protoEl && protoLive) {
                 if (protoRes.status === 'fulfilled') {
                     const d = protoRes.value;
                     if (d && d.status === 'ok') {

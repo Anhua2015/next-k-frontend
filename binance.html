@@ -33,24 +33,18 @@
                     },
                     borderRadius: {
                         sm: '0.125rem',
-                        DEFAULT: '0.2rem',
-                        md: '0.25rem',
-                        lg: '0.375rem',
-                        xl: '0.5rem',
-                        '2xl': '0.625rem',
-                        '3xl': '0.75rem',
+                        DEFAULT: '0.1875rem',
+                        md: '0.1875rem',
+                        lg: '0.25rem',
+                        xl: '0.3125rem',
+                        '2xl': '0.375rem',
+                        '3xl': '0.4375rem',
                     },
                 }
             }
         }
     </script>
     <style>
-        :root {
-            /* tokens in theme.css — local aliases only */
-            --radius-sm: 0.375rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-        }
         .card {
             transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
             box-shadow: var(--card-shadow);
@@ -154,7 +148,6 @@
                 </a>
                 <nav class="hidden md:flex items-center gap-1.5" aria-label="主导航">
                     <a href="index.html" class="nav-pill">策略看板</a>
-                    <a href="binance.html" class="nav-pill nav-pill-active" aria-current="page">实盘看板</a>
                 </nav>
             </div>
             <div class="flex items-center gap-2 shrink-0">
