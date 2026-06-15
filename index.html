@@ -1361,9 +1361,9 @@
                 const titleCls = orbAlertTitleClass(sev === 'block' ? 'block' : 'warn');
                 const icon = sev === 'block' ? '⛔' : '⚠';
                 const detail = [
-                    hint.gate_exists ? 'Gate ✓' : 'Gate ✗',
-                    hint.gbm_exists ? 'GBM ✓' : 'GBM ✗',
-                    hint.profiles_exists ? 'Profiles ✓' : 'Profiles ✗',
+                    hint.using_live_bundle_gate ? 'Gate ✓' : ('Gate → ' + (hint.active_gate || '?')),
+                    hint.using_live_bundle_gbm ? 'GBM ✓' : ('GBM → ' + (hint.active_gbm || '?')),
+                    hint.using_live_bundle_profiles ? 'Profiles ✓' : ('Profiles → ' + (hint.active_profiles || '?')),
                 ].join(' · ');
                 banner.classList.remove('hidden');
                 banner.innerHTML = '<div class="orb-alert-banner border text-xs leading-relaxed ' + panel + '">'
@@ -1617,38 +1617,55 @@
         async function hydrateOrbBoard() {
             const root = document.getElementById('orb-root');
             const tsEl = document.getElementById('orb-ts');
+            const refreshBtn = document.getElementById('orb-refresh');
             if (!root) return;
-            root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载纸面…</div>';
-            const [sumRes, sigRes, lbRes] = await Promise.allSettled([
-                API.orbSummary(),
-                API.orbSignals(),
-                API.orbLiveBundle(),
-            ]);
-            renderOrbLiveBundle(lbRes.status === 'fulfilled' ? lbRes.value : null);
-            if (lbRes.status === 'rejected') console.error('orb live-bundle:', lbRes.reason);
-            if (sumRes.status === 'fulfilled') {
-                renderOrbTodayAlerts(sumRes.value.today);
-                renderOrbSummary(sumRes.value);
-            } else {
-                console.error('orb summary:', sumRes.reason);
-                renderOrbTodayAlerts(null);
-                renderOrbSummary(null);
-                try {
-                    renderOrbTodayAlerts(await API.orbSessionToday());
-                } catch (e2) {
-                    console.error('orb session today:', e2);
-                }
+            const hasContent = !!(root.querySelector('table') || root.querySelector('.orb-empty'));
+            if (!hasContent) {
+                root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载纸面…</div>';
             }
-            if (sigRes.status === 'fulfilled') {
-                _orbSignalsCache = sigRes.value.signals || [];
-                applyOrbTableFilters();
-                if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-            } else {
-                console.error('orb signals:', sigRes.reason);
-                _orbSignalsCache = [];
-                const e = sigRes.reason;
-                root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
-                if (tsEl) tsEl.textContent = '--';
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '刷新中…';
+            }
+            try {
+                const [sumRes, sigRes, lbRes] = await Promise.allSettled([
+                    API.orbSummary(),
+                    API.orbSignals(),
+                    API.orbLiveBundle(),
+                ]);
+                renderOrbLiveBundle(lbRes.status === 'fulfilled' ? lbRes.value : null);
+                if (lbRes.status === 'rejected') console.error('orb live-bundle:', lbRes.reason);
+                if (sumRes.status === 'fulfilled') {
+                    renderOrbTodayAlerts(sumRes.value.today);
+                    renderOrbSummary(sumRes.value);
+                } else {
+                    console.error('orb summary:', sumRes.reason);
+                    renderOrbTodayAlerts(null);
+                    renderOrbSummary(null);
+                    try {
+                        renderOrbTodayAlerts(await API.orbSessionToday());
+                    } catch (e2) {
+                        console.error('orb session today:', e2);
+                    }
+                }
+                if (sigRes.status === 'fulfilled') {
+                    _orbSignalsCache = sigRes.value.signals || [];
+                    applyOrbTableFilters();
+                    if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+                } else {
+                    console.error('orb signals:', sigRes.reason);
+                    if (!hasContent) {
+                        _orbSignalsCache = [];
+                        const e = sigRes.reason;
+                        root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
+                        if (tsEl) tsEl.textContent = '--';
+                    }
+                }
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '刷新';
+                }
             }
         }
 
