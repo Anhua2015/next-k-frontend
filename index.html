@@ -1485,7 +1485,7 @@
             const skipTag = sum.today && sum.today.skip_new_entries
                 ? ' <span class="text-neon-red text-[9px] font-medium">不新开仓</span>' : '';
             const robotCount = sum.robot_count ?? sum.robots?.length ?? 0;
-            const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '10k';
+            const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '1k';
             const universe = sum.universe_count != null ? String(sum.universe_count) + ' 标' : '';
             const gate = sum.gate || {};
             const gateSub = gate.min_p_true != null
