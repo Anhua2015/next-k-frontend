@@ -460,10 +460,10 @@
                             </svg>
                         </div>
                         <div class="min-w-0">
-                            <div class="orb-head-kicker">US Equities</div>
+                            <div class="orb-head-kicker">US Equities · ORB V2.2</div>
                             <h2 class="orb-head-title">Next K 交易桌</h2>
                             <p class="orb-head-meta">
-                                <span class="orb-head-tag">SIM</span>
+                                <span class="orb-head-tag">ML Gate</span>
                                 <span id="orb-live-bundle-tag" class="orb-head-tag hidden" title="orb_live 实盘参数包">参数包</span>
                                 <span id="orb-session-meta" class="font-mono text-text-secondary tracking-normal">—</span>
                             </p>
@@ -487,10 +487,10 @@
                 <div id="orb-today-alerts" class="px-4 py-3 border-b border-border/35 shrink-0">
                     <div class="text-text-muted text-sm animate-pulse">加载当日提示…</div>
                 </div>
-                <div id="orb-summary" class="px-4 pt-3 pb-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 shrink-0"></div>
+                <div id="orb-summary" class="px-4 pt-3 pb-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5 shrink-0"></div>
                 <div class="px-4 pt-2 pb-1 shrink-0">
-                    <div class="orb-bots-label mb-2">标的监控</div>
-                    <div id="orb-bots" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2.5"></div>
+                    <div class="orb-bots-label mb-2">Robot 资金池</div>
+                    <div id="orb-bots" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5"></div>
                 </div>
                 <div id="orb-root" class="px-4 pb-4 pt-3 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/35 lane-board-scroll" data-lane-max-rows="20">
                     <div class="state-muted animate-pulse py-6 text-center">加载中…</div>
@@ -1419,10 +1419,11 @@
             return s.endsWith('USDT') ? s.slice(0, -4) : s;
         }
 
-        function renderOrbBotCards(rows) {
+        function renderOrbRobotCards(rows) {
             return rows.map((b) => {
-                const symRaw = String(b.symbol || '—');
-                const sym = escHtml(orbBotBaseSymbol(symRaw));
+                const label = escHtml(String(b.label || ('R' + (b.robot_id || ''))));
+                const symRaw = String(b.symbol || '');
+                const sym = symRaw ? escHtml(orbBotBaseSymbol(symRaw)) : '—';
                 const wallet = Number(b.wallet_balance_usdt) || 0;
                 const rp = Number(b.realized_pnl_usdt) || 0;
                 const side = String(b.open_side || '').toUpperCase();
@@ -1443,11 +1444,13 @@
                     posHtml = '<span class="text-text-muted text-[10px]">空闲</span>';
                 }
                 const off = b.enabled === false ? ' opacity-45 grayscale-[0.2]' : '';
+                const symTitle = symRaw ? ' title="' + escHtml(symRaw) + '"' : '';
                 return '<article class="orb-bot-card border px-3 py-2.5 flex flex-col gap-2 min-w-0 ' + cardTint + off + '">'
                     + '<div class="flex items-start justify-between gap-2 min-w-0">'
-                    + '<div class="font-semibold text-sm text-text-primary tracking-tight truncate" title="' + escHtml(symRaw) + '">' + sym + '</div>'
+                    + '<div class="font-semibold text-sm text-text-primary tracking-tight truncate">' + label + '</div>'
                     + posHtml
                     + '</div>'
+                    + '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>标的 ' + sym + '</div>'
                     + '<div class="flex items-end justify-between gap-2">'
                     + '<div class="min-w-0">'
                     + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">钱包</div>'
@@ -1462,6 +1465,10 @@
             }).join('');
         }
 
+        function renderOrbBotCards(rows) {
+            return renderOrbRobotCards(rows);
+        }
+
         function renderOrbSummary(sum) {
             const el = document.getElementById('orb-summary');
             const botsEl = document.getElementById('orb-bots');
@@ -1470,16 +1477,21 @@
             if (!sum || !sum.ok) {
                 el.innerHTML = '';
                 if (botsEl) botsEl.innerHTML = '';
-                if (botsLabel) botsLabel.textContent = '标的监控';
+                if (botsLabel) botsLabel.textContent = 'Robot 资金池';
                 return;
             }
             const pnl = Number(sum.sum_pnl_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             const skipTag = sum.today && sum.today.skip_new_entries
                 ? ' <span class="text-neon-red text-[9px] font-medium">不新开仓</span>' : '';
-            const botEq = sum.symbol_bot_equity_usdt != null ? fmtZctPx(sum.symbol_bot_equity_usdt, 0) : '1k';
-            const botCount = sum.symbol_bot_count ?? sum.per_symbol?.length ?? 0;
-            if (botsLabel) botsLabel.textContent = '标的监控 · ' + botCount + ' bot';
+            const robotCount = sum.robot_count ?? sum.robots?.length ?? 0;
+            const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '10k';
+            const universe = sum.universe_count != null ? String(sum.universe_count) + ' 标' : '';
+            const gate = sum.gate || {};
+            const gateSub = gate.min_p_true != null
+                ? 'min P ' + Number(gate.min_p_true).toFixed(2) + ' · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—'))
+                : '';
+            if (botsLabel) botsLabel.textContent = 'Robot 资金池 · ' + robotCount + ' 台';
             const stat = (label, value, sub, accent, extraCls, suffixHtml) => (
                 '<div class="orb-stat-card" style="--orb-stat-accent:' + accent + '">'
                 + '<div class="text-text-muted text-[10px] uppercase tracking-wider pl-1">' + label + (suffixHtml || '') + '</div>'
@@ -1488,10 +1500,11 @@
                 + '</div>'
             );
             el.innerHTML = [
-                stat('机器人', escHtml(String(botCount)), '每 bot ' + escHtml(botEq) + ' U', 'var(--accent)', '', skipTag),
-                stat('持仓', escHtml(String(sum.open_positions ?? 0)), '', 'var(--warn)', '', ''),
+                stat('Robot', escHtml(String(robotCount)), '每台 ' + escHtml(robotEq) + ' U · 复利' + (universe ? ' · ' + escHtml(universe) : ''), 'var(--accent)', '', skipTag),
+                stat('持仓', escHtml(String(sum.open_positions ?? 0)), gate.robot_reuse_after_exit ? '平仓释放 slot' : '日上限 ' + escHtml(String(gate.max_opens_per_day ?? '—')), 'var(--warn)', '', ''),
                 stat('已结算', escHtml(String(sum.settled_trades ?? 0)), '', 'var(--neon-blue)', '', ''),
                 stat('累计 U', fmtZctPx(pnl, 4), '', pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
+                stat('Gate', gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—', gateSub, 'var(--gold)', '', ''),
                 stat('宏观过滤', sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启', '', 'var(--neon-purple)', sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted', ''),
                 stat(
                     '币安通知',
@@ -1503,8 +1516,8 @@
                 ),
             ].join('');
             if (botsEl) {
-                const rows = Array.isArray(sum.per_symbol) ? sum.per_symbol : [];
-                botsEl.innerHTML = rows.length ? renderOrbBotCards(rows) : '<div class="col-span-full text-text-muted text-xs py-2">暂无 bot 配置</div>';
+                const rows = Array.isArray(sum.robots) ? sum.robots : (Array.isArray(sum.per_symbol) ? sum.per_symbol : []);
+                botsEl.innerHTML = rows.length ? renderOrbRobotCards(rows) : '<div class="col-span-full text-text-muted text-xs py-2">暂无 Robot 配置</div>';
             }
         }
 
@@ -1524,7 +1537,7 @@
                 <table class="data-table min-w-[1100px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 px-2 font-medium">#</th>
+                            <th class="py-2 px-2 font-medium">Robot</th>
                             <th class="py-2 px-2 font-medium">UTC</th>
                             <th class="py-2 px-2 font-medium">标的</th>
                             <th class="py-2 px-2 font-medium">状态</th>
@@ -1556,7 +1569,7 @@
                 const tpHtml = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : '<span class="text-text-muted">—</span>';
                 const symShort = escHtml(orbBotBaseSymbol(row.symbol));
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
-                    <td class="py-2 px-2 font-mono text-text-muted">${escHtml(String(row.id ?? '—'))}</td>
+                    <td class="py-2 px-2 font-mono text-[11px] text-text-secondary">${escHtml(String(row.robot_label || (row.robot_id != null ? 'R' + row.robot_id : '—')))}</td>
                     <td class="py-2 px-2 font-mono text-[11px] text-text-secondary whitespace-nowrap">${escHtml(String(row.recorded_at_utc || '').replace('T',' ').replace('Z',''))}</td>
                     <td class="py-2 px-2"><span class="font-semibold text-text-primary">${symShort}</span></td>
                     <td class="py-2 px-2">${orbStatusPill(st)}</td>
@@ -1593,7 +1606,7 @@
             const btn = document.getElementById('maint-orb-clear-db');
             if (btn) btn.disabled = true;
             try {
-                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs、orb_symbol_bots，不可撤销。')) return;
+                if (!confirm('确定清理 ORB 纸面库？\n将删除 orb_signals、orb_settlements、orb_runs、orb_robots 等，不可撤销。')) return;
                 const out = await API.orbClearDb();
                 if (msg) {
                     msg.innerHTML = '<span class="text-neon-green">ORB 已清库</span> signals='
