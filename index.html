@@ -464,7 +464,7 @@
                             <h2 class="orb-head-title">Next K 交易桌</h2>
                             <p class="orb-head-meta">
                                 <span class="orb-head-tag">SIM</span>
-                                <span id="orb-live-bundle-tag" class="orb-head-tag hidden" title="Live 模型包状态">Live 包</span>
+                                <span id="orb-live-bundle-tag" class="orb-head-tag hidden" title="orb_live 实盘参数包">参数包</span>
                                 <span id="orb-session-meta" class="font-mono text-text-secondary tracking-normal">—</span>
                             </p>
                         </div>
@@ -1329,22 +1329,23 @@
             if (!tag && !banner) return;
             if (!hint || !hint.ok) {
                 if (tag) {
-                    tag.textContent = 'Live 包 ?';
+                    tag.textContent = '参数包 ?';
                     tag.className = 'orb-head-tag orb-head-tag-warn';
-                    tag.title = '无法加载 Live 包状态';
+                    tag.title = '无法加载 orb_live 参数包状态';
                     tag.classList.remove('hidden');
                 }
                 if (banner) {
                     banner.classList.remove('hidden');
                     banner.innerHTML = '<div class="orb-alert-banner border border-border/60 bg-surface-light/40 text-xs text-text-muted">'
                         + '<span class="orb-alert-icon bg-surface-light border border-border/70">?</span>'
-                        + '<span>无法加载 Live 模型包状态</span></div>';
+                        + '<span>无法加载 <code class="font-mono">orb_live/</code> 参数包状态</span></div>';
                 }
                 return;
             }
             const sev = String(hint.severity || 'ok');
             const tagCls = sev === 'block' ? 'orb-head-tag-err' : (sev === 'warn' ? 'orb-head-tag-warn' : 'orb-head-tag-ok');
-            const tagLabel = sev === 'block' ? 'Live 包缺失' : (sev === 'warn' ? 'Live 包回退' : 'Live 包就绪');
+            const tagLabel = sev === 'block' ? '参数包缺失' : (sev === 'warn' ? '参数路径异常' : '参数包就绪');
+            const bundleRoot = String(hint.root || hint.bundle_dir || 'orb_live').replace(/\\/g, '/');
             if (tag) {
                 tag.textContent = tagLabel;
                 tag.className = 'orb-head-tag ' + tagCls;
@@ -1360,16 +1361,23 @@
                 const panel = orbAlertPanelClass(sev === 'block' ? 'block' : 'warn');
                 const titleCls = orbAlertTitleClass(sev === 'block' ? 'block' : 'warn');
                 const icon = sev === 'block' ? '⛔' : '⚠';
-                const detail = [
-                    hint.using_live_bundle_gate ? 'Gate ✓' : ('Gate → ' + (hint.active_gate || '?')),
-                    hint.using_live_bundle_gbm ? 'GBM ✓' : ('GBM → ' + (hint.active_gbm || '?')),
-                    hint.using_live_bundle_profiles ? 'Profiles ✓' : ('Profiles → ' + (hint.active_profiles || '?')),
-                ].join(' · ');
+                const coreArtifacts = (hint.artifacts || []).filter((a) => !String(a.name || '').startsWith('ml_'));
+                const checklist = coreArtifacts.map((a) => {
+                    const ok = !!a.live_exists;
+                    const mark = ok ? '✓' : '✗';
+                    const cls = ok ? 'text-neon-green' : 'text-neon-red';
+                    const rel = String(a.live_path || a.name || '').replace(/\\/g, '/');
+                    return '<span class="' + cls + ' font-mono text-[10px]">' + mark + ' ' + escHtml(rel) + '</span>';
+                }).join(' ');
+                const steps = (hint.deploy_steps || []).slice(0, 4).map((s) => escHtml(s)).join(' · ');
                 banner.classList.remove('hidden');
                 banner.innerHTML = '<div class="orb-alert-banner border text-xs leading-relaxed ' + panel + '">'
                     + '<span class="orb-alert-icon bg-surface/60 border border-border/50 ' + titleCls + '">' + icon + '</span>'
                     + '<div><b class="block font-semibold mb-0.5 ' + titleCls + '">' + escHtml(hint.message || tagLabel) + '</b>'
-                    + '<span class="text-text-secondary">' + escHtml(hint.root || 'data/orb/live') + ' · ' + escHtml(detail) + '</span></div></div>';
+                    + '<div class="text-text-muted text-[10px] mb-1 font-mono">目录: ' + escHtml(bundleRoot) + '</div>'
+                    + '<div class="text-text-secondary mb-1">' + checklist + '</div>'
+                    + (steps ? '<div class="text-text-muted text-[10px]">' + steps + '</div>' : '')
+                    + '</div></div>';
             }
         }
 
