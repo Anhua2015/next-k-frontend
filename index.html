@@ -1805,6 +1805,15 @@
                     fillOiRadarFromPayload(data, body, tsEl);
                     return;
                 }
+                if (data && data.error) {
+                    const errMsg = data.message || data.error;
+                    body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(errMsg)}</div>`;
+                    if (hl) {
+                        hl.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(errMsg)}</div>`;
+                    }
+                    void hydrateWorthHighlightBoards(data);
+                    return;
+                }
             }
             body.innerHTML = '<div class="text-warn text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
             if (hl) {
