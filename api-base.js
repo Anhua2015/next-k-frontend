@@ -11,8 +11,8 @@ function resolveApiBase() {
     if (proto === 'file:' || !h) {
         return 'http://127.0.0.1:8000';
     }
-    //return 'http://43.167.241.153:8000'; 
-    return 'https://next-k-api-production.up.railway.app';
+    return 'http://127.0.0.1:8000'; 
+    //return 'https://next-k-api-production.up.railway.app';
 }
 
 try {

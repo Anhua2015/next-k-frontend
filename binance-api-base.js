@@ -11,8 +11,8 @@ function resolveProtocolApiBase() {
     if (proto === 'file:' || !h) {
         return 'http://127.0.0.1:8001';
     }
-    //return 'http://43.167.241.153:8001'; 
-    return 'https://next-k-protocol-production.up.railway.app';
+    return 'http://127.0.0.1:8001'; 
+    //return 'https://next-k-protocol-production.up.railway.app';
 }
 
 try {
