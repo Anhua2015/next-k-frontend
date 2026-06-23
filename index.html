@@ -636,7 +636,12 @@
         const API_BASE = resolveApiBase();
         const PROTOCOL_BASE = resolveProtocolApiBase();
 
-        /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
+        /**
+         * 为短请求增加浏览器侧超时。
+         *
+         * 后端可能只有一个 worker，扫描期间连接会变慢；如果不主动 abort，页面状态可能
+         * 永远停留在“连接中”。真正耗时的 OI 扫描采用“POST 启动 + GET 轮询”。
+         */
         async function fetchWithTimeout(url, options, ms) {
             const timeoutMs = ms == null ? 12000 : ms;
             const ctrl = new AbortController();
@@ -649,6 +654,7 @@
         }
 
         function maintenanceHeaders(extra) {
+            // 维护令牌只存在当前标签页；关闭标签页后自动消失。
             const headers = Object.assign({}, extra || {});
             try {
                 const token = sessionStorage.getItem('NEXT_K_MAINTENANCE_TOKEN');
@@ -689,6 +695,7 @@
             return JSON.stringify(d || data || text || (res && res.statusText) || '请求失败');
         }
 
+        // 集中描述 next-k-api 的 HTTP 合约，渲染函数不直接关心 URL 拼接细节。
         const API = {
             async health() {
                 const res = await fetchWithTimeout(`${API_BASE}/api/health`, {}, 8000);
@@ -1771,6 +1778,7 @@
         }
 
         async function hydrateOrbBoard() {
+            // 各接口互相独立；allSettled 让模型状态失败时仍可显示 summary 和信号表。
             const root = document.getElementById('orb-root');
             const tsEl = document.getElementById('orb-ts');
             const refreshBtn = document.getElementById('orb-refresh');
@@ -1908,6 +1916,7 @@
         }
 
         async function runOiRadarBackgroundPoll(body, tsEl) {
+            // POST 只启动后台扫描；随后轮询快速 GET 快照，避免代理长连接超时。
             const hl = document.getElementById('oi-radar-highlights-slot');
             let j;
             try {
@@ -2058,6 +2067,7 @@
             if (!panel) return;
             panel.classList.remove('hidden');
             try {
+                // 后端未配置令牌时可留空；配置后维护写请求会携带该请求头。
                 if (!sessionStorage.getItem('NEXT_K_MAINTENANCE_TOKEN')) {
                     const token = window.prompt('维护令牌（未配置可留空）');
                     if (token) {
@@ -2335,6 +2345,7 @@
         }
 
         async function init() {
+            // 首屏模块独立加载；连接状态失败不阻止已有磁盘快照或 ORB 历史继续展示。
             // enforceDashboardLayout 已由顶部 IIFE 在 DOM 加载时跑过；此处不重复
             tickHeaderClock();
             setInterval(tickHeaderClock, 30000);

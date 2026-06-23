@@ -210,6 +210,7 @@
 <script>
 function getApiBase() { return resolveProtocolApiBase(); }
 function buildHeaders() {
+    // 普通 GET 不要求鉴权，但隐藏的 TradFi 签署操作会复用同一请求封装并携带令牌。
     var headers = { 'Content-Type': 'application/json' };
     try {
         var token = sessionStorage.getItem('PROTOCOL_MAINTENANCE_TOKEN');
@@ -231,6 +232,7 @@ function showToast(msg, ok) {
 // ── API fetch ─────────────────────────────────────────────────────────────────
 
 async function apiFetch(path, opts) {
+    // 统一把非 2xx 响应转换成异常，使各卡片只处理成功数据和用户提示。
     const url = getApiBase() + path;
     const res = await fetch(url, { headers: buildHeaders(), ...(opts || {}) });
     if (!res.ok) {
@@ -478,6 +480,7 @@ async function signTradFiPerps() {
 // ── Open positions ────────────────────────────────────────────────────────────
 
 async function loadOpenPositions() {
+    // 持仓以 Binance positionRisk 为真相；账户摘要失败时仍可展示持仓列表。
     var body = document.getElementById('open-positions-body');
     var countEl = document.getElementById('open-pos-count');
     try {
