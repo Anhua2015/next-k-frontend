@@ -210,7 +210,12 @@
 <script>
 function getApiBase() { return resolveProtocolApiBase(); }
 function buildHeaders() {
-    return { 'Content-Type': 'application/json' };
+    var headers = { 'Content-Type': 'application/json' };
+    try {
+        var token = sessionStorage.getItem('PROTOCOL_MAINTENANCE_TOKEN');
+        if (token) headers['X-Maintenance-Token'] = token;
+    } catch (e) { /* ignore */ }
+    return headers;
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -444,6 +449,14 @@ async function loadStatus() {
 async function signTradFiPerps() {
     var btn = document.getElementById('btn-sign-tradfi');
     if (btn && btn.disabled) return;
+    try {
+        if (!sessionStorage.getItem('PROTOCOL_MAINTENANCE_TOKEN')) {
+            var token = window.prompt('Protocol 维护令牌（未配置可留空）');
+            if (token) {
+                sessionStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', token.trim());
+            }
+        }
+    } catch (e) { /* ignore */ }
     var orig = btn ? btn.textContent : '';
     if (btn) {
         btn.disabled = true;

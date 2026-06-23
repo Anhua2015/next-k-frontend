@@ -649,7 +649,12 @@
         }
 
         function maintenanceHeaders(extra) {
-            return Object.assign({}, extra || {});
+            const headers = Object.assign({}, extra || {});
+            try {
+                const token = sessionStorage.getItem('NEXT_K_MAINTENANCE_TOKEN');
+                if (token) headers['X-Maintenance-Token'] = token;
+            } catch (e) { /* ignore */ }
+            return headers;
         }
 
         function formatBytes(n) {
@@ -2052,9 +2057,15 @@
             const panel = document.getElementById('maint-panel');
             if (!panel) return;
             panel.classList.remove('hidden');
-            void ensureMqUniverseDatalist();
-            if (_mqProfilesCache && _mqProfilesCache.length) {
-                syncMqResearchProfileSelect(_mqProfilesCache);
+            try {
+                if (!sessionStorage.getItem('NEXT_K_MAINTENANCE_TOKEN')) {
+                    const token = window.prompt('维护令牌（未配置可留空）');
+                    if (token) {
+                        sessionStorage.setItem('NEXT_K_MAINTENANCE_TOKEN', token.trim());
+                    }
+                }
+            } catch (e) {
+                console.warn('维护令牌无法写入 sessionStorage', e);
             }
         }
 
@@ -2202,20 +2213,31 @@
                         msg.textContent = '已取消导出';
                         return;
                     }
-                    const url = buildExportVolumeUrl('zip');
-                    msg.innerHTML =
-                        '<span class="text-neon-green">已发起下载</span>'
-                        + '<br/><span class="text-text-muted text-[10px]">'
-                        + escHtml(dir) + ' · ' + escHtml(String(files)) + ' 文件 · ' + escHtml(sizeStr)
-                        + '<br/>若未出现保存对话框，可<a class="text-accent underline" href="'
-                        + escHtml(url) + '" target="_blank" rel="noopener">点此直接打开下载链接</a></span>';
+                    msg.textContent = '正在打包并下载，请勿关闭页面…';
+                    const downloadRes = await fetch(buildExportVolumeUrl('zip'), {
+                        headers: maintenanceHeaders(),
+                    });
+                    if (!downloadRes.ok) {
+                        const errorText = await downloadRes.text();
+                        throw new Error(errorText || downloadRes.statusText);
+                    }
+                    const blob = await downloadRes.blob();
+                    const disposition = downloadRes.headers.get('Content-Disposition') || '';
+                    const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+                    const filename = filenameMatch ? filenameMatch[1] : 'next-k-data.zip';
+                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.target = '_blank';
-                    a.rel = 'noopener';
+                    a.download = filename;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
+                    URL.revokeObjectURL(url);
+                    msg.innerHTML =
+                        '<span class="text-neon-green">下载完成</span>'
+                        + '<br/><span class="text-text-muted text-[10px]">'
+                        + escHtml(dir) + ' · ' + escHtml(String(files)) + ' 文件 · ' + escHtml(sizeStr)
+                        + '</span>';
                 } catch (e) {
                     console.error(e);
                     msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '导出失败') + '</span>';

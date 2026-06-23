@@ -149,7 +149,8 @@ resolveProtocolApiBase()
 
 ### 安全措施
 
-页面加载时自动清除 `localStorage` 中的敏感令牌：
+页面加载时自动清除 `localStorage` 中的敏感令牌，维护操作仅在当前标签页的
+`sessionStorage` 中临时保存 API / Protocol 维护令牌：
 - `NEXT_K_MAINTENANCE_TOKEN`
 - `PROTOCOL_MAINTENANCE_TOKEN`
 
