@@ -357,41 +357,6 @@ function sideBadge(side) {
     return '<span class="badge ' + cls + '">' + escHtml(side) + '</span>';
 }
 
-function reasonBadge(r) {
-    if (!r) return '—';
-    var labels = {
-        tp: '止盈', sl: '止损', expired: '到期', manual: '手动', unknown: '未知',
-        paper_close: '纸面平仓', external: '外部平仓',
-        momentum_scan: '动量调仓', momentum_trail: '动量移动止盈',
-        jiezhen_scan: '接针调仓', jiezhen_trail: '接针移动止盈',
-    };
-    // 解析 "momentum_scan/trail_tier1" 格式
-    var parts = String(r).split('/');
-    var sourcePart = parts[0] || '';
-    var rulePart = parts[1] || '';
-    var ruleLabels = {
-        trail_tier1: '止盈一档', trail_tier2: '止盈二档',
-        trail_low: '低档保护', trail_stop: '硬止损',
-        rotate: '换仓', expired: '到期',
-    };
-    // class 白名单：只允许已知 key 进入 class 属性
-    var BADGE_CLASS_WHITELIST = {
-        tp: 1, sl: 1, expired: 1, manual: 1, unknown: 1,
-        paper_close: 1, external: 1,
-        momentum_scan: 1, momentum_trail: 1,
-        jiezhen_scan: 1, jiezhen_trail: 1,
-        trail_tier1: 1, trail_tier2: 1,
-        trail_low: 1, trail_stop: 1,
-        rotate: 1,
-    };
-    var sourceLabel = labels[sourcePart] || sourcePart;
-    var ruleLabel = ruleLabels[rulePart] || rulePart;
-    var display = ruleLabel ? sourceLabel + '/' + ruleLabel : sourceLabel;
-    var rawClassKey = rulePart || sourcePart;
-    var classKey = BADGE_CLASS_WHITELIST[rawClassKey] ? rawClassKey : 'unknown';
-    return '<span class="badge badge-' + classKey + '">' + escHtml(display) + '</span>';
-}
-
 function signalStatusBadge(status, action) {
     if (!status) return '—';
     var act = (action || 'open').toLowerCase();

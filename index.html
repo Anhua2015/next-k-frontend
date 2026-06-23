@@ -1295,7 +1295,7 @@
             return hydrateWorthHighlightBoards(snapshotPayload);
         }
 
-        function fmtZctPx(v, decimals) {
+        function fmtNum(v, decimals) {
             if (v == null || v === '' || Number.isNaN(Number(v))) return '—';
             return Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
         }
@@ -1472,8 +1472,8 @@
                 if (!id || _orbSeenResetIds.has(id)) return;
                 _orbSeenResetIds.add(id);
                 const label = String(r.robot_label || ('R' + (r.robot_id || '')));
-                const wd = fmtZctPx(Number(r.withdrawn_usdt) || 0, 0);
-                const after = fmtZctPx(Number(r.balance_after) || 0, 0);
+                const wd = fmtNum(Number(r.withdrawn_usdt) || 0, 0);
+                const after = fmtNum(Number(r.balance_after) || 0, 0);
                 showToast(label + ' 已提现重置 · 提 ' + wd + 'U → ' + after + 'U', true);
             });
         }
@@ -1488,8 +1488,8 @@
             }
             const resets = Array.isArray(sum?.recent_robot_resets) ? sum.recent_robot_resets : [];
             const policy = sum?.robot_reset_policy || {};
-            const cap = policy.cap_usdt != null ? fmtZctPx(policy.cap_usdt, 0) : '2500';
-            const floor = policy.floor_usdt != null ? fmtZctPx(policy.floor_usdt, 0) : '1500';
+            const cap = policy.cap_usdt != null ? fmtNum(policy.cap_usdt, 0) : '2500';
+            const floor = policy.floor_usdt != null ? fmtNum(policy.floor_usdt, 0) : '1500';
             const withdrawnTotal = Number(sum?.total_withdrawn_usdt) || 0;
             const policyEnabled = policy.enabled !== false;
             if (!policyEnabled && !resets.length && withdrawnTotal <= 0) {
@@ -1500,7 +1500,7 @@
             el.classList.remove('hidden');
             const header = '<div class="text-[10px] text-text-muted mb-2 uppercase tracking-wider font-semibold">'
                 + 'Robot 提现重置 · 结算后 ≥' + escHtml(cap) + 'U → ' + escHtml(floor) + 'U'
-                + (withdrawnTotal > 0 ? ' · 累计提 ' + escHtml(fmtZctPx(withdrawnTotal, 0)) + 'U' : '')
+                + (withdrawnTotal > 0 ? ' · 累计提 ' + escHtml(fmtNum(withdrawnTotal, 0)) + 'U' : '')
                 + '</div>';
             if (!resets.length) {
                 el.innerHTML = header + '<div class="text-[11px] text-text-muted pb-2 pl-0.5">暂无重置记录 · 规则已启用</div>';
@@ -1509,9 +1509,9 @@
             const cards = resets.slice(0, 5).map((r) => {
                 const when = escHtml(String(r.reset_at_utc || '').replace('T', ' ').replace('Z', ''));
                 const label = escHtml(String(r.robot_label || ('R' + (r.robot_id || ''))));
-                const before = fmtZctPx(Number(r.balance_before) || 0, 0);
-                const after = fmtZctPx(Number(r.balance_after) || 0, 0);
-                const wd = fmtZctPx(Number(r.withdrawn_usdt) || 0, 0);
+                const before = fmtNum(Number(r.balance_before) || 0, 0);
+                const after = fmtNum(Number(r.balance_after) || 0, 0);
+                const wd = fmtNum(Number(r.withdrawn_usdt) || 0, 0);
                 return '<div class="orb-alert-banner border border-gold/35 bg-gold/[0.08] text-xs leading-relaxed mb-2">'
                     + '<span class="orb-alert-icon bg-gold/15 border border-gold/30 text-gold">↓</span>'
                     + '<div><b class="text-gold font-semibold block mb-0.5">' + label + ' 已提现重置</b>'
@@ -1525,8 +1525,8 @@
         function orbResetPolicyChip(sum) {
             const policy = sum?.robot_reset_policy || {};
             if (policy.enabled === false) return '';
-            const cap = policy.cap_usdt != null ? fmtZctPx(policy.cap_usdt, 0) : '2500';
-            const floor = policy.floor_usdt != null ? fmtZctPx(policy.floor_usdt, 0) : '1500';
+            const cap = policy.cap_usdt != null ? fmtNum(policy.cap_usdt, 0) : '2500';
+            const floor = policy.floor_usdt != null ? fmtNum(policy.floor_usdt, 0) : '1500';
             return '<span class="orb-reset-policy-chip" title="结算后余额达到上限则提现并重置">≥' + escHtml(cap) + ' → ' + escHtml(floor) + 'U</span>';
         }
 
@@ -1545,15 +1545,15 @@
                 const rpCls = rp > 0 ? 'text-neon-green' : (rp < 0 ? 'text-neon-red' : 'text-text-secondary');
                 const lastReset = b.last_reset || null;
                 const resetBadge = lastReset && Number(lastReset.withdrawn_usdt) > 0
-                    ? '<span class="orb-reset-badge" title="最近提现 ' + escHtml(fmtZctPx(lastReset.withdrawn_usdt, 0)) + 'U · 重置至 ' + escHtml(fmtZctPx(lastReset.balance_after, 0)) + 'U">已重置</span>'
+                    ? '<span class="orb-reset-badge" title="最近提现 ' + escHtml(fmtNum(lastReset.withdrawn_usdt, 0)) + 'U · 重置至 ' + escHtml(fmtNum(lastReset.balance_after, 0)) + 'U">已重置</span>'
                     : '';
                 const recentResetCls = lastReset && Number(lastReset.withdrawn_usdt) > 0 ? ' orb-bot-card-recent-reset' : '';
                 const nearCap = wallet >= cap * 0.92 && wallet < cap;
                 const capHint = nearCap
-                    ? '<div class="text-[9px] text-gold/90 mt-1">接近重置线 ' + escHtml(fmtZctPx(cap, 0)) + 'U</div>'
+                    ? '<div class="text-[9px] text-gold/90 mt-1">接近重置线 ' + escHtml(fmtNum(cap, 0)) + 'U</div>'
                     : '';
                 const resetFoot = lastReset && Number(lastReset.withdrawn_usdt) > 0
-                    ? '<div class="text-[9px] text-gold/85 truncate" title="' + escHtml(String(lastReset.reset_at_utc || '')) + '">提 ' + escHtml(fmtZctPx(lastReset.withdrawn_usdt, 0)) + 'U → ' + escHtml(fmtZctPx(lastReset.balance_after, 0)) + 'U</div>'
+                    ? '<div class="text-[9px] text-gold/85 truncate" title="' + escHtml(String(lastReset.reset_at_utc || '')) + '">提 ' + escHtml(fmtNum(lastReset.withdrawn_usdt, 0)) + 'U → ' + escHtml(fmtNum(lastReset.balance_after, 0)) + 'U</div>'
                     : '';
                 let cardTint = hasOpen
                     ? 'border-accent/45 bg-accent/[0.06] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_12%,transparent)]'
@@ -1582,12 +1582,12 @@
                     + '<div class="flex items-end justify-between gap-2">'
                     + '<div class="min-w-0">'
                     + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">钱包</div>'
-                    + '<div class="font-mono text-sm text-text-primary leading-none">' + fmtZctPx(wallet, 0) + '<span class="text-[10px] text-text-muted ml-0.5">U</span></div>'
+                    + '<div class="font-mono text-sm text-text-primary leading-none">' + fmtNum(wallet, 0) + '<span class="text-[10px] text-text-muted ml-0.5">U</span></div>'
                     + capHint
                     + '</div>'
                     + '<div class="text-right shrink-0">'
                     + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">盈亏</div>'
-                    + '<div class="font-mono text-sm font-semibold leading-none ' + rpCls + '">' + rpSign + fmtZctPx(rp, 2) + '</div>'
+                    + '<div class="font-mono text-sm font-semibold leading-none ' + rpCls + '">' + rpSign + fmtNum(rp, 2) + '</div>'
                     + '</div>'
                     + '</div>'
                     + resetFoot
@@ -1615,12 +1615,12 @@
             const withdrawn = Number(sum.total_withdrawn_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
             const pnlSub = withdrawn > 0
-                ? '已提现 ' + fmtZctPx(withdrawn, 0) + 'U'
+                ? '已提现 ' + fmtNum(withdrawn, 0) + 'U'
                 : '';
             const skipTag = sum.today && sum.today.skip_new_entries
                 ? ' <span class="text-neon-red text-[9px] font-medium">不新开仓</span>' : '';
             const robotCount = sum.robot_count ?? sum.robots?.length ?? 0;
-            const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '1k';
+            const robotEq = sum.robot_equity_usdt != null ? fmtNum(sum.robot_equity_usdt, 0) : '1k';
             const universe = sum.universe_count != null ? String(sum.universe_count) + ' 标' : '';
             const gate = sum.gate || {};
             const gateSub = gate.min_p_true != null
@@ -1638,7 +1638,7 @@
                 stat('Robot', escHtml(String(robotCount)), '每台 ' + escHtml(robotEq) + ' U · 复利' + (universe ? ' · ' + escHtml(universe) : ''), 'var(--accent)', '', skipTag),
                 stat('持仓', escHtml(String(sum.open_positions ?? 0)), gate.robot_reuse_after_exit ? '平仓释放 slot' : '日上限 ' + escHtml(String(gate.max_opens_per_day ?? '—')), 'var(--warn)', '', ''),
                 stat('已结算', escHtml(String(sum.settled_trades ?? 0)), '', 'var(--neon-blue)', '', ''),
-                stat('累计 U', fmtZctPx(pnl, 4), pnlSub, pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
+                stat('累计 U', fmtNum(pnl, 4), pnlSub, pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
                 stat('Gate', gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—', gateSub, 'var(--gold)', '', ''),
                 stat('宏观过滤', sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启', '', 'var(--neon-purple)', sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted', ''),
             ].join('');
@@ -1695,7 +1695,7 @@
                 const pnl = row.pnl_usdt != null ? Number(row.pnl_usdt) : null;
                 const pnlCls = pnl != null ? pxClass(pnl) : 'text-text-muted';
                 const volRatio = (row.volume && row.vol_ma) ? (Number(row.volume) / Number(row.vol_ma)).toFixed(2) : '—';
-                const tpHtml = row.tp_price != null ? fmtZctPx(row.tp_price, 4) : '<span class="text-text-muted">—</span>';
+                const tpHtml = row.tp_price != null ? fmtNum(row.tp_price, 4) : '<span class="text-text-muted">—</span>';
                 const symShort = escHtml(orbBotBaseSymbol(row.symbol));
                 return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
                     <td class="py-2 px-2 font-mono text-[11px] text-text-secondary">${escHtml(String(row.robot_label || (row.robot_id != null ? 'R' + row.robot_id : '—')))}</td>
@@ -1703,13 +1703,13 @@
                     <td class="py-2 px-2"><span class="font-semibold text-text-primary">${symShort}</span></td>
                     <td class="py-2 px-2">${orbStatusPill(st)}</td>
                     <td class="py-2 px-2">${orbSidePill(row.side)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${fmtZctPx(row.entry_price, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-neon-red/90">${fmtZctPx(row.sl_price, 4)}</td>
+                    <td class="py-2 px-2 font-mono text-right tabular-nums">${fmtNum(row.entry_price, 4)}</td>
+                    <td class="py-2 px-2 font-mono text-right tabular-nums text-neon-red/90">${fmtNum(row.sl_price, 4)}</td>
                     <td class="py-2 px-2 font-mono text-right tabular-nums">${tpHtml}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_high, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtZctPx(row.or_low, 4)}</td>
+                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtNum(row.or_high, 4)}</td>
+                    <td class="py-2 px-2 font-mono text-right tabular-nums text-text-secondary">${fmtNum(row.or_low, 4)}</td>
                     <td class="py-2 px-2 font-mono text-right tabular-nums">${escHtml(volRatio)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums font-semibold ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
+                    <td class="py-2 px-2 font-mono text-right tabular-nums font-semibold ${pnlCls}">${pnl != null ? fmtNum(pnl, 4) : '—'}</td>
                 </tr>`;
             }).join('');
             root.innerHTML = head + rows + '</tbody></table>' + laneBoardScrollHint(total);
@@ -1819,12 +1819,6 @@
                     refreshBtn.textContent = '刷新';
                 }
             }
-        }
-
-        function zctSideClass(side) {
-            if (side === 'LONG') return 'text-neon-green font-medium';
-            if (side === 'SHORT') return 'text-neon-red font-medium';
-            return 'text-text-muted';
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
