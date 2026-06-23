@@ -146,8 +146,9 @@
                         <div class="brand-subtitle hidden sm:block">Live Terminal</div>
                     </div>
                 </a>
-                <nav class="hidden md:flex items-center gap-1.5" aria-label="主导航">
+                <nav class="flex items-center gap-1.5" aria-label="主导航">
                     <a href="index.html" class="nav-pill">策略看板</a>
+                    <a href="binance.html" class="nav-pill nav-pill-active" aria-current="page">实盘看板</a>
                 </nav>
             </div>
             <div class="flex items-center gap-2 shrink-0">
@@ -176,6 +177,7 @@
                     <div class="panel-kicker">System</div>
                     <h2 class="panel-title mt-1">系统状态</h2>
                 </div>
+                <button id="btn-sign-tradfi" type="button" onclick="signTradFiPerps()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="CRCL/PAYP 等股票永续需先签署">签署 TradFi</button>
             </div>
             <div id="status-body" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
@@ -428,6 +430,27 @@ async function loadStatus() {
             '<div class="col-span-3" style="color:var(--neon-red);font-size:0.75rem">无法连接：' + e.message + '</div>';
         var badge = document.getElementById('status-badge');
         if (badge) setBinanceStatusPill(badge, 'err', '离线');
+    }
+}
+
+async function signTradFiPerps() {
+    var btn = document.getElementById('btn-sign-tradfi');
+    if (btn && btn.disabled) return;
+    var orig = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '签署中…';
+    }
+    try {
+        var d = await apiFetch('/api/binance/_internal/sign-tradfi-perps');
+        showToast('TradFi 协议已签署' + (d.result ? '：' + d.result : ''), true);
+    } catch (e) {
+        showToast('签署失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = orig || '签署 TradFi';
+        }
     }
 }
 
