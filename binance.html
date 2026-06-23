@@ -83,21 +83,6 @@
         td { padding: 0.55rem 0.75rem; font-size: 0.78rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 90%, transparent); white-space: nowrap; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: var(--hover-bg); }
-        .config-input {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 0.35rem 0.6rem;
-            font-size: 0.78rem;
-            color: var(--text-primary);
-            outline: none;
-            transition: border-color 0.15s;
-        }
-        .config-input:focus { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-        select.config-input { appearance: auto; cursor: pointer; }
-        .tab-btn { transition: color 0.15s, border-color 0.15s; }
-        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-        .tab-btn:not(.active) { color: var(--text-muted); border-bottom: 2px solid transparent; }
         .toast {
             position: fixed;
             bottom: 1.5rem;
@@ -167,9 +152,8 @@
 
 <main class="max-w-7xl mx-auto px-4 py-6 space-y-5">
 
-    <!-- Status + Config row -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
+    <!-- Status -->
+    <section>
         <!-- Status card -->
         <div class="bg-surface rounded-xl border border-border card p-4">
             <div class="flex items-center justify-between mb-3">
@@ -183,34 +167,23 @@
                 <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
             </div>
         </div>
-
-        <!-- Binance config editor -->
-        <div class="bg-surface rounded-xl border border-border card p-4">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <div class="panel-kicker">Config</div>
-                    <h2 class="panel-title mt-1">交易配置</h2>
-                </div>
-                <button id="btn-save-config" type="button" onclick="saveConfig()" class="btn-secondary px-2.5 py-1 rounded-lg bg-accent/15 border border-accent/30 text-accent text-xs font-medium hover:bg-accent/25 disabled:opacity-50 disabled:cursor-not-allowed">保存配置</button>
-            </div>
-            <div class="flex items-center gap-0 mb-3 border-b border-border/90" id="config-tabs">
-                <button type="button" class="tab-btn active px-3 py-1.5 text-xs font-medium" data-tab="global" onclick="switchConfigTab('global')">全局</button>
-            </div>
-            <div id="config-body" class="grid grid-cols-2 gap-x-4 gap-y-2">
-                <div class="text-text-muted text-xs animate-pulse col-span-2">加载中…</div>
-            </div>
-        </div>
     </section>
 
     <!-- Open positions -->
     <section class="bg-surface rounded-xl border border-border card overflow-hidden">
-        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
-            <h2 class="text-text-primary font-semibold text-sm">当前持仓</h2>
-            <span id="open-pos-count" class="text-text-muted text-xs">—</span>
+        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 min-w-0">
+                <h2 class="text-text-primary font-semibold text-sm">当前持仓</h2>
+                <span class="badge badge-manual">U本位</span>
+            </div>
+            <span id="open-pos-count" class="text-text-muted text-xs shrink-0">—</span>
+        </div>
+        <div id="usdt-account-bar" class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.2]">
+            <div class="text-text-muted text-xs animate-pulse">加载 U 本位账户…</div>
         </div>
         <div class="overflow-x-auto">
             <div id="open-positions-body" class="p-4">
-                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+                <div class="text-text-muted text-xs animate-pulse">加载持仓…</div>
             </div>
         </div>
     </section>
@@ -219,7 +192,10 @@
     <section class="bg-surface rounded-xl border border-border card overflow-hidden">
         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
             <h2 class="text-text-primary font-semibold text-sm">信号日志</h2>
-            <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+            <div class="flex items-center gap-2">
+                <span class="text-text-muted text-xs">近24小时</span>
+                <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+            </div>
         </div>
         <div class="overflow-x-auto">
             <div id="signals-body" class="p-4">
@@ -312,6 +288,64 @@ function fmtNum(v, decimals) {
     return Number(v).toFixed(decimals != null ? decimals : 4);
 }
 
+function fmtUsd(v, decimals) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    return Number(v).toFixed(decimals != null ? decimals : 2) + ' U';
+}
+
+function fmtPnlHtml(v) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    var n = Number(v);
+    var sign = n >= 0 ? '+' : '';
+    return '<span style="' + pnlColor(n) + '">' + sign + n.toFixed(2) + ' U</span>';
+}
+
+function marginTypeLabel(v) {
+    if (!v) return '—';
+    var s = String(v).toUpperCase();
+    if (s === 'ISOLATED') return '逐仓';
+    if (s === 'CROSSED' || s === 'CROSS') return '全仓';
+    return escHtml(v);
+}
+
+function positionNotional(p) {
+    var qty = Number(p.quantity);
+    var mark = Number(p.mark_price);
+    if (!Number.isFinite(qty) || !Number.isFinite(mark)) return null;
+    return qty * mark;
+}
+
+function renderAccountBar(acct, rows) {
+    var bar = document.getElementById('usdt-account-bar');
+    if (!bar) return;
+    if (!acct) {
+        bar.innerHTML = '<div class="text-text-muted text-xs">账户摘要暂不可用</div>';
+        return;
+    }
+    var posUpnl = 0;
+    var hasPosUpnl = false;
+    (rows || []).forEach(function(p) {
+        var u = Number(p.unrealized_pnl_usdt);
+        if (Number.isFinite(u)) {
+            posUpnl += u;
+            hasPosUpnl = true;
+        }
+    });
+    var items = [
+        ['合约类型', '<span class="text-text-primary text-xs font-medium">USDT 永续 · U本位</span>'],
+        ['钱包余额', '<span class="font-mono text-xs text-text-primary">' + fmtUsd(acct.wallet_balance_usdt) + '</span>'],
+        ['可用余额', '<span class="font-mono text-xs text-text-primary">' + fmtUsd(acct.available_balance_usdt) + '</span>'],
+        ['账户浮盈', fmtPnlHtml(acct.unrealized_pnl_usdt)],
+        ['持仓浮盈', hasPosUpnl ? fmtPnlHtml(posUpnl) : '<span class="text-text-muted text-xs">—</span>'],
+    ];
+    bar.innerHTML = '<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">' + items.map(function(item) {
+        return '<div class="flex flex-col gap-0.5">'
+            + '<span class="text-text-muted text-[10px] uppercase tracking-wider">' + item[0] + '</span>'
+            + '<div>' + item[1] + '</div>'
+            + '</div>';
+    }).join('') + '</div>';
+}
+
 function pnlColor(v) {
     if (v == null) return '';
     return Number(v) >= 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
@@ -358,11 +392,21 @@ function reasonBadge(r) {
     return '<span class="badge badge-' + classKey + '">' + escHtml(display) + '</span>';
 }
 
-function signalStatusBadge(s) {
-    if (!s) return '—';
-    var cls = s === 'traded' ? 'badge-open' : s === 'error' ? 'badge-sl' : 'badge-unknown';
+function signalStatusBadge(status, action) {
+    if (!status) return '—';
+    var act = (action || 'open').toLowerCase();
+    if (status === 'traded' && act === 'close') {
+        return '<span class="badge badge-unknown">已平仓</span>';
+    }
+    var cls = status === 'traded' ? 'badge-open' : status === 'error' ? 'badge-sl' : 'badge-unknown';
     var labels = { traded: '已开仓', received: '已收到', error: '错误' };
-    return '<span class="badge ' + cls + '">' + escHtml(labels[s] || s) + '</span>';
+    return '<span class="badge ' + cls + '">' + escHtml(labels[status] || status) + '</span>';
+}
+
+function skipReasonLabel(reason) {
+    if (!reason) return '—';
+    if (reason === 'already_flat') return '交易所已平仓';
+    return reason;
 }
 
 // ── Status ────────────────────────────────────────────────────────────────────
@@ -398,13 +442,13 @@ function tickHeaderClock() {
 async function loadStatus() {
     try {
         var d = await apiFetch('/api/binance/status');
-        var enabled = d.enabled === 'true' || d.enabled === true;
-        var testnet  = d.testnet  === 'true' || d.testnet  === true;
+        var testnet = d.testnet === true || d.testnet === 'true';
+        var paused  = d.execution_paused === true;
 
         var badge = document.getElementById('status-badge');
         if (badge) {
-            if (!enabled) {
-                setBinanceStatusPill(badge, 'err', '已禁用');
+            if (paused) {
+                setBinanceStatusPill(badge, 'err', '已暂停');
             } else if (testnet) {
                 setBinanceStatusPill(badge, 'warn', 'TESTNET');
             } else {
@@ -413,10 +457,9 @@ async function loadStatus() {
         }
 
         var items = [
-            ['状态',     enabled ? '<span class="badge badge-enabled">启用</span>' : '<span class="badge badge-disabled">禁用</span>'],
-            ['网络',     testnet  ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
+            ['网络',     testnet ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
+            ['执行',     paused  ? '<span class="badge badge-disabled">已暂停</span>' : '<span class="badge badge-enabled">正常</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
-            ['最大持仓', '<span class="text-text-primary font-mono">' + (d.max_positions || '—') + '</span>'],
         ];
 
         document.getElementById('status-body').innerHTML = items.map(function(item) {
@@ -454,147 +497,53 @@ async function signTradFiPerps() {
     }
 }
 
-// ── Config editor ─────────────────────────────────────────────────────────────
-
-var _configTab = 'global';
-var EDITABLE_KEYS = {
-    global: [
-        { key: 'enabled',               label: '启用交易',        hint: 'true / false' },
-        { key: 'testnet',               label: '测试网',          hint: 'true / false' },
-        { key: 'max_positions',         label: '最大持仓(总)',     hint: '8' },
-        { key: 'entry_type',            label: '入场单类型(默认)', hint: 'MARKET', type: 'select', options: ['MARKET','LIMIT'] },
-    ],
-};
-
-function switchConfigTab(tab) {
-    _configTab = tab;
-    var btns = document.querySelectorAll('#config-tabs .tab-btn');
-    btns.forEach(function(b) {
-        b.classList.toggle('active', b.getAttribute('data-tab') === tab);
-    });
-    for (var k in EDITABLE_KEYS) {
-        if (!EDITABLE_KEYS.hasOwnProperty(k)) continue;
-        var el = document.getElementById('config-section-' + k);
-        if (el) el.style.display = (k === tab) ? '' : 'none';
-    }
-}
-
-function _allConfigKeys() {
-    var all = [];
-    for (var k in EDITABLE_KEYS) {
-        if (EDITABLE_KEYS.hasOwnProperty(k)) {
-            all = all.concat(EDITABLE_KEYS[k]);
-        }
-    }
-    return all;
-}
-
-async function loadConfig() {
-    try {
-        var cfg = await apiFetch('/api/binance/config');
-        var sections = [];
-        for (var tab in EDITABLE_KEYS) {
-            if (!EDITABLE_KEYS.hasOwnProperty(tab)) continue;
-            var keys = EDITABLE_KEYS[tab];
-            var display = (tab === _configTab) ? '' : 'display:none';
-            var items = keys.map(function(item) {
-                var raw = cfg[item.key] != null ? cfg[item.key] : '';
-                var val = (item.password && raw === '****') ? '' : raw;
-                var control;
-                if (item.type === 'select') {
-                    var opts = (item.options || []).map(function(o) {
-                        var label = o === '' ? '（回退全局）' : o;
-                        var sel = String(val) === String(o) ? ' selected' : '';
-                        return '<option value="' + escHtml(o) + '"' + sel + '>' + escHtml(label) + '</option>';
-                    }).join('');
-                    control = '<select id="cfg-' + escHtml(item.key) + '" class="config-input">' + opts + '</select>';
-                } else {
-                    var inputType = item.password ? 'password' : 'text';
-                    control = '<input id="cfg-' + escHtml(item.key) + '" type="' + inputType + '" value="' + escHtml(val) + '" placeholder="' + escHtml(item.hint) + '" class="config-input"/>';
-                }
-                return '<div class="flex flex-col gap-0.5">'
-                    + '<label class="text-text-muted text-[10px] uppercase tracking-wider">' + escHtml(item.label) + '</label>'
-                    + control
-                    + '</div>';
-            }).join('');
-            sections.push('<div id="config-section-' + escHtml(tab) + '" style="' + display + '" class="grid grid-cols-2 gap-x-4 gap-y-2 col-span-2">' + items + '</div>');
-        }
-        document.getElementById('config-body').innerHTML = sections.join('');
-    } catch(e) {
-        document.getElementById('config-body').innerHTML =
-            '<div class="col-span-2" style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
-    }
-}
-
-async function saveConfig() {
-    var btn = document.getElementById('btn-save-config');
-    if (btn && btn.disabled) return;
-    var pairs = {};
-    _allConfigKeys().forEach(function(item) {
-        var el = document.getElementById('cfg-' + item.key);
-        if (!el) return;
-        var v = el.value.trim();
-        if (item.password && !v) return;
-        pairs[item.key] = v;
-    });
-    var origText = btn ? btn.textContent : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '保存中…';
-    }
-    try {
-        await apiFetch('/api/binance/config', {
-            method: 'POST',
-            body: JSON.stringify({ pairs: pairs }),
-        });
-        showToast('配置已保存', true);
-        loadStatus();
-        loadConfig();
-    } catch(e) {
-        showToast('保存失败：' + e.message, false);
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = origText || '保存配置';
-        }
-    }
-}
-
 // ── Open positions ────────────────────────────────────────────────────────────
 
 async function loadOpenPositions() {
+    var body = document.getElementById('open-positions-body');
+    var countEl = document.getElementById('open-pos-count');
     try {
-        var rows = await apiFetch('/api/binance/positions?status=open&limit=50');
-        document.getElementById('open-pos-count').textContent = rows.length + ' 条';
+        var results = await Promise.all([
+            apiFetch('/api/binance/positions?status=open&limit=50'),
+            apiFetch('/api/binance/account/summary').catch(function() { return null; }),
+        ]);
+        var rows = results[0] || [];
+        var acct = results[1];
+        renderAccountBar(acct, rows);
+        countEl.textContent = rows.length + ' 个仓位';
 
         if (!rows.length) {
-            document.getElementById('open-positions-body').innerHTML =
-                '<div class="text-text-muted text-xs">暂无持仓</div>';
+            body.innerHTML =
+                '<div class="text-text-muted text-xs">暂无 U 本位持仓（数据来自币安合约账户实时同步）</div>';
             return;
         }
 
         var trs = rows.map(function(p) {
             var upnl = Number(p.unrealized_pnl_usdt);
+            var notional = positionNotional(p);
             return '<tr>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(p.side) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.mark_price, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 6) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(4)) : '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.leverage, 0) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.liquidation_price, 6) + '</td>'
-                + '<td class="text-text-muted">' + escHtml(p.margin_type || '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.mark_price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + (notional != null ? fmtUsd(notional, 2) : '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(2) + ' U') : '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + (p.leverage != null ? escHtml(String(p.leverage)) + 'x' : '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.liquidation_price, 4) + '</td>'
+                + '<td class="text-text-muted text-xs">' + marginTypeLabel(p.margin_type) + '</td>'
                 + '</tr>';
         }).join('');
 
-        document.getElementById('open-positions-body').innerHTML =
+        body.innerHTML =
             '<table><thead><tr>'
-            + '<th>标的</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>浮盈 U</th><th>杠杆</th><th>强平价</th><th>保证金模式</th>'
+            + '<th>标的</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>名义(U)</th><th>浮盈(U)</th><th>杠杆</th><th>强平价</th><th>保证金</th>'
             + '</tr></thead><tbody>' + trs + '</tbody></table>';
     } catch(e) {
-        document.getElementById('open-positions-body').innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">读取当前持仓失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
+        renderAccountBar(null, []);
+        countEl.textContent = '—';
+        body.innerHTML =
+            '<div style="color:var(--neon-red);font-size:0.75rem">读取 U 本位持仓失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
     }
 }
 
@@ -606,7 +555,7 @@ async function loadSignals() {
 
         if (!rows.length) {
             document.getElementById('signals-body').innerHTML =
-                '<div class="text-text-muted text-xs">暂无信号日志</div>';
+                '<div class="text-text-muted text-xs">近24小时暂无信号日志</div>';
             return;
         }
 
@@ -619,8 +568,8 @@ async function loadSignals() {
                 + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(s.entry_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-red)">' + fmtNum(s.sl_price, 4) + '</td>'
                 + '<td style="font-variant-numeric:tabular-nums;color:var(--neon-green)">' + fmtNum(s.tp_price, 4) + '</td>'
-                + '<td>' + signalStatusBadge(s.status) + '</td>'
-                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + escHtml(s.skip_reason || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + escHtml(s.skip_reason || '—') + '</td>'
+                + '<td>' + signalStatusBadge(s.status, s.action) + '</td>'
+                + '<td class="text-text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="' + escHtml(skipReasonLabel(s.skip_reason) || '') + '" onclick="var e=this.style;if(e.maxWidth){e.maxWidth=\'\';e.overflow=\'\';e.textOverflow=\'\'}else{e.maxWidth=\'160px\';e.overflow=\'hidden\';e.textOverflow=\'ellipsis\'}">' + escHtml(skipReasonLabel(s.skip_reason)) + '</td>'
                 + '<td class="text-text-muted">' + fmtTime(s.received_at) + '</td>'
                 + '</tr>';
         }).join('');
@@ -639,7 +588,6 @@ async function loadSignals() {
 
 function refreshAll() {
     loadStatus();
-    loadConfig();
     loadOpenPositions();
     loadSignals();
 }
