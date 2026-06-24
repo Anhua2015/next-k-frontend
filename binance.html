@@ -237,6 +237,11 @@
                 <button type="button" data-pnl-period="daily" onclick="setPnlPeriod('daily')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent pnl-tab-active">日</button>
                 <button type="button" data-pnl-period="weekly" onclick="setPnlPeriod('weekly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">周</button>
                 <button type="button" data-pnl-period="monthly" onclick="setPnlPeriod('monthly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">月</button>
+                <label class="flex items-center gap-1 text-text-muted text-xs">
+                    <span>起始</span>
+                    <input type="date" id="pnl-start-date" onchange="setPnlStartDate(this.value)" class="bg-surface-light/80 border border-border/90 rounded-lg px-2 py-1 text-text-secondary text-xs outline-none focus:border-accent/45" />
+                </label>
+                <button type="button" onclick="clearPnlStartDate()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">全部</button>
                 <button type="button" id="btn-pnl-sync" onclick="syncPnl()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">同步</button>
                 <button type="button" id="btn-pnl-clear" onclick="clearPnlCache()" class="btn-secondary px-2.5 py-1 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs hover:bg-accent/10 hover:border-accent/45">清理缓存</button>
             </div>
@@ -610,6 +615,11 @@ async function loadOpenPositions() {
 // ── PnL calendar ─────────────────────────────────────────────────────────────
 
 var _pnlPeriod = 'daily';
+var _pnlStartDate = '';
+
+try {
+    _pnlStartDate = localStorage.getItem('PNL_START_DATE') || '';
+} catch (e) { /* ignore */ }
 
 function setPnlPeriod(period) {
     _pnlPeriod = period || 'daily';
@@ -617,6 +627,21 @@ function setPnlPeriod(period) {
         btn.classList.toggle('pnl-tab-active', btn.dataset.pnlPeriod === _pnlPeriod);
     });
     loadPnl();
+}
+
+function setPnlStartDate(value) {
+    _pnlStartDate = String(value || '').trim();
+    try {
+        if (_pnlStartDate) localStorage.setItem('PNL_START_DATE', _pnlStartDate);
+        else localStorage.removeItem('PNL_START_DATE');
+    } catch (e) { /* ignore */ }
+    loadPnl();
+}
+
+function clearPnlStartDate() {
+    var input = document.getElementById('pnl-start-date');
+    if (input) input.value = '';
+    setPnlStartDate('');
 }
 
 function renderPnlSummary(data) {
@@ -674,10 +699,12 @@ function buildPnlDisplayRows(data) {
     rows.forEach(function(row) { byPeriod[row.period] = row; });
     var out = [];
     var now = new Date();
+    var minDate = _pnlStartDate ? new Date(_pnlStartDate + 'T00:00:00') : null;
     if (_pnlPeriod === 'daily') {
         for (var i = 0; i < 90; i++) {
             var d = new Date(now);
             d.setDate(now.getDate() - i);
+            if (minDate && d < minDate) break;
             var k = ymd(d);
             out.push(byPeriod[k] || emptyPnlRow(k));
         }
@@ -687,6 +714,7 @@ function buildPnlDisplayRows(data) {
         for (var w = 0; w < 14; w++) {
             var dw = new Date(now);
             dw.setDate(now.getDate() - w * 7);
+            if (minDate && dw < minDate) break;
             var wk = isoWeekLabel(dw);
             if (!out.length || out[out.length - 1].period !== wk) {
                 out.push(byPeriod[wk] || emptyPnlRow(wk));
@@ -696,6 +724,7 @@ function buildPnlDisplayRows(data) {
     }
     for (var m = 0; m < 6; m++) {
         var dm = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        if (minDate && new Date(dm.getFullYear(), dm.getMonth() + 1, 0) < minDate) break;
         var mk = ym(dm);
         out.push(byPeriod[mk] || emptyPnlRow(mk));
     }
@@ -735,13 +764,16 @@ function renderPnlCalendar(data) {
 
 async function loadPnl() {
     try {
-        var data = await apiFetch('/api/binance/pnl/summary?period=' + encodeURIComponent(_pnlPeriod) + '&days=90');
+        var path = '/api/binance/pnl/summary?period=' + encodeURIComponent(_pnlPeriod) + '&days=90';
+        if (_pnlStartDate) path += '&start_date=' + encodeURIComponent(_pnlStartDate);
+        var data = await apiFetch(path);
         renderPnlSummary(data);
         renderPnlCalendar(data);
         var st = document.getElementById('pnl-sync-state');
         if (st) {
             var last = data.sync_state && data.sync_state.last_sync_at;
-            st.textContent = last ? ('上次同步：' + fmtTime(last)) : '尚未同步 Binance income 流水';
+            var range = _pnlStartDate ? (' · 起始日期：' + _pnlStartDate) : '';
+            st.textContent = (last ? ('上次同步：' + fmtTime(last)) : '尚未同步 Binance income 流水') + range;
         }
     } catch (e) {
         document.getElementById('pnl-summary').innerHTML =
@@ -877,6 +909,8 @@ function toggleTheme() {
 
 document.addEventListener('DOMContentLoaded', function() {
     tickHeaderClock();
+    var startInput = document.getElementById('pnl-start-date');
+    if (startInput && _pnlStartDate) startInput.value = _pnlStartDate;
     setInterval(tickHeaderClock, 30000);
     refreshAll();
     setInterval(function() {
