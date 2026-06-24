@@ -1,26 +1,48 @@
-name: Auto Deploy to Server
+name: Test and Deploy
 
-# 触发条件：一旦有人把代码 push（推送）到 release 分支，就开工
 on:
   push:
-    branches:
-      - release
+    branches: [release]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-k-frontend-release-deploy
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: SSH into server and deploy
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check api-base.js
+          node --check binance-api-base.js
+          node tools/check-inline-js.mjs
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Deploy release to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          # 连上服务器后，GitHub 会帮你自动敲以下三行命令：
+          command_timeout: 10m
           script: |
-            cd /home/ubuntu/next-k/next-k-frontend  # 👈 改成你服务器上项目的绝对路径
+            set -e
+            cd /home/ubuntu/next-k/next-k-frontend
             git fetch origin release
             git checkout release
             git reset --hard origin/release
             bash stop.sh
-            bash start.sh       # 👈 改成你重启服务的脚本或命令
+            bash start.sh
