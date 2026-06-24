@@ -264,6 +264,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-text-muted text-xs">近24小时</span>
                 <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+                <button type="button" id="btn-signals-clear" onclick="clearSignalLogs()" class="btn-secondary px-2.5 py-1 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs hover:bg-accent/10 hover:border-accent/45">清理日志</button>
             </div>
         </div>
         <div class="overflow-x-auto">
@@ -884,6 +885,41 @@ async function loadSignals() {
     } catch(e) {
         document.getElementById('signals-body').innerHTML =
             '<div style="color:var(--neon-red);font-size:0.75rem">' + e.message + '</div>';
+    }
+}
+
+async function clearSignalLogs() {
+    var btn = document.getElementById('btn-signals-clear');
+    try {
+        var token = window.prompt('请输入 Protocol 维护令牌，用于清理本地信号日志');
+        if (!token || !token.trim()) {
+            showToast('已取消清理：未输入令牌', false);
+            return;
+        }
+        sessionStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', token.trim());
+    } catch (e) {
+        showToast('无法读取维护令牌', false);
+        return;
+    }
+    if (!confirm('确定清理本地信号日志？\n这只会删除 signals_log 审计记录，不会影响 Binance 订单或持仓。')) {
+        return;
+    }
+    var old = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '清理中…';
+    }
+    try {
+        var out = await apiFetch('/api/binance/signals/clear', { method: 'POST' });
+        showToast('信号日志已清理：' + out.deleted_signals + ' 条', true);
+        await loadSignals();
+    } catch (e) {
+        showToast('清理失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = old || '清理日志';
+        }
     }
 }
 
