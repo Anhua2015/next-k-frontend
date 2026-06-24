@@ -425,7 +425,9 @@ function renderAccountBar(acct, rows) {
 
 function pnlColor(v) {
     if (v == null) return '';
-    return Number(v) >= 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
+    var n = Number(v);
+    if (!Number.isFinite(n) || n === 0) return 'color:var(--text-muted)';
+    return n > 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
 }
 
 function pnlClass(v) {
