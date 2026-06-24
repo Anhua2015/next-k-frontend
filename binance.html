@@ -215,8 +215,8 @@
                 <span class="badge badge-manual">含手续费 · 资金费率</span>
             </div>
             <div class="flex items-center gap-2">
-                <button type="button" data-pnl-period="daily" onclick="setPnlPeriod('daily')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent pnl-tab-active">日</button>
-                <button type="button" data-pnl-period="weekly" onclick="setPnlPeriod('weekly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">周</button>
+                <button type="button" data-pnl-period="daily" onclick="setPnlPeriod('daily')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">日</button>
+                <button type="button" data-pnl-period="weekly" onclick="setPnlPeriod('weekly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent pnl-tab-active">周</button>
                 <button type="button" data-pnl-period="monthly" onclick="setPnlPeriod('monthly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">月</button>
                 <label class="flex items-center gap-1 text-text-muted text-xs">
                     <span>起始</span>
@@ -615,7 +615,7 @@ async function loadOpenPositions() {
 
 // ── PnL calendar ─────────────────────────────────────────────────────────────
 
-var _pnlPeriod = 'daily';
+var _pnlPeriod = 'weekly';
 var _pnlStartDate = '';
 
 function defaultPnlStartDate() {
