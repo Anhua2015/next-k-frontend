@@ -617,8 +617,14 @@ async function loadOpenPositions() {
 var _pnlPeriod = 'daily';
 var _pnlStartDate = '';
 
+function defaultPnlStartDate() {
+    var d = new Date();
+    d.setDate(d.getDate() - 30);
+    return ymd(d);
+}
+
 try {
-    _pnlStartDate = localStorage.getItem('PNL_START_DATE') || '';
+    _pnlStartDate = localStorage.getItem('PNL_START_DATE') || defaultPnlStartDate();
 } catch (e) { /* ignore */ }
 
 function setPnlPeriod(period) {
@@ -764,7 +770,7 @@ function renderPnlCalendar(data) {
 
 async function loadPnl() {
     try {
-        var path = '/api/binance/pnl/summary?period=' + encodeURIComponent(_pnlPeriod) + '&days=90';
+        var path = '/api/binance/pnl/summary?period=' + encodeURIComponent(_pnlPeriod) + '&days=30';
         if (_pnlStartDate) path += '&start_date=' + encodeURIComponent(_pnlStartDate);
         var data = await apiFetch(path);
         renderPnlSummary(data);
