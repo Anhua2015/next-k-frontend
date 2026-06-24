@@ -199,7 +199,10 @@
                     <div class="panel-kicker">System</div>
                     <h2 class="panel-title mt-1">系统状态</h2>
                 </div>
-                <button id="btn-sign-tradfi" type="button" onclick="signTradFiPerps()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="CRCL/PAYP 等股票永续需先签署">签署 TradFi</button>
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                    <button id="btn-trading-toggle" type="button" onclick="toggleTradingEnabled()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="需要维护令牌。关闭后禁止新开仓，平仓仍允许。">交易开关</button>
+                    <button id="btn-sign-tradfi" type="button" onclick="signTradFiPerps()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="CRCL/PAYP 等股票永续需先签署">签署 TradFi</button>
+                </div>
             </div>
             <div id="status-body" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
@@ -278,6 +281,8 @@
 
 <script src="binance-api-base.js"></script>
 <script>
+let _tradingEnabled = null;
+
 function getApiBase() { return resolveProtocolApiBase(); }
 function buildHeaders() {
     // 普通 GET 不要求鉴权，但隐藏的 TradFi 签署操作会复用同一请求封装并携带令牌。
@@ -474,6 +479,24 @@ function boolBadge(ok, yesText, noText) {
 
 // ── Status ────────────────────────────────────────────────────────────────────
 
+function renderTradingToggleButton(enabled) {
+    var btn = document.getElementById('btn-trading-toggle');
+    if (!btn) return;
+    if (enabled === true) {
+        btn.textContent = '停用实盘';
+        btn.className = 'btn-secondary px-2.5 py-1 rounded-lg bg-neon-red/[0.06] border border-neon-red/30 text-neon-red text-xs hover:bg-neon-red/[0.10] hover:border-neon-red/45 disabled:opacity-50';
+        btn.title = '需要维护令牌。关闭后禁止新开仓，平仓仍允许。';
+    } else if (enabled === false) {
+        btn.textContent = '启用实盘';
+        btn.className = 'btn-secondary px-2.5 py-1 rounded-lg bg-neon-green/[0.06] border border-neon-green/30 text-neon-green text-xs hover:bg-neon-green/[0.10] hover:border-neon-green/45 disabled:opacity-50';
+        btn.title = '需要维护令牌。启用后允许接收信号并新开仓。';
+    } else {
+        btn.textContent = '交易开关';
+        btn.className = 'btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50';
+        btn.title = '等待系统状态加载。';
+    }
+}
+
 function setBinanceStatusPill(el, state, text) {
     var classes = {
         ok: 'status-pill status-pill-ok bg-neon-green/[0.08] text-neon-green border-neon-green/20',
@@ -507,16 +530,21 @@ async function loadStatus() {
         var d = await apiFetch('/api/binance/status');
         var testnet = d.testnet === true || d.testnet === 'true';
         var paused  = d.execution_paused === true;
+        var tradingEnabled = d.trading_enabled !== false;
         var authOn = d.maintenance_auth_enabled === true;
         var pnlSyncOn = d.pnl_auto_sync_enabled === true;
         var fallback = d.market_entry_fallback === true;
         var spread = Number(d.max_entry_spread_bps || 0);
         var slip = Number(d.max_entry_slippage_bps || 0);
+        _tradingEnabled = tradingEnabled;
+        renderTradingToggleButton(tradingEnabled);
 
         var badge = document.getElementById('status-badge');
         if (badge) {
             if (paused) {
                 setBinanceStatusPill(badge, 'err', '已暂停');
+            } else if (!tradingEnabled) {
+                setBinanceStatusPill(badge, 'warn', '交易关闭');
             } else if (testnet) {
                 setBinanceStatusPill(badge, 'warn', 'TESTNET');
             } else {
@@ -527,6 +555,7 @@ async function loadStatus() {
         var items = [
             ['网络', testnet ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="badge badge-enabled">主网</span>'],
             ['执行', paused ? '<span class="badge badge-disabled">已暂停</span>' : '<span class="badge badge-enabled">正常</span>'],
+            ['交易开关', tradingEnabled ? '<span class="badge badge-enabled">允许开仓</span>' : '<span class="badge badge-disabled">禁止开仓</span>'],
             ['API Key', boolBadge(d.api_key_set === true, '已配置', '缺失')],
             ['维护鉴权', authOn ? '<span class="badge badge-enabled">已启用</span>' : '<span class="badge badge-sl">开放模式</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
@@ -546,10 +575,63 @@ async function loadStatus() {
                 + '</div>';
         }).join('');
     } catch(e) {
+        _tradingEnabled = null;
+        renderTradingToggleButton(null);
         document.getElementById('status-body').innerHTML =
             '<div class="col-span-3" style="color:var(--neon-red);font-size:0.75rem">无法连接：' + e.message + '</div>';
         var badge = document.getElementById('status-badge');
         if (badge) setBinanceStatusPill(badge, 'err', '离线');
+    }
+}
+
+async function toggleTradingEnabled() {
+    var btn = document.getElementById('btn-trading-toggle');
+    if (btn && btn.disabled) return;
+    if (_tradingEnabled == null) {
+        showToast('系统状态未加载，无法切换交易开关', false);
+        return;
+    }
+
+    var next = !_tradingEnabled;
+    try {
+        var token = window.prompt('请输入 Protocol 维护令牌，用于' + (next ? '启用' : '停用') + '实盘新开仓');
+        if (!token || !token.trim()) {
+            showToast('已取消：未输入令牌', false);
+            return;
+        }
+        sessionStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', token.trim());
+    } catch (e) {
+        showToast('无法读取维护令牌', false);
+        return;
+    }
+
+    var msg = next
+        ? '确定启用实盘新开仓？启用后 Protocol 会继续接收有效信号并执行开仓。'
+        : '确定停用实盘新开仓？关闭后新开仓会被拒绝，但平仓仍允许。';
+    if (!confirm(msg)) return;
+
+    var old = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = next ? '启用中…' : '停用中…';
+    }
+    try {
+        var out = await apiFetch('/api/binance/trading/enabled?enabled=' + encodeURIComponent(next ? 'true' : 'false'), { method: 'POST' });
+        _tradingEnabled = out.trading_enabled === true;
+        renderTradingToggleButton(_tradingEnabled);
+        showToast(_tradingEnabled ? '实盘新开仓已启用' : '实盘新开仓已停用', true);
+        await loadStatus();
+    } catch (e) {
+        showToast('切换交易开关失败：' + e.message, false);
+        renderTradingToggleButton(_tradingEnabled);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            if (btn.textContent === '启用中…' || btn.textContent === '停用中…') {
+                btn.textContent = old || '交易开关';
+            }
+            renderTradingToggleButton(_tradingEnabled);
+        }
     }
 }
 
