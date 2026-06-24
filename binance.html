@@ -223,7 +223,7 @@
                 <button type="button" data-pnl-period="monthly" onclick="setPnlPeriod('monthly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">月</button>
                 <label class="flex items-center gap-1 text-text-muted text-xs">
                     <span>起始</span>
-                    <input type="date" id="pnl-start-date" onchange="setPnlStartDate(this.value)" class="bg-surface-light/80 border border-border/90 rounded-lg px-2 py-1 text-text-secondary text-xs outline-none focus:border-accent/45" />
+                    <input type="date" id="pnl-start-date" onchange="setPnlStartDate(this.value)" />
                 </label>
                 <button type="button" onclick="clearPnlStartDate()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">全部</button>
                 <button type="button" id="btn-pnl-sync" onclick="syncPnl()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">同步</button>

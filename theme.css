@@ -412,6 +412,42 @@ h1, h2, h3, .hl-title, .panel-title, .orb-head-title {
 .data-table tbody tr:hover td { background: var(--hover-bg); }
 .data-table tbody tr:last-child td { border-bottom: none; }
 
+/* ── Date / datetime inputs ── */
+input[type="date"],
+input[type="datetime-local"] {
+    color-scheme: light;
+    background: color-mix(in srgb, var(--surface-light) 80%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+    color: var(--text-secondary);
+    border-radius: var(--radius-lg);
+    padding: 0.25rem 0.45rem;
+    font-size: 0.7rem;
+    font-family: inherit;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.55);
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+input[type="date"]:hover::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+.dark input[type="date"],
+.dark input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+}
+
 /* ── Loading ── */
 .skeleton {
     background: linear-gradient(
