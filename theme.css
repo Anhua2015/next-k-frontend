@@ -43,6 +43,7 @@
     --card-shadow-hover:
         0 2px 4px color-mix(in srgb, var(--shadow-color) 70%, transparent),
         0 20px 48px -20px color-mix(in srgb, var(--shadow-color) 140%, transparent);
+    color-scheme: light;
 }
 
 .dark {
@@ -78,6 +79,7 @@
     --hero-inner-glow: rgba(255, 255, 255, 0.04);
     --glass: rgba(22, 22, 24, 0.82);
     --glass-border: rgba(46, 46, 52, 0.75);
+    color-scheme: dark;
 }
 
 body {
@@ -415,10 +417,9 @@ h1, h2, h3, .hl-title, .panel-title, .orb-head-title {
 /* ── Date / datetime inputs ── */
 input[type="date"],
 input[type="datetime-local"] {
-    color-scheme: light;
-    background: color-mix(in srgb, var(--surface-light) 80%, var(--surface));
-    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-    color: var(--text-secondary);
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     border-radius: var(--radius-lg);
     padding: 0.25rem 0.45rem;
     font-size: 0.7rem;
@@ -428,24 +429,13 @@ input[type="datetime-local"] {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
-    filter: invert(0.55);
-    opacity: 0.7;
+    opacity: 0.82;
     transition: opacity 0.15s;
 }
 
 input[type="date"]:hover::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
     opacity: 1;
-}
-
-.dark input[type="date"],
-.dark input[type="datetime-local"] {
-    color-scheme: dark;
-}
-
-.dark input[type="date"]::-webkit-calendar-picker-indicator,
-.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.85);
 }
 
 /* ── Loading ── */
