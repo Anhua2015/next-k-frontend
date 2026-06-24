@@ -466,6 +466,12 @@ function skipReasonLabel(reason) {
     return reason;
 }
 
+function boolBadge(ok, yesText, noText) {
+    return ok
+        ? '<span class="badge badge-enabled">' + escHtml(yesText || '已启用') + '</span>'
+        : '<span class="badge badge-disabled">' + escHtml(noText || '未启用') + '</span>';
+}
+
 // ── Status ────────────────────────────────────────────────────────────────────
 
 function setBinanceStatusPill(el, state, text) {
@@ -501,6 +507,11 @@ async function loadStatus() {
         var d = await apiFetch('/api/binance/status');
         var testnet = d.testnet === true || d.testnet === 'true';
         var paused  = d.execution_paused === true;
+        var authOn = d.maintenance_auth_enabled === true;
+        var pnlSyncOn = d.pnl_auto_sync_enabled === true;
+        var fallback = d.market_entry_fallback === true;
+        var spread = Number(d.max_entry_spread_bps || 0);
+        var slip = Number(d.max_entry_slippage_bps || 0);
 
         var badge = document.getElementById('status-badge');
         if (badge) {
@@ -514,9 +525,18 @@ async function loadStatus() {
         }
 
         var items = [
-            ['网络',     testnet ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
-            ['执行',     paused  ? '<span class="badge badge-disabled">已暂停</span>' : '<span class="badge badge-enabled">正常</span>'],
+            ['网络', testnet ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="badge badge-enabled">主网</span>'],
+            ['执行', paused ? '<span class="badge badge-disabled">已暂停</span>' : '<span class="badge badge-enabled">正常</span>'],
+            ['API Key', boolBadge(d.api_key_set === true, '已配置', '缺失')],
+            ['维护鉴权', authOn ? '<span class="badge badge-enabled">已启用</span>' : '<span class="badge badge-sl">开放模式</span>'],
             ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
+            ['开仓方式', '<span class="font-mono text-xs text-text-primary">' + escHtml(d.entry_order_type || '—') + '</span>'],
+            ['滑点上限', '<span class="font-mono text-xs text-text-primary">' + (Number.isFinite(slip) ? slip.toFixed(0) + ' bps' : '—') + '</span>'],
+            ['盘口价差', '<span class="font-mono text-xs text-text-primary">' + (Number.isFinite(spread) && spread > 0 ? spread.toFixed(0) + ' bps' : '未限制') + '</span>'],
+            ['市价回退', fallback ? '<span class="badge badge-sl">允许</span>' : '<span class="badge badge-enabled">关闭</span>'],
+            ['PnL同步', pnlSyncOn ? '<span class="badge badge-enabled">自动</span>' : '<span class="badge badge-disabled">关闭</span>'],
+            ['最近PnL同步', '<span class="font-mono text-xs text-text-secondary">' + escHtml(d.pnl_last_sync_at ? fmtTime(d.pnl_last_sync_at) : '—') + '</span>'],
+            ['数据库', '<span class="text-text-muted text-xs" title="' + escHtml(d.db_path || '') + '">' + escHtml((d.db_path || '').split('/').pop() || '—') + '</span>'],
         ];
 
         document.getElementById('status-body').innerHTML = items.map(function(item) {
