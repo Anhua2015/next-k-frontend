@@ -96,6 +96,44 @@
         }
         .toast-ok  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 30%, transparent); color: var(--neon-green); }
         .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
+        .pnl-dot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+            gap: 0.55rem;
+        }
+        .pnl-dot-cell {
+            min-height: 72px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: color-mix(in srgb, var(--surface-light) 42%, transparent);
+            padding: 0.55rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.35rem;
+        }
+        .pnl-dot-cell.pnl-profit {
+            border-color: color-mix(in srgb, var(--neon-green) 35%, var(--border));
+            background: color-mix(in srgb, var(--neon-green) 10%, var(--surface));
+        }
+        .pnl-dot-cell.pnl-loss {
+            border-color: color-mix(in srgb, var(--neon-red) 35%, var(--border));
+            background: color-mix(in srgb, var(--neon-red) 10%, var(--surface));
+        }
+        .pnl-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--text-muted);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-muted) 13%, transparent);
+        }
+        .pnl-dot.pnl-profit { background: var(--neon-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--neon-green) 14%, transparent); }
+        .pnl-dot.pnl-loss { background: var(--neon-red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--neon-red) 14%, transparent); }
+        .pnl-tab-active {
+            border-color: color-mix(in srgb, var(--accent) 45%, var(--border)) !important;
+            color: var(--accent) !important;
+            background: color-mix(in srgb, var(--accent) 8%, var(--surface-light)) !important;
+        }
         .theme-toggle {
             display: inline-flex;
             align-items: center;
@@ -185,6 +223,32 @@
             <div id="open-positions-body" class="p-4">
                 <div class="text-text-muted text-xs animate-pulse">加载持仓…</div>
             </div>
+        </div>
+    </section>
+
+    <!-- PnL calendar -->
+    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
+        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 min-w-0">
+                <h2 class="text-text-primary font-semibold text-sm">净盈亏</h2>
+                <span class="badge badge-manual">含手续费 · 资金费率</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" data-pnl-period="daily" onclick="setPnlPeriod('daily')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent pnl-tab-active">日</button>
+                <button type="button" data-pnl-period="weekly" onclick="setPnlPeriod('weekly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">周</button>
+                <button type="button" data-pnl-period="monthly" onclick="setPnlPeriod('monthly')" class="pnl-period-btn btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">月</button>
+                <button type="button" id="btn-pnl-sync" onclick="syncPnl()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">同步</button>
+                <button type="button" id="btn-pnl-clear" onclick="clearPnlCache()" class="btn-secondary px-2.5 py-1 rounded-lg bg-warn/[0.06] border border-accent/30 text-accent text-xs hover:bg-accent/10 hover:border-accent/45">清理缓存</button>
+            </div>
+        </div>
+        <div class="p-4 space-y-3">
+            <div id="pnl-summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div class="text-text-muted text-xs animate-pulse col-span-3">加载盈亏…</div>
+            </div>
+            <div id="pnl-calendar" class="pnl-dot-grid">
+                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+            </div>
+            <div id="pnl-sync-state" class="text-text-muted text-[11px]"></div>
         </div>
     </section>
 
@@ -307,6 +371,12 @@ function fmtPnlHtml(v) {
     return '<span style="' + pnlColor(n) + '">' + sign + n.toFixed(2) + ' U</span>';
 }
 
+function fmtSignedUsd(v, decimals) {
+    if (v == null || !Number.isFinite(Number(v))) return '—';
+    var n = Number(v);
+    return (n >= 0 ? '+' : '') + n.toFixed(decimals != null ? decimals : 2) + ' U';
+}
+
 function marginTypeLabel(v) {
     if (!v) return '—';
     var s = String(v).toUpperCase();
@@ -356,6 +426,13 @@ function renderAccountBar(acct, rows) {
 function pnlColor(v) {
     if (v == null) return '';
     return Number(v) >= 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
+}
+
+function pnlClass(v) {
+    var n = Number(v || 0);
+    if (n > 0) return 'pnl-profit';
+    if (n < 0) return 'pnl-loss';
+    return '';
 }
 
 function sideBadge(side) {
@@ -528,6 +605,211 @@ async function loadOpenPositions() {
     }
 }
 
+// ── PnL calendar ─────────────────────────────────────────────────────────────
+
+var _pnlPeriod = 'daily';
+
+function setPnlPeriod(period) {
+    _pnlPeriod = period || 'daily';
+    document.querySelectorAll('.pnl-period-btn').forEach(function(btn) {
+        btn.classList.toggle('pnl-tab-active', btn.dataset.pnlPeriod === _pnlPeriod);
+    });
+    loadPnl();
+}
+
+function renderPnlSummary(data) {
+    var root = document.getElementById('pnl-summary');
+    if (!root) return;
+    var t = data && data.totals ? data.totals : {};
+    var items = [
+        ['净盈亏', fmtPnlHtml(t.net_pnl_usdt)],
+        ['已实现', fmtPnlHtml(t.realized_pnl_usdt)],
+        ['手续费', fmtPnlHtml(t.commission_usdt)],
+        ['资金费', fmtPnlHtml(t.funding_fee_usdt)],
+        ['返还', fmtPnlHtml(t.rebate_usdt)],
+        ['流水', '<span class="font-mono text-xs text-text-primary">' + escHtml(String(t.event_count || 0)) + '</span>'],
+    ];
+    root.innerHTML = items.map(function(item) {
+        return '<div class="flex flex-col gap-0.5 rounded-md border border-border/80 bg-surface-light/[0.24] px-3 py-2">'
+            + '<span class="text-text-muted text-[10px] uppercase tracking-wider">' + item[0] + '</span>'
+            + '<div>' + item[1] + '</div>'
+            + '</div>';
+    }).join('');
+}
+
+function isoWeekLabel(d) {
+    var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var day = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - day);
+    var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    var week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    return date.getUTCFullYear() + '-W' + String(week).padStart(2, '0');
+}
+
+function ymd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function ym(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function emptyPnlRow(period) {
+    return {
+        period: period,
+        net_pnl_usdt: 0,
+        realized_pnl_usdt: 0,
+        commission_usdt: 0,
+        funding_fee_usdt: 0,
+        rebate_usdt: 0,
+        event_count: 0,
+    };
+}
+
+function buildPnlDisplayRows(data) {
+    var rows = (data && data.rows) || [];
+    var byPeriod = {};
+    rows.forEach(function(row) { byPeriod[row.period] = row; });
+    var out = [];
+    var now = new Date();
+    if (_pnlPeriod === 'daily') {
+        for (var i = 0; i < 90; i++) {
+            var d = new Date(now);
+            d.setDate(now.getDate() - i);
+            var k = ymd(d);
+            out.push(byPeriod[k] || emptyPnlRow(k));
+        }
+        return out;
+    }
+    if (_pnlPeriod === 'weekly') {
+        for (var w = 0; w < 14; w++) {
+            var dw = new Date(now);
+            dw.setDate(now.getDate() - w * 7);
+            var wk = isoWeekLabel(dw);
+            if (!out.length || out[out.length - 1].period !== wk) {
+                out.push(byPeriod[wk] || emptyPnlRow(wk));
+            }
+        }
+        return out;
+    }
+    for (var m = 0; m < 6; m++) {
+        var dm = new Date(now.getFullYear(), now.getMonth() - m, 1);
+        var mk = ym(dm);
+        out.push(byPeriod[mk] || emptyPnlRow(mk));
+    }
+    return out;
+}
+
+function renderPnlCalendar(data) {
+    var root = document.getElementById('pnl-calendar');
+    if (!root) return;
+    var rows = buildPnlDisplayRows(data);
+    var hasEvents = rows.some(function(row) { return Number(row.event_count || 0) > 0; });
+    if (!hasEvents) {
+        root.innerHTML = '<div class="text-text-muted text-xs">暂无盈亏流水。点击“同步”从 Binance 拉取最近数据。</div>';
+        return;
+    }
+    root.innerHTML = rows.map(function(row) {
+        var net = Number(row.net_pnl_usdt || 0);
+        var cls = pnlClass(net);
+        var title = [
+            '周期：' + row.period,
+            '净盈亏：' + fmtSignedUsd(net, 2),
+            '已实现：' + fmtSignedUsd(row.realized_pnl_usdt, 2),
+            '手续费：' + fmtSignedUsd(row.commission_usdt, 2),
+            '资金费：' + fmtSignedUsd(row.funding_fee_usdt, 2),
+            '返还：' + fmtSignedUsd(row.rebate_usdt, 2),
+        ].join('\n');
+        return '<div class="pnl-dot-cell ' + cls + '" title="' + escHtml(title) + '">'
+            + '<div class="flex items-center justify-between gap-2">'
+            + '<span class="text-text-muted text-[11px] font-mono">' + escHtml(row.period) + '</span>'
+            + '<span class="pnl-dot ' + cls + '"></span>'
+            + '</div>'
+            + '<div class="font-mono text-sm font-semibold" style="' + pnlColor(net) + '">' + escHtml(fmtSignedUsd(net, 2)) + '</div>'
+            + '<div class="text-text-muted text-[10px]">流水 ' + escHtml(String(row.event_count || 0)) + '</div>'
+            + '</div>';
+    }).join('');
+}
+
+async function loadPnl() {
+    try {
+        var data = await apiFetch('/api/binance/pnl/summary?period=' + encodeURIComponent(_pnlPeriod) + '&days=90');
+        renderPnlSummary(data);
+        renderPnlCalendar(data);
+        var st = document.getElementById('pnl-sync-state');
+        if (st) {
+            var last = data.sync_state && data.sync_state.last_sync_at;
+            st.textContent = last ? ('上次同步：' + fmtTime(last)) : '尚未同步 Binance income 流水';
+        }
+    } catch (e) {
+        document.getElementById('pnl-summary').innerHTML =
+            '<div style="color:var(--neon-red);font-size:0.75rem">读取盈亏失败：' + escHtml(e.message) + '</div>';
+        document.getElementById('pnl-calendar').innerHTML = '';
+    }
+}
+
+async function syncPnl() {
+    var btn = document.getElementById('btn-pnl-sync');
+    try {
+        if (!sessionStorage.getItem('PROTOCOL_MAINTENANCE_TOKEN')) {
+            var token = window.prompt('Protocol 维护令牌（未配置可留空）');
+            if (token) sessionStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', token.trim());
+        }
+    } catch (e) { /* ignore */ }
+    var old = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '同步中…';
+    }
+    try {
+        var out = await apiFetch('/api/binance/pnl/sync?days=90', { method: 'POST' });
+        showToast('PnL 同步完成：新增 ' + out.inserted + ' / 拉取 ' + out.fetched, true);
+        await loadPnl();
+    } catch (e) {
+        showToast('PnL 同步失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = old || '同步';
+        }
+    }
+}
+
+async function clearPnlCache() {
+    var btn = document.getElementById('btn-pnl-clear');
+    try {
+        var token = window.prompt('请输入 Protocol 维护令牌，用于清理本地 PnL 缓存');
+        if (!token || !token.trim()) {
+            showToast('已取消清理：未输入令牌', false);
+            return;
+        }
+        sessionStorage.setItem('PROTOCOL_MAINTENANCE_TOKEN', token.trim());
+    } catch (e) {
+        showToast('无法读取维护令牌', false);
+        return;
+    }
+    if (!confirm('确定清理本地 PnL 缓存？\n这只会删除本地 income_events 缓存和同步状态，不会影响 Binance 真实流水。')) {
+        return;
+    }
+    var old = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '清理中…';
+    }
+    try {
+        var out = await apiFetch('/api/binance/pnl/clear-cache', { method: 'POST' });
+        showToast('PnL 缓存已清理：流水 ' + out.deleted_events + ' 条', true);
+        await loadPnl();
+    } catch (e) {
+        showToast('清理失败：' + e.message, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = old || '清理缓存';
+        }
+    }
+}
+
 // ── Signal log ────────────────────────────────────────────────────────────────
 
 async function loadSignals() {
@@ -570,6 +852,7 @@ async function loadSignals() {
 function refreshAll() {
     loadStatus();
     loadOpenPositions();
+    loadPnl();
     loadSignals();
 }
 
