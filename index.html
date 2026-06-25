@@ -497,7 +497,8 @@
                             <div class="orb-head-kicker">US Equities · ORB V2.2</div>
                             <h2 class="orb-head-title">Next K 交易桌</h2>
                             <p class="orb-head-meta">
-                                <span class="orb-head-tag">ML Gate</span>
+                                <span id="orb-ml-gate-tag" class="orb-head-tag">—</span>
+                                <span id="orb-bound-tag" class="orb-head-tag hidden">一标一绑</span>
                                 <span id="orb-live-bundle-tag" class="orb-head-tag hidden" title="orb_live 实盘参数包">模型参数</span>
                                 <span id="orb-session-meta" class="font-mono text-text-secondary tracking-normal">—</span>
                             </p>
@@ -1530,13 +1531,39 @@
             return '<span class="orb-reset-policy-chip" title="结算后余额达到上限则提现并重置">≥' + escHtml(cap) + ' → ' + escHtml(floor) + 'U</span>';
         }
 
+        function updateOrbHeadTags(sum) {
+            const mlTag = document.getElementById('orb-ml-gate-tag');
+            const boundTag = document.getElementById('orb-bound-tag');
+            const gate = sum?.gate || {};
+            const mlOn = sum && sum.ok && gate.ml_enabled === true;
+            if (mlTag) {
+                mlTag.textContent = !sum || !sum.ok ? '—' : (mlOn ? 'ML Gate' : '无 ML');
+                mlTag.className = 'orb-head-tag ' + (mlOn ? 'orb-head-tag-ok' : (!sum || !sum.ok ? '' : 'orb-head-tag-warn'));
+                mlTag.title = mlOn ? 'ML p / BS / early-trap 过滤已开启' : '仅 OR 突破开单，不过 ML 过滤';
+            }
+            if (boundTag) {
+                if (sum?.robot_bound) {
+                    boundTag.classList.remove('hidden');
+                    boundTag.title = '每 Robot 固定绑定一个标的，独立资金池';
+                } else {
+                    boundTag.classList.add('hidden');
+                }
+            }
+        }
+
         function renderOrbRobotCards(rows, sum) {
             const policy = sum?.robot_reset_policy || {};
             const cap = Number(policy.cap_usdt) || 2500;
+            const boundMode = !!sum?.robot_bound;
             return rows.map((b) => {
-                const label = escHtml(String(b.label || ('R' + (b.robot_id || ''))));
-                const symRaw = String(b.symbol || '');
-                const sym = symRaw ? escHtml(orbBotBaseSymbol(symRaw)) : '—';
+                const ridLabel = String(b.label || ('R' + (b.robot_id || '')));
+                const boundRaw = String(b.bound_symbol || b.symbol || '');
+                const symShort = boundRaw ? escHtml(orbBotBaseSymbol(boundRaw)) : '—';
+                const label = boundMode && boundRaw
+                    ? escHtml(ridLabel + ' · ' + symShort)
+                    : escHtml(ridLabel);
+                const symRaw = boundRaw;
+                const sym = symShort;
                 const wallet = Number(b.wallet_balance_usdt) || 0;
                 const rp = Number(b.realized_pnl_usdt) || 0;
                 const side = String(b.open_side || '').toUpperCase();
@@ -1573,12 +1600,15 @@
                 }
                 const off = b.enabled === false ? ' opacity-45 grayscale-[0.2]' : '';
                 const symTitle = symRaw ? ' title="' + escHtml(symRaw) + '"' : '';
+                const symLine = boundMode
+                    ? '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>专属 ' + sym + '</div>'
+                    : '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>标的 ' + sym + '</div>';
                 return '<article class="orb-bot-card border px-3 py-2.5 flex flex-col gap-2 min-w-0 ' + cardTint + recentResetCls + off + '">'
                     + '<div class="flex items-start justify-between gap-2 min-w-0">'
                     + '<div class="font-semibold text-sm text-text-primary tracking-tight truncate">' + label + '</div>'
                     + '<div class="flex flex-col items-end gap-1 shrink-0">' + resetBadge + posHtml + '</div>'
                     + '</div>'
-                    + '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>标的 ' + sym + '</div>'
+                    + symLine
                     + '<div class="flex items-end justify-between gap-2">'
                     + '<div class="min-w-0">'
                     + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">钱包</div>'
@@ -1608,9 +1638,11 @@
                 el.innerHTML = '';
                 if (botsEl) botsEl.innerHTML = '';
                 if (botsLabel) botsLabel.textContent = 'Robot 资金池';
+                updateOrbHeadTags(null);
                 renderOrbResetAlerts(null);
                 return;
             }
+            updateOrbHeadTags(sum);
             const pnl = Number(sum.sum_pnl_usdt) || 0;
             const withdrawn = Number(sum.total_withdrawn_usdt) || 0;
             const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
@@ -1623,10 +1655,17 @@
             const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '1k';
             const universe = sum.universe_count != null ? String(sum.universe_count) + ' 标' : '';
             const gate = sum.gate || {};
-            const gateSub = gate.min_p_true != null
-                ? 'min P ' + Number(gate.min_p_true).toFixed(2) + ' · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—'))
+            const mlOn = gate.ml_enabled === true;
+            const gateValue = mlOn
+                ? (gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—')
+                : '关闭';
+            const gateSub = mlOn
+                ? ('min P ' + Number(gate.min_p_true).toFixed(2) + ' · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—')))
+                : ('仅 OR 突破 · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—')));
+            const boundChip = sum.robot_bound
+                ? ' <span class="text-accent/90 text-[9px] font-medium">一标一绑</span>'
                 : '';
-            if (botsLabel) botsLabel.innerHTML = 'Robot 资金池 · ' + escHtml(String(robotCount)) + ' 台' + orbResetPolicyChip(sum);
+            if (botsLabel) botsLabel.innerHTML = 'Robot 资金池 · ' + escHtml(String(robotCount)) + ' 台' + boundChip + orbResetPolicyChip(sum);
             const stat = (label, value, sub, accent, extraCls, suffixHtml) => (
                 '<div class="orb-stat-card" style="--orb-stat-accent:' + accent + '">'
                 + '<div class="text-text-muted text-[10px] uppercase tracking-wider pl-1">' + label + (suffixHtml || '') + '</div>'
@@ -1639,7 +1678,7 @@
                 stat('持仓', escHtml(String(sum.open_positions ?? 0)), gate.robot_reuse_after_exit ? '平仓释放 slot' : '日上限 ' + escHtml(String(gate.max_opens_per_day ?? '—')), 'var(--warn)', '', ''),
                 stat('已结算', escHtml(String(sum.settled_trades ?? 0)), '', 'var(--neon-blue)', '', ''),
                 stat('累计 U', fmtZctPx(pnl, 4), pnlSub, pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
-                stat('Gate', gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—', gateSub, 'var(--gold)', '', ''),
+                stat('Gate', gateValue, gateSub, 'var(--gold)', mlOn ? '' : 'text-text-muted', ''),
                 stat('宏观过滤', sum.today && sum.today.macro_filter_enabled ? '已开启' : '未开启', '', 'var(--neon-purple)', sum.today && sum.today.macro_filter_enabled ? 'text-warn/90' : 'text-text-muted', ''),
             ].join('');
             if (botsEl) {
