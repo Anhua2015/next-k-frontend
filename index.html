@@ -460,7 +460,7 @@
                             </svg>
                         </div>
                         <div class="min-w-0">
-                            <div class="orb-head-kicker">COIN · CRCL · ORB Live</div>
+                            <div class="orb-head-kicker">COIN · CRCL · TSLA · ORB Live</div>
                             <h2 class="orb-head-title">ORB 实盘</h2>
                             <p class="orb-head-meta">
                                 <span id="orb-ml-gate-tag" class="orb-head-tag">—</span>
@@ -490,8 +490,8 @@
                 </div>
                 <div id="orb-summary" class="px-4 pt-3 pb-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-2.5 shrink-0"></div>
                 <div class="px-4 pt-2 pb-1 shrink-0">
-                    <div class="orb-bots-label mb-2">Robot · COIN / CRCL</div>
-                    <div id="orb-bots" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-2xl"></div>
+                    <div class="orb-bots-label mb-2">Robot · COIN / CRCL / TSLA</div>
+                    <div id="orb-bots" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-w-4xl"></div>
                 </div>
                 <div id="orb-root" class="px-4 pb-4 pt-3 overflow-x-auto overflow-y-auto max-h-[42rem] border-t border-border/35 lane-board-scroll" data-lane-max-rows="20">
                     <div class="state-muted animate-pulse py-6 text-center">加载中…</div>
@@ -1507,7 +1507,7 @@
             if (!sum || !sum.ok) {
                 el.innerHTML = '';
                 if (botsEl) botsEl.innerHTML = '';
-                if (botsLabel) botsLabel.textContent = 'Robot · COIN / CRCL';
+                if (botsLabel) botsLabel.textContent = 'Robot';
                 updateOrbHeadTags(null);
                 return;
             }
@@ -1532,8 +1532,8 @@
                 : '';
             const symLabel = Array.isArray(sum.symbols) && sum.symbols.length
                 ? sum.symbols.map(orbBotBaseSymbol).join(' / ')
-                : 'COIN / CRCL';
-            if (botsLabel) botsLabel.innerHTML = 'Robot · ' + escHtml(symLabel) + boundChip;
+                : '';
+            if (botsLabel) botsLabel.innerHTML = 'Robot' + (symLabel ? ' · ' + escHtml(symLabel) : '') + boundChip;
             const stat = (label, value, sub, accent, extraCls, suffixHtml) => (
                 '<div class="orb-stat-card" style="--orb-stat-accent:' + accent + '">'
                 + '<div class="text-text-muted text-[10px] uppercase tracking-wider pl-1">' + label + (suffixHtml || '') + '</div>'
