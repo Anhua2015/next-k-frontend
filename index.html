@@ -1525,7 +1525,9 @@
                 ? (gate.min_p_true != null ? Number(gate.min_p_true).toFixed(2) : '—')
                 : '关闭';
             const gateSub = mlOn
-                ? ('min P ' + Number(gate.min_p_true).toFixed(2) + ' · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—')))
+                ? ('min P ' + Number(gate.min_p_true).toFixed(2)
+                    + (gate.min_breakout_score > 0 ? ' · BS≥' + Number(gate.min_breakout_score).toFixed(0) : '')
+                    + ' · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—')))
                 : ('仅 OR 突破 · 并发 ' + escHtml(String(gate.max_opens_per_day ?? '—')));
             const boundChip = sum.robot_bound
                 ? ' <span class="text-accent/90 text-[9px] font-medium">一标一绑</span>'
