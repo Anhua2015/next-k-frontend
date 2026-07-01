@@ -549,6 +549,13 @@ async function loadOpenPositions() {
 
 // ── Signal log ────────────────────────────────────────────────────────────────
 
+function sourceLabel(src) {
+    var s = String(src || '').toLowerCase();
+    if (s === 'kk') return 'King Keltner';
+    if (s === 'orb') return 'ORB';
+    return src || '—';
+}
+
 async function loadSignals() {
     try {
         var rows = await apiFetch('/api/binance/signals?limit=100');
@@ -561,7 +568,7 @@ async function loadSignals() {
 
         var trs = rows.map(function(s) {
             return '<tr>'
-                + '<td class="text-text-secondary">' + escHtml(s.source || '—') + '</td>'
+                + '<td class="text-text-secondary">' + escHtml(sourceLabel(s.source)) + '</td>'
                 + '<td class="text-text-secondary">' + escHtml(s.action || '—') + '</td>'
                 + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(s.symbol || '—') + '</td>'
                 + '<td>' + sideBadge(s.side) + '</td>'
