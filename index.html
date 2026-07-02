@@ -407,27 +407,11 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="6" data-theme="zen-premium">
-        <!-- 首屏：值得关注 + S2 并排（窄屏上下堆叠），无需滚动即可看到 -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7 items-stretch" aria-label="优先信号">
+        <!-- 首屏：值得关注 -->
+        <section class="mb-7" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
                 <div class="highlights-hero p-4 md:p-5 flex-1 flex flex-col justify-center">
                     <div class="state-muted animate-pulse">加载值得关注…</div>
-                </div>
-            </div>
-            <div class="dash-card card-hover flex flex-col min-h-[200px] min-w-0 lg:max-h-[min(520px,calc(100vh-220px))]">
-                <div class="panel-head shrink-0">
-                    <div>
-                        <div class="panel-kicker">Funding · OI</div>
-                        <h2 class="panel-title">费率转负 + OI 涨</h2>
-                        <p class="panel-sub">近 2 日信号</p>
-                    </div>
-                    <div class="panel-toolbar">
-                        <span id="s2-signals-ts" class="panel-ts">--</span>
-                        <button type="button" onclick="loadS2FundingSignals()" id="s2-signals-refresh" class="btn-ghost">刷新</button>
-                    </div>
-                </div>
-                <div id="s2-signals-body" class="panel-body overflow-x-auto overflow-y-auto flex-1 min-h-0 pt-0">
-                    <div class="state-muted animate-pulse">加载中…</div>
                 </div>
             </div>
         </section>
@@ -577,7 +561,6 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
-                        <button type="button" data-maint-cron="s2_funding" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">S2 费率转负</button>
                     </div>
                     <div class="text-text-secondary text-[10px] font-medium mt-2">King Keltner</div>
                     <div class="flex flex-wrap gap-2">
@@ -686,11 +669,6 @@
             /** 热度+收筹看盘 */
             async heatAccumWatch() {
                 const res = await fetch(`${API_BASE}/api/accumulation/heat-accum-watch`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async s2FundingSignals() {
-                const res = await fetch(`${API_BASE}/api/s2/funding-signals`);
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
@@ -1135,125 +1113,6 @@
                     }
                 });
             });
-        }
-
-        function fmtS2RecordedAt(iso) {
-            if (!iso) return '--';
-            try {
-                const d = new Date(iso);
-                if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16).replace('T', ' ');
-                return d.toLocaleString('zh-CN', {
-                    timeZone: 'Asia/Shanghai',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                });
-            } catch (e) {
-                return String(iso).slice(0, 16);
-            }
-        }
-
-        function fmtFrPct(raw) {
-            const n = Number(raw);
-            if (Number.isNaN(n)) return '--';
-            return (n * 100).toFixed(4) + '%';
-        }
-
-        function fillS2FundingSignals(data, body, tsEl) {
-            if (!body) return;
-            const list = (data && data.signals) || [];
-            tsEl.textContent = data && data.count != null ? `共 ${data.count} 条` : '';
-            if (!list.length) {
-                body.innerHTML = '<div class="text-text-muted text-sm py-2">近 2 日尚无强信号。信号在「费率由非负刚转负」且「OI 四段首尾抬升」时写入（与 TG 推送条件一致）。</div>';
-                return;
-            }
-            const head = `
-                <table class="data-table min-w-[720px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium">时间 (CST)</th>
-                            <th class="py-2 pr-3 font-medium">币种</th>
-                            <th class="py-2 pr-3 font-mono font-medium">费率 前→今</th>
-                            <th class="py-2 pr-3 font-medium">OI Δ</th>
-                            <th class="py-2 pr-3 font-medium">24h</th>
-                            <th class="py-2 pr-3 font-medium">成交额</th>
-                            <th class="py-2 pr-3 font-medium">市值</th>
-                            <th class="py-2 pr-3 font-medium">现货</th>
-                            <th class="py-2 pr-3 font-medium">广场</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            const rows = list.map((s) => {
-                const sym = s.symbol || (s.coin ? s.coin + 'USDT' : '');
-                const perpPair = perpSymToPairLabel(sym);
-                const px = Number(s.price_chg_24h);
-                const oi = Number(s.oi_change_pct);
-                const frFrom = fmtFrPct(s.prev_fr);
-                const frTo = fmtFrPct(s.current_fr);
-                const volM = Number(s.volume_usd) / 1e6;
-                const spot = s.has_spot ? '<span class="text-neon-green">有</span>' : '<span class="text-text-muted">仅合约</span>';
-                let sq = '<span class="text-text-muted">-</span>';
-                if (Number(s.square_posts) > 0) {
-                    const v = Number(s.square_views) || 0;
-                    const vStr = v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : String(v);
-                    sq = escHtml(String(s.square_posts)) + '帖 / ' + escHtml(vStr);
-                }
-                const coinCell = perpPair
-                    ? `<button type="button" class="s2-sym-pick font-semibold text-accent hover:underline decoration-accent/40" data-perp-pair="${perpPair.replace(/"/g, '&quot;')}">${escHtml(s.coin || '')}</button>`
-                    : escHtml(s.coin || '');
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${escHtml(fmtS2RecordedAt(s.recorded_at))}</td>
-                    <td class="py-2 pr-3">${coinCell}</td>
-                    <td class="py-2 pr-3 text-text-secondary whitespace-nowrap">${escHtml(frFrom)} → ${escHtml(frTo)}</td>
-                    <td class="py-2 pr-3 ${oi >= 0 ? 'text-neon-green' : 'text-neon-red'}">${oi >= 0 ? '+' : ''}${oi.toFixed(1)}%</td>
-                    <td class="py-2 pr-3 ${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(1)}%</td>
-                    <td class="py-2 pr-3 text-text-muted">$${volM.toFixed(1)}M</td>
-                    <td class="py-2 pr-3 text-text-muted">${formatMcapUsd(s.est_mcap_usd)}</td>
-                    <td class="py-2 pr-3">${spot}</td>
-                    <td class="py-2 pr-3 text-text-secondary">${sq}</td>
-                </tr>`;
-            }).join('');
-            body.innerHTML = head + rows + '</tbody></table>';
-            body.querySelectorAll('.s2-sym-pick[data-perp-pair]').forEach((btn) => {
-                btn.addEventListener('click', () => openBinanceFuturesByPair(btn.getAttribute('data-perp-pair')));
-            });
-        }
-
-        async function loadS2FundingSignals() {
-            const body = document.getElementById('s2-signals-body');
-            const tsEl = document.getElementById('s2-signals-ts');
-            const btn = document.getElementById('s2-signals-refresh');
-            if (!body || !tsEl) return;
-            if (btn) btn.disabled = true;
-            try {
-                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载中…</div>';
-                const data = await API.s2FundingSignals();
-                if (data && data.ok) {
-                    fillS2FundingSignals(data, body, tsEl);
-                    if (data.warning === 'database_busy') {
-                        tsEl.textContent = '数据库忙，稍后刷新';
-                    }
-                } else {
-                    tsEl.textContent = '';
-                    body.innerHTML = '<div class="text-warn text-sm">接口返回异常</div>';
-                }
-            } catch (e) {
-                console.error('s2 signals:', e);
-                tsEl.textContent = '';
-                let msg = e && e.message ? String(e.message) : '加载失败';
-                try {
-                    const parsed = JSON.parse(msg);
-                    if (parsed && parsed.detail) msg = String(parsed.detail);
-                } catch (_ignore) {}
-                if (msg === 's2_signals_db_error') {
-                    msg = '信号库读取失败（请确认 DATA_DIR 卷与 s2.db 可写）';
-                }
-                body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>`;
-            } finally {
-                if (btn) btn.disabled = false;
-            }
         }
 
         /** 与 hydrateWorthHighlightBoards 同源（重点关注已并入「值得关注 · 历史记录」Tab） */
@@ -2177,7 +2036,6 @@
             initWorthHistoryTabDelegationOnce();
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
-            loadS2FundingSignals();
             initKkPanelOnce();
             void hydrateKkBoard();
         }
