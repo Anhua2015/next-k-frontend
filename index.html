@@ -1232,6 +1232,9 @@
                 const data = await API.s2FundingSignals();
                 if (data && data.ok) {
                     fillS2FundingSignals(data, body, tsEl);
+                    if (data.warning === 'database_busy') {
+                        tsEl.textContent = '数据库忙，稍后刷新';
+                    }
                 } else {
                     tsEl.textContent = '';
                     body.innerHTML = '<div class="text-warn text-sm">接口返回异常</div>';
@@ -1239,7 +1242,14 @@
             } catch (e) {
                 console.error('s2 signals:', e);
                 tsEl.textContent = '';
-                const msg = e && e.message ? String(e.message) : '加载失败';
+                let msg = e && e.message ? String(e.message) : '加载失败';
+                try {
+                    const parsed = JSON.parse(msg);
+                    if (parsed && parsed.detail) msg = String(parsed.detail);
+                } catch (_ignore) {}
+                if (msg === 's2_signals_db_error') {
+                    msg = '信号库读取失败（请确认 DATA_DIR 卷与 accumulation.db 可写）';
+                }
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>`;
             } finally {
                 if (btn) btn.disabled = false;
