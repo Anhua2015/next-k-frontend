@@ -161,7 +161,7 @@
                     <div class="panel-kicker">System</div>
                     <h2 class="panel-title mt-1">系统状态</h2>
                 </div>
-                <button id="btn-sign-tradfi" type="button" onclick="signTradFiPerps()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="CRCL/PAYP 等股票永续需先签署">签署 TradFi</button>
+                <button id="btn-sign-tradfi" type="button" onclick="signTradFiPerps()" class="hidden btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent disabled:opacity-50" title="CRCL/PAYP 等股票永续需先签署">签署 TradFi</button>
             </div>
             <div id="status-body" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div class="text-text-muted text-xs animate-pulse col-span-3">加载中…</div>
@@ -169,11 +169,14 @@
         </div>
     </section>
 
+    <!-- Binance live: positions + trade history -->
+    <section class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
+
     <!-- Open positions -->
-    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
+    <div class="bg-surface rounded-xl border border-border card overflow-hidden min-w-0">
         <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2 min-w-0">
-                <h2 class="text-text-primary font-semibold text-sm">当前持仓</h2>
+                <h2 class="text-text-primary font-semibold text-sm">当前仓位</h2>
                 <span class="badge badge-manual">U本位</span>
             </div>
             <span id="open-pos-count" class="text-text-muted text-xs shrink-0">—</span>
@@ -186,29 +189,31 @@
                 <div class="text-text-muted text-xs animate-pulse">加载持仓…</div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Signal log -->
-    <section class="bg-surface rounded-xl border border-border card overflow-hidden">
-        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between">
-            <h2 class="text-text-primary font-semibold text-sm">信号日志</h2>
-            <div class="flex items-center gap-2">
-                <span class="text-text-muted text-xs">近24小时</span>
-                <button type="button" onclick="loadSignals()" class="btn-secondary px-2.5 py-1 rounded-lg bg-surface-light/80 border border-border/90 text-text-muted text-xs hover:border-accent/40 hover:text-accent">刷新</button>
+    <!-- Trade history -->
+    <div class="bg-surface rounded-xl border border-border card overflow-hidden min-w-0">
+        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 min-w-0">
+                <h2 class="text-text-primary font-semibold text-sm">历史成交</h2>
+                <span class="text-text-muted text-xs">近 7 天</span>
             </div>
+            <span id="trade-history-count" class="text-text-muted text-xs shrink-0">—</span>
         </div>
         <div class="overflow-x-auto">
-            <div id="signals-body" class="p-4">
-                <div class="text-text-muted text-xs animate-pulse">加载中…</div>
+            <div id="trade-history-body" class="p-4">
+                <div class="text-text-muted text-xs animate-pulse">加载成交…</div>
             </div>
         </div>
+    </div>
+
     </section>
 
 </main>
 
-<script src="binance-api-base.js"></script>
+<script src="api-base.js"></script>
 <script>
-function getApiBase() { return resolveProtocolApiBase(); }
+function getApiBase() { return resolveApiBase(); }
 function buildHeaders() {
     return { 'Content-Type': 'application/json' };
 }
@@ -442,24 +447,27 @@ function tickHeaderClock() {
 async function loadStatus() {
     try {
         var d = await apiFetch('/api/binance/status');
-        var testnet = d.testnet === true || d.testnet === 'true';
-        var paused  = d.execution_paused === true;
+        var liveOn = d.live_active === true;
+        var running = d.vnpy && d.vnpy.running === true;
 
         var badge = document.getElementById('status-badge');
         if (badge) {
-            if (paused) {
-                setBinanceStatusPill(badge, 'err', '已暂停');
-            } else if (testnet) {
-                setBinanceStatusPill(badge, 'warn', 'TESTNET');
-            } else {
+            if (!d.api_key_set) {
+                setBinanceStatusPill(badge, 'warn', '未配置 Key');
+            } else if (liveOn && running) {
                 setBinanceStatusPill(badge, 'ok', '实盘');
+            } else if (running) {
+                setBinanceStatusPill(badge, 'warn', 'VnPy');
+            } else {
+                setBinanceStatusPill(badge, 'err', '离线');
             }
         }
 
         var items = [
-            ['网络',     testnet ? '<span class="badge badge-testnet">Testnet</span>' : '<span class="text-text-secondary text-xs">主网</span>'],
-            ['执行',     paused  ? '<span class="badge badge-disabled">已暂停</span>' : '<span class="badge badge-enabled">正常</span>'],
-            ['当前持仓', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
+            ['Lane', '<span class="text-text-secondary text-xs font-mono">' + escHtml(d.lane || '—') + '</span>'],
+            ['Live', liveOn ? '<span class="badge badge-enabled">已启用</span>' : '<span class="badge badge-disabled">未启用</span>'],
+            ['VnPy', running ? '<span class="badge badge-enabled">运行中</span>' : '<span class="badge badge-disabled">未运行</span>'],
+            ['当前仓位', '<span style="font-variant-numeric:tabular-nums" class="text-text-primary font-mono">' + (d.open_positions != null ? d.open_positions : '—') + '</span>'],
         ];
 
         document.getElementById('status-body').innerHTML = items.map(function(item) {
@@ -547,6 +555,71 @@ async function loadOpenPositions() {
     }
 }
 
+// ── Trade history ─────────────────────────────────────────────────────────────
+
+function tradeSideLabelBadge(label) {
+    if (!label) return '—';
+    var t = String(label);
+    var isClose = t.indexOf('平') === 0;
+    var cls = isClose ? 'badge-short' : 'badge-long';
+    return '<span class="badge ' + cls + '">' + escHtml(t) + '</span>';
+}
+
+function baseAsset(sym) {
+    if (!sym || typeof sym !== 'string') return '';
+    return sym.endsWith('USDT') ? sym.slice(0, -4) : sym;
+}
+
+function fmtTimeMs(ms) {
+    if (!ms) return '—';
+    try {
+        return new Date(Number(ms)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\//g, '-');
+    } catch (e) {
+        return String(ms);
+    }
+}
+
+async function loadTradeHistory() {
+    var body = document.getElementById('trade-history-body');
+    var countEl = document.getElementById('trade-history-count');
+    try {
+        var payload = await apiFetch('/api/binance/trades?days=7&limit=200');
+        var rows = payload.trades || [];
+        var days = payload.days || 7;
+        countEl.textContent = rows.length + ' 笔 · ' + days + ' 天';
+
+        if (!rows.length) {
+            body.innerHTML =
+                '<div class="text-text-muted text-xs">近 ' + days + ' 天暂无成交记录</div>';
+            return;
+        }
+
+        var trs = rows.map(function(t) {
+            var asset = baseAsset(t.symbol);
+            return '<tr>'
+                + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(t.order_id || t.id || '—')) + '</td>'
+                + '<td class="text-text-secondary text-xs">' + fmtTimeMs(t.time_ms) + '</td>'
+                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(t.symbol || '—') + ' <span class="text-text-muted text-[10px]">永续</span></td>'
+                + '<td>' + tradeSideLabelBadge(t.side_label) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.price, 4) + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.qty, 4) + (asset ? ' ' + escHtml(asset) : '') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums;color:var(--text-muted)">' + fmtNum(t.commission_usdt, 4) + ' USDT</td>'
+                + '<td class="text-text-muted text-xs">' + escHtml(t.role || '—') + '</td>'
+                + '<td style="font-variant-numeric:tabular-nums">' + fmtPnlHtml(t.realized_pnl_usdt) + '</td>'
+                + '</tr>';
+        }).join('');
+
+        body.innerHTML =
+            '<table><thead><tr>'
+            + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>成交均价</th><th>数量</th><th>手续费</th><th>角色</th><th>已实现盈亏</th>'
+            + '</tr></thead><tbody>' + trs + '</tbody></table>';
+    } catch(e) {
+        countEl.textContent = '—';
+        body.innerHTML =
+            '<div style="color:var(--neon-red);font-size:0.75rem">读取成交失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
+    }
+}
+
 // ── Signal log ────────────────────────────────────────────────────────────────
 
 function sourceLabel(src) {
@@ -596,7 +669,7 @@ async function loadSignals() {
 function refreshAll() {
     loadStatus();
     loadOpenPositions();
-    loadSignals();
+    loadTradeHistory();
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -623,6 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(function() {
         if (document.visibilityState === 'visible') {
             loadOpenPositions();
+            loadTradeHistory();
             loadStatus();
         }
     }, 30000);
@@ -630,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
             loadOpenPositions();
+            loadTradeHistory();
             loadStatus();
         }
     });
