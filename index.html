@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Next K</title>
+    <title>Next K · 策略看板</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -225,86 +225,86 @@
                             <h1 class="brand-title text-text-primary">
                                 Next <span class="text-accent">K</span>
                             </h1>
-                            <div class="brand-subtitle hidden sm:block">Quant Terminal</div>
+                            <div class="brand-subtitle hidden sm:block">Strategy Desk</div>
                         </div>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <span id="header-et-clock" class="header-clock hidden lg:inline" title="美东时间">--:-- ET</span>
-                    <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换主题" id="theme-btn">☽</button>
+                    <span id="header-et-clock" class="header-clock hidden lg:inline" title="纽约时间">--:-- ET</span>
+                    <button type="button" onclick="toggleTheme()" class="theme-toggle" title="明暗切换" id="theme-btn">☽</button>
                     <div id="connection-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18">
-                        <span class="status-dot"></span><span>API 连接中…</span>
+                        <span class="status-dot"></span><span>接口连接中…</span>
                     </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="12" data-theme="zen-premium">
-        <!-- 首屏：值得关注 -->
-        <section class="mb-7" aria-label="优先信号">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="14" data-theme="zen-premium">
+        <!-- 首屏：精选推荐 -->
+        <section class="mb-7" aria-label="精选推荐">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
                 <div class="highlights-hero p-4 md:p-5 flex-1 flex flex-col justify-center">
-                    <div class="state-muted animate-pulse">加载值得关注…</div>
+                    <div class="state-muted animate-pulse">正在载入精选推荐…</div>
                 </div>
             </div>
         </section>
 
-        <section class="mb-7" aria-label="收筹池 OI 监控" id="oi-lane-section">
+        <section class="mb-7" aria-label="吸筹池 · 持仓量雷达" id="oi-lane-section">
             <div class="dash-card card-hover min-w-0">
                 <div class="panel-head">
                     <div>
-                        <div class="panel-kicker">Accumulation</div>
-                        <h2 class="panel-title">收筹池 · OI 监控</h2>
+                        <div class="panel-kicker">Flow Radar</div>
+                        <h2 class="panel-title">吸筹池 · 持仓量雷达</h2>
                     </div>
                     <div class="panel-toolbar">
                         <span id="oi-radar-ts" class="panel-ts">--</span>
-                        <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-ghost">刷新</button>
+                        <button type="button" onclick="loadAccumulationOiRadar({ forceRefresh: true })" id="oi-radar-refresh" class="btn-ghost">更新</button>
                     </div>
                 </div>
                 <div id="oi-radar-body" class="panel-body overflow-x-auto pt-0">
-                <div class="state-muted animate-pulse">加载中…</div>
+                <div class="state-muted animate-pulse">数据拉取中…</div>
                 </div>
             </div>
         </section>
 
-        <section class="mb-7" aria-label="策略信号" id="strategy-signals-section">
+        <section class="mb-7" aria-label="实盘策略动向" id="strategy-signals-section">
             <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
                 <div class="panel-head border-b border-border/80">
                     <div>
-                        <div class="panel-kicker">Live</div>
-                        <h2 class="panel-title">策略信号</h2>
+                        <div class="panel-kicker">Execution</div>
+                        <h2 class="panel-title">实盘策略动向</h2>
                     </div>
                     <div class="panel-toolbar">
                         <span id="strategy-signals-ts" class="panel-ts">—</span>
-                        <button type="button" id="strategy-signals-refresh" class="btn-ghost">刷新</button>
+                        <button type="button" id="strategy-signals-refresh" class="btn-ghost">更新</button>
                     </div>
                 </div>
-                <div id="strategy-signal-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="策略信号来源"></div>
+                <div id="strategy-signal-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="策略动向来源"></div>
                 <div id="strategy-signal-panels" class="min-w-0">
                     <div id="strategy-signal-panel-orb" role="tabpanel" class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
-                        <div id="strategy-signals-orb-body" class="state-muted animate-pulse py-4 px-1">加载策略1信号…</div>
+                        <div id="strategy-signals-orb-body" class="state-muted animate-pulse py-4 px-1">正在载入 Alpha 动向…</div>
                     </div>
                     <div id="strategy-signal-panel-ict" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
-                        <div id="strategy-signals-ict-body" class="state-muted animate-pulse py-4 px-1">加载策略2信号…</div>
+                        <div id="strategy-signals-ict-body" class="state-muted animate-pulse py-4 px-1">正在载入 Beta 动向…</div>
                     </div>
                 </div>
             </div>
         </section>
 
-<section class="mb-7" aria-label="值得关注与重点关注归档" id="worth-history-section">
+<section class="mb-7" aria-label="精选推荐与核心关注归档" id="worth-history-section">
             <div class="dash-card card-hover min-w-0">
                 <div class="panel-head">
                     <div>
-                        <div class="panel-kicker">Archive</div>
-                        <h2 class="panel-title">值得关注 · 历史记录</h2>
+                        <div class="panel-kicker">Timeline</div>
+                        <h2 class="panel-title">精选推荐 · 往期回顾</h2>
                     </div>
                 </div>
                 <div id="worth-watch-boards-root" class="flex flex-col min-w-0">
-                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="重点关注与值得关注七类"></div>
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="核心关注与精选推荐七类"></div>
                     <div class="px-4 pb-4 pt-3 min-w-0">
                         <div id="worth-history-tab-panels">
-                            <div class="state-muted animate-pulse">加载历史记录…</div>
+                            <div class="state-muted animate-pulse">正在载入往期数据…</div>
                         </div>
                         <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
                     </div>
@@ -351,10 +351,10 @@
             const pick = (id, aria) =>
                 document.getElementById(id) || main.querySelector('section[aria-label="' + aria + '"]');
             const blocks = [
-                main.querySelector('section[aria-label="优先信号"]'),
-                pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('strategy-signals-section', '策略信号'),
-                pick('worth-history-section', '值得关注与重点关注归档'),
+                main.querySelector('section[aria-label="精选推荐"]'),
+                pick('oi-lane-section', '吸筹池 · 持仓量雷达'),
+                pick('strategy-signals-section', '实盘策略动向'),
+                pick('worth-history-section', '精选推荐与核心关注归档'),
             ];
             blocks.forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
@@ -365,7 +365,7 @@
     <footer class="border-t border-border/70 py-7 mt-auto select-none">
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p id="footer-brand-line" class="cursor-default brand-title text-sm text-text-secondary">Next K</p>
-            <p class="mt-1.5 text-text-muted/55 text-[11px] tracking-wide">仅供研究参考，不构成投资建议</p>
+            <p class="mt-1.5 text-text-muted/55 text-[11px] tracking-wide">内容仅供学习研究，不作投资依据</p>
         </div>
     </footer>
 
@@ -374,39 +374,39 @@
         <div class="max-w-7xl mx-auto px-4 py-3 pb-6">
             <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
-                    <div class="text-warn text-xs font-semibold tracking-wide">维护</div>
-                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「刷新」无需额外配置（OI 刷新有约 2 分钟冷却）。下方清库 / 手动 Cron / 数据导出可直接使用。清库后可点上方「刷新」拉快照。</p>
+                    <div class="text-warn text-xs font-semibold tracking-wide">运维</div>
+                    <p class="text-text-muted text-[11px] mt-1 leading-relaxed">主界面「更新」无需额外配置（持仓量雷达更新有约 2 分钟冷却）。下方重置 / 任务触发 / 数据导出可直接使用。重置后可点上方「更新」拉取快照。</p>
                 </div>
-                <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">关闭</button>
+                <button type="button" id="maint-close" class="shrink-0 px-2 py-1 rounded-md border border-border/80 text-text-secondary text-xs hover:border-accent/40 hover:text-accent">收起</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 items-start">
                 <!-- 左栏：清理 -->
                 <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
-                    <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表。清盘后请在主界面点「刷新」。</p>
-                    <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
+                    <div class="text-warn/90 text-xs font-semibold tracking-wide">重置</div>
+                    <p class="text-text-muted text-[10px] leading-relaxed">吸筹池与看盘表。清空后请在主界面点「更新」。</p>
+                    <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 吸筹</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
-                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
+                        <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 吸筹池；清空后须跑 pool 再更新">重置吸筹池</button>
+                        <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">重置全部看盘表</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
                 <div class="min-w-0 space-y-3 md:pl-1">
-                    <div class="text-accent/90 text-xs font-semibold tracking-wide">手动触发</div>
+                    <div class="text-accent/90 text-xs font-semibold tracking-wide">任务触发</div>
                     <div class="text-accent/85 text-[11px] font-medium">定时任务（与 Cron 相同，后台执行）</div>
                     <p class="text-text-muted text-[10px] leading-relaxed">与 <code class="text-[10px]">trigger-cron</code> 对齐。</p>
                     <div class="text-text-secondary text-[10px] font-medium">雷达 / 池</div>
                     <div class="flex flex-wrap gap-2">
-                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
-                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
+                        <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 吸筹池</button>
+                        <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 持仓量雷达</button>
                     </div>
 </div>
             </div>
 <div class="mt-4 pt-3 border-t border-border/50 space-y-2">
-                <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据备份</div>
+                <div class="text-neon-blue/90 text-xs font-semibold tracking-wide">数据导出</div>
                 <p class="text-text-muted text-[10px] leading-relaxed">将服务端 <code class="text-[10px]">DATA_DIR</code>（持久化数据卷）打包为 zip 下载。需后端 <code class="text-[10px]">NEXT_K_EXPORT_VOLUME_ENABLED=1</code>；打包可能数分钟，下载完成后请关闭该变量并重新部署。</p>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-sm bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需 NEXT_K_EXPORT_VOLUME_ENABLED=1">一键导出 DATA_DIR (zip)</button>
+                    <button type="button" id="maint-export-volume" class="btn-secondary px-3 py-1.5 rounded-sm bg-neon-blue/10 border border-neon-blue/35 text-neon-blue text-xs font-medium hover:bg-neon-blue/15 hover:border-neon-blue/55" title="GET /export-volume — 需 NEXT_K_EXPORT_VOLUME_ENABLED=1">导出 DATA_DIR (zip)</button>
                 </div>
             </div>
             <div id="maint-msg" class="mt-3 text-xs font-mono whitespace-pre-wrap break-words min-h-[1.25rem]"></div>
@@ -458,11 +458,11 @@
                 return '服务端未开启卷导出：请设置 NEXT_K_EXPORT_VOLUME_ENABLED=1 并重新部署';
             }
             if (d && typeof d === 'object' && d.error === 'rate_limited') {
-                return d.message || ('刷新过于频繁，请 ' + (d.retry_after_sec != null ? d.retry_after_sec : '?') + ' 秒后再试');
+                return d.message || ('更新过于频繁，请 ' + (d.retry_after_sec != null ? d.retry_after_sec : '?') + ' 秒后再试');
             }
             if (typeof d === 'string') return d;
             if (Array.isArray(d)) return d.map((x) => x.msg || x).join('; ');
-            return JSON.stringify(d || data || text || (res && res.statusText) || '请求失败');
+            return JSON.stringify(d || data || text || (res && res.statusText) || '请求未成功');
         }
 
         const API = {
@@ -625,14 +625,14 @@
 
         function oiRadarHotTags(d) {
             const t = [];
-            if (d.in_cg) t.push('<span class="text-neon-blue">🌐CG</span>');
-            if (d.vol_surge) t.push('<span class="text-warn/95">📈放量</span>');
+            if (d.in_cg) t.push('<span class="text-neon-blue">🔍榜</span>');
+            if (d.vol_surge) t.push('<span class="text-warn/95">⬆脉冲</span>');
             if (Math.abs(Number(d.d6h) || 0) >= 3) {
                 const v = Number(d.d6h);
-                t.push('<span class="text-neon-purple">⚡OI' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</span>');
+                t.push('<span class="text-neon-purple">📊仓' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</span>');
             }
-            if (d.in_pool) t.push('<span class="text-text-secondary">💤池' + (Number(d.sw_days) || 0) + '天</span>');
-            if (Number(d.fr_pct) < -0.03) t.push('<span class="text-neon-blue">🧊' + Number(d.fr_pct).toFixed(2) + '%</span>');
+            if (d.in_pool) t.push('<span class="text-text-secondary">⏳蓄' + (Number(d.sw_days) || 0) + '日</span>');
+            if (Number(d.fr_pct) < -0.03) t.push('<span class="text-neon-blue">🔻' + Number(d.fr_pct).toFixed(2) + '%</span>');
             return t.join(' ');
         }
 
@@ -692,16 +692,16 @@
 
         /** 与后端 WORTH_HIGHLIGHT_CATEGORY_ORDER 顺序一致 */
         const WORTH_WATCH_META = [
-            ['heat_accum', '🔥💤 热度+收筹'],
-            ['patrick_core', '📍 Patrick核心'],
-            ['hot_oi', '🔥⚡ 热度+OI'],
-            ['chase_fire', '🔥 追多·费率加速'],
-            ['dual_list', '⭐ 追多+综合双榜'],
-            ['ambush_dark', '🎯 埋伏·暗流'],
-            ['ambush_gem', '💎 埋伏·低市值+OI'],
+            ['heat_accum', '🌡⏳ 风口+吸筹'],
+            ['patrick_core', '🧭 Patrick 精选'],
+            ['hot_oi', '🌡📊 风口+持仓'],
+            ['chase_fire', '🚀 做多·费率急升'],
+            ['dual_list', '✦ 做多+多维双榜'],
+            ['ambush_dark', '🌊 静默·静建'],
+            ['ambush_gem', '🪙 静默·小盘+持仓'],
         ];
-        /** 顶部 Tab：重点关注 + 七类 worth（与后端归档一致） */
-        const WORTH_HISTORY_TAB_META = [['focus_watch', '👑 重点关注'], ...WORTH_WATCH_META];
+        /** 顶部 Tab：核心关注 + 七类 worth（与后端归档一致） */
+        const WORTH_HISTORY_TAB_META = [['focus_watch', '👑 核心关注'], ...WORTH_WATCH_META];
         /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（八类均以 Tab 切换） */
         const HISTORY_TABLE_SCROLL_WRAP =
             'max-h-[min(26rem,40vh)] overflow-y-auto overflow-x-auto';
@@ -715,7 +715,7 @@
             if (!tabBar || !panelsRoot || !footEl) {
                 root.className = 'flex flex-col min-w-0';
                 root.innerHTML = `
-                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="重点关注与值得关注七类"></div>
+                    <div id="worth-history-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-2 sm:px-3 pt-2 border-b border-border/70 bg-surface-light/[0.2] scrollbar-thin" role="tablist" aria-label="核心关注与精选推荐七类"></div>
                     <div class="px-4 pb-4 pt-3 min-w-0">
                         <div id="worth-history-tab-panels"></div>
                         <p id="worth-history-footnote" class="hidden text-text-muted text-[11px] mt-3 mb-0 leading-relaxed"></p>
@@ -787,17 +787,17 @@
         function buildFocusWatchPanelInnerHtml(fw) {
             const items = fw && Array.isArray(fw.items) ? fw.items : [];
             if (!items.length) {
-                const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入收筹池，且满足逼空/天量/暗流条件；整点 :30 OI 扫描或点下方「刷新」后入库。';
+                const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入吸筹池，且满足轧空/天量/静建条件；整点 :30 持仓扫描或点下方「更新」后入库。';
                 return `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>`;
             }
             const thead = `
                 <table class="data-table min-w-[560px]">
                     <thead>
                         <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">通道</th>
-                            <th class="py-2 pr-3 font-medium">摘要</th>
-                            <th class="py-2 pr-3 font-medium">策略提示</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">合约</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap">来源</th>
+                            <th class="py-2 pr-3 font-medium">概述</th>
+                            <th class="py-2 pr-3 font-medium">操作建议</th>
                         </tr>
                     </thead><tbody>`;
             const rows = items.map((row) => {
@@ -837,9 +837,9 @@
                     ${colgroup}
                     <thead>
                         <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">标的</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">生成日期</th>
-                            <th class="py-2 pr-3 font-medium align-top">摘要</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">合约</th>
+                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">产出日期</th>
+                            <th class="py-2 pr-3 font-medium align-top">概述</th>
                         </tr>
                     </thead><tbody>`;
             const pref = worthHistoryPreferredTabKey();
@@ -858,7 +858,7 @@
                     const sec = cats[key] || { items: [] };
                     const items = sortWorthHighlightItemsDesc(sec.items || []);
                     if (!items.length) {
-                        inner = '<div class="text-text-muted text-sm py-2">本类暂无归档。</div>';
+                        inner = '<div class="text-text-muted text-sm py-2">本类暂无往期记录。</div>';
                     } else {
                         const rows = items.map((row) => {
                             const gd = escHtml(row.generated_date || '--');
@@ -911,13 +911,13 @@
                 try {
                     wl = await API.worthWatch();
                 } catch (e2) {
-                    wl = { categories: {}, message: '看盘接口暂不可用' };
+                    wl = { categories: {}, message: '看盘数据接口暂不可用' };
                 }
                 if (!hasSnapFocus) {
                     try {
                         fw = await API.focusWatch();
                     } catch (e3) {
-                        fw = { items: [], message: 'focus_watch 接口暂不可用' };
+                        fw = { items: [], message: '核心关注接口暂不可用' };
                     }
                 } else if (!fw) {
                     fw = { items: [] };
@@ -951,8 +951,8 @@
         }
 
         const STRATEGY_SIGNAL_TAB_META = [
-            ['orb', '策略1', 'trading_orb'],
-            ['ict', '策略2', 'ict_2022'],
+            ['orb', 'Alpha', 'trading_orb'],
+            ['ict', 'Beta', 'ict_2022'],
         ];
         let _strategySignalCounts = { orb: 0, ict: 0 };
         let _strategySignalsByTab = { orb: [], ict: [] };
@@ -997,9 +997,9 @@
 
         function signalActionLabel(action) {
             const a = String(action || 'open').toLowerCase();
-            if (a === 'close') return '平仓';
-            if (a === 'rolling') return '滚仓';
-            return '开仓';
+            if (a === 'close') return '离场';
+            if (a === 'rolling') return '移仓';
+            return '进场';
         }
 
         function signalStatusBadge(status, action) {
@@ -1009,32 +1009,32 @@
                 return '<span class="sig-badge sig-badge-open">已成交</span>';
             }
             if (st === 'shadow') {
-                return '<span class="sig-badge sig-badge-warn">纸面/信号</span>';
+                return '<span class="sig-badge sig-badge-warn">模拟/信号</span>';
             }
             if (st === 'emitted') {
-                return '<span class="sig-badge sig-badge-warn">已发出</span>';
+                return '<span class="sig-badge sig-badge-warn">已推送</span>';
             }
             if (st === 'traded' && act === 'close') {
-                return '<span class="sig-badge sig-badge-warn">已平仓</span>';
+                return '<span class="sig-badge sig-badge-warn">已离场</span>';
             }
             if (st === 'traded') {
                 return '<span class="sig-badge sig-badge-open">已执行</span>';
             }
             if (st === 'received' || st === 'submitted') {
-                return '<span class="sig-badge sig-badge-warn">已收到</span>';
+                return '<span class="sig-badge sig-badge-warn">已接收</span>';
             }
             if (st === 'error' || st.indexOf('error') >= 0) {
-                return '<span class="sig-badge sig-badge-err">错误</span>';
+                return '<span class="sig-badge sig-badge-err">异常</span>';
             }
             if (st.indexOf('skipped') === 0 || st === 'duplicate') {
-                return '<span class="sig-badge sig-badge-warn">已跳过</span>';
+                return '<span class="sig-badge sig-badge-warn">已忽略</span>';
             }
             return '<span class="sig-badge sig-badge-warn">' + escHtml(status || '—') + '</span>';
         }
 
         function signalSkipReasonLabel(reason) {
             if (!reason) return '—';
-            if (reason === 'already_flat') return '交易所已平仓';
+            if (reason === 'already_flat') return '交易所已无持仓';
             return String(reason);
         }
 
@@ -1092,13 +1092,13 @@
             const err = _strategySignalErrors[key];
             if (err) {
                 _strategySignalCounts[key] = 0;
-                body.innerHTML = '<div class="text-neon-red text-xs py-4">信号加载失败：' + escHtml(err) + '</div>';
+                body.innerHTML = '<div class="text-neon-red text-xs py-4">动向载入失败：' + escHtml(err) + '</div>';
                 return;
             }
             const rows = _strategySignalsByTab[key] || [];
             _strategySignalCounts[key] = rows.length;
             if (!rows.length) {
-                body.innerHTML = '<div class="state-muted text-xs py-4">暂无 ' + escHtml(label) + ' 信号</div>';
+                body.innerHTML = '<div class="state-muted text-xs py-4">暂无 ' + escHtml(label) + ' 动向</div>';
                 return;
             }
             const trs = rows.map((s) => {
@@ -1115,7 +1115,7 @@
                     + '</tr>';
             }).join('');
             body.innerHTML = '<table class="data-table min-w-[720px]"><thead><tr>'
-                + '<th>动作</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>备注</th><th>收到时间</th>'
+                + '<th>类型</th><th>合约</th><th>多空</th><th>进场价</th><th>止损位</th><th>止盈位</th><th>进度</th><th>说明</th><th>推送时间</th>'
                 + '</tr></thead><tbody>' + trs + '</tbody></table>';
         }
 
@@ -1142,7 +1142,7 @@
             const tsEl = document.getElementById('strategy-signals-ts');
             if (refreshBtn) {
                 refreshBtn.disabled = true;
-                refreshBtn.textContent = '刷新中…';
+                refreshBtn.textContent = '更新中…';
             }
             try {
                 const results = await Promise.allSettled(
@@ -1158,7 +1158,7 @@
                     } else {
                         const reason = res.reason;
                         console.error('strategy signals ' + key + ':', reason);
-                        _strategySignalErrors[key] = reason && reason.message ? String(reason.message) : '加载失败';
+                        _strategySignalErrors[key] = reason && reason.message ? String(reason.message) : '载入失败';
                         _strategySignalsByTab[key] = [];
                     }
                 });
@@ -1170,13 +1170,13 @@
                 console.error('strategy signals:', e);
                 _strategySignalsByTab = { orb: [], ict: [] };
                 _strategySignalCounts = { orb: 0, ict: 0 };
-                _strategySignalErrors = { orb: '加载失败', ict: '加载失败' };
+                _strategySignalErrors = { orb: '载入失败', ict: '载入失败' };
                 if (tsEl) tsEl.textContent = '—';
                 renderStrategySignalTabBar();
             } finally {
                 if (refreshBtn) {
                     refreshBtn.disabled = false;
-                    refreshBtn.textContent = '刷新';
+                    refreshBtn.textContent = '更新';
                 }
             }
         }
@@ -1189,56 +1189,56 @@
                 const px = Number(d.px_chg);
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> ${oiRadarHotTags(d)}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无热度标的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无风口合约</div>';
 
             const chase = (data.chase || []).slice(0, 8).map(d => {
                 const px = Number(d.px_chg);
                 const line = `<span class="font-semibold text-text-primary w-16 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-blue font-mono">${Number(d.fr_pct).toFixed(3)}%</span> <span class="text-text-muted">${escHtml(d.trend || '')}</span> <span class="text-text-muted">|</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span>`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无追多标的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无空头挤压合约</div>';
 
             const combined = (data.combined || []).slice(0, 8).map(d => {
                 const dims = [];
-                if (d.f_sc >= 10) dims.push('<span class="text-neon-blue">🧊' + Number(d.fr_pct).toFixed(2) + '%</span>');
-                if (d.m_sc >= 12) dims.push('<span class="text-warn/95">💎' + formatMcapUsd(d.est_mcap) + '</span>');
-                if (d.s_sc >= 10) dims.push('<span class="text-text-secondary">💤' + (Number(d.sw_days) || 0) + '天</span>');
-                if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">⚡OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
+                if (d.f_sc >= 10) dims.push('<span class="text-neon-blue">🔻' + Number(d.fr_pct).toFixed(2) + '%</span>');
+                if (d.m_sc >= 12) dims.push('<span class="text-warn/95">🪙' + formatMcapUsd(d.est_mcap) + '</span>');
+                if (d.s_sc >= 10) dims.push('<span class="text-text-secondary">⏳' + (Number(d.sw_days) || 0) + '日</span>');
+                if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">📊仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${dims.join(' ')}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无综合上榜</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无多维共振合约</div>';
 
             const ambush = (data.ambush || []).slice(0, 8).map(d => {
                 const dark = Number(d.d6h) > 2 && Math.abs(Number(d.px_chg)) < 5;
                 const parts = [
                     '<span class="text-text-muted">' + formatMcapUsd(d.est_mcap) + '</span>',
-                    '<span class="text-neon-purple">OI' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>'
+                    '<span class="text-neon-purple">仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>'
                 ];
-                if (dark) parts.push('<span class="text-warn/95">🎯暗流</span>');
-                if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">横盘' + Number(d.sw_days).toFixed(0) + '天</span>');
+                if (dark) parts.push('<span class="text-warn/95">🌊静建</span>');
+                if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">盘整' + Number(d.sw_days).toFixed(0) + '日</span>');
                 if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">费率' + Number(d.fr_pct).toFixed(2) + '%</span>');
                 const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${parts.join(' ')}`;
                 return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无埋伏标的</div>';
+            }).join('') || '<div class="text-text-muted text-xs">暂无静默建仓合约</div>';
 
             const highlights = (data.highlights || []).map(h =>
                 `<div class="hl-item"><span class="hl-item-mark" aria-hidden="true"></span><span>${escHtml(h)}</span></div>`
-            ).join('') || '<div class="state-muted py-2">暂无提醒</div>';
+            ).join('') || '<div class="state-muted py-2">暂无动态提醒</div>';
 
 
             const legend = `
                 <div class="mt-4 pt-3 border-t border-border text-text-muted text-[11px] leading-relaxed space-y-0.5">
-                    <div class="font-medium text-text-secondary mb-1">📖 图例</div>
-                    <div>热度 = CG 热搜 + 成交量暴增（OI 领先指标）</div>
-                    <div>费率负 = 空头燃料 · 💎 市值 · 💤 横盘（吸筹）</div>
-                    <div>🔥💤 热度+吸筹 = 最强预判 · 🔥⚡ 热度+OI = 正在发生</div>
-                    <div class="mt-2 text-accent/85">点击标的可在新标签页打开币安合约</div>
+                    <div class="font-medium text-text-secondary mb-1">📖 符号说明</div>
+                    <div>🌡 风口 = 榜热 + 成交脉冲（持仓领先指标）</div>
+                    <div>🔻 负费率 = 空头燃料 · 🪙 盘小 · ⏳ 盘整（吸筹阶段）</div>
+                    <div>🌡⏳ 风口+吸筹 = 最强预判 · 🌡📊 风口+持仓 = 正在发生</div>
+                    <div class="mt-2 text-accent/85">点击合约可在新标签页打开币安永续</div>
                 </div>`;
 
             const highlightsHtml = `
                 <div class="highlights-hero rounded-sm p-4 md:p-5 h-full min-h-[160px] min-w-0 flex flex-col">
                     <div class="mb-3 shrink-0">
-                        <div class="panel-kicker">Priority Signal</div>
-                        <h3 class="hl-title text-text-primary mt-1">值得关注</h3>
+                        <div class="panel-kicker">Spotlight</div>
+                        <h3 class="hl-title text-text-primary mt-1">精选推荐</h3>
                     </div>
                     <div class="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-auto max-h-[min(320px,46vh)] lg:max-h-[min(400px,calc(100vh-260px))] pr-1">${highlights}</div>
                 </div>`;
@@ -1250,10 +1250,10 @@
 
             const gridBlock = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    ${oiRadarCard('热度榜', '', hot)}
-                    ${oiRadarCard('追多（按费率）', '', chase)}
-                    ${oiRadarCard('综合', '', combined)}
-                    ${oiRadarCard('埋伏', '', ambush)}
+                    ${oiRadarCard('风口榜', '', hot)}
+                    ${oiRadarCard('空头挤压榜', '', chase)}
+                    ${oiRadarCard('多维共振', '', combined)}
+                    ${oiRadarCard('静默建仓榜', '', ambush)}
                 </div>
                 ${legend}`;
 
@@ -1268,7 +1268,7 @@
             try {
                 j = await API.accumulationOiRadarRefresh();
             } catch (e) {
-                const msg = e && e.message ? String(e.message) : '刷新失败';
+                const msg = e && e.message ? String(e.message) : '更新失败';
                 body.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(msg) + '</div>';
                 if (hl) {
                     hl.innerHTML =
@@ -1280,9 +1280,9 @@
             }
             if (!j.accepted) {
                 if (j.busy) {
-                    body.innerHTML = '<div class="text-warn text-sm">已有扫描在运行，请约 1–2 分钟后再点刷新。</div>';
+                    body.innerHTML = '<div class="text-warn text-sm">已有扫描在运行，请约 1–2 分钟后再点更新。</div>';
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">收筹快照扫描排队中，值得关注稍后更新。</div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">吸筹快照扫描排队中，精选推荐稍后更新。</div>';
                     }
                 }
                 return;
@@ -1290,7 +1290,7 @@
             for (let i = 0; i < 45; i++) {
                 body.innerHTML = `<div class="text-text-muted text-sm py-3">后台扫描中（约 1–2 分钟）… 已等待 ${i + 1}/45 轮</div>`;
                 if (hl) {
-                    hl.innerHTML = `<div class="rounded-sm border border-border bg-surface-light/30 p-4 text-text-muted text-sm">后台扫描中… 已等待 ${i + 1}/45 轮<br/><span class="text-xs text-text-muted/80">值得关注将在完成后显示在首屏左侧</span></div>`;
+                    hl.innerHTML = `<div class="rounded-sm border border-border bg-surface-light/30 p-4 text-text-muted text-sm">后台扫描中… 已等待 ${i + 1}/45 轮<br/><span class="text-xs text-text-muted/80">精选推荐将在完成后显示在首屏左侧</span></div>`;
                 }
                 await new Promise((r) => setTimeout(r, 4000));
                 const data = await API.accumulationOiRadar();
@@ -1301,13 +1301,13 @@
             }
             body.innerHTML = '<div class="text-warn text-sm">扫描较久仍未写入快照，请稍后再试或查看后端日志。</div>';
             if (hl) {
-                hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，值得关注暂无法更新。</div>';
+                hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">快照仍未就绪，精选推荐暂无法更新。</div>';
             }
             void hydrateWorthHighlightBoards(null);
         }
 
         async function clearAccumulationPool() {
-            if (!confirm('确定清空收筹池（SQLite 表 watchlist）？\n\n清空后须重新运行 pool 扫描（定时每日 10:00 或维护里的「pool 收筹池」），再点「刷新」，否则 OI 雷达无法基于池内标的计算。')) {
+            if (!confirm('确定重置吸筹池（SQLite 表 watchlist）？\n\n重置后须重新运行 pool 扫描（定时每日 10:00 或运维里的「pool 吸筹池」），再点「更新」，否则持仓量雷达无法基于池内合约计算。')) {
                 return;
             }
             const btn = document.getElementById('maint-clear-pool');
@@ -1317,11 +1317,11 @@
                 if (refreshBtn) refreshBtn.disabled = true;
                 const out = await API.clearWatchlistPool();
                 const n = out.cleared_rows && out.cleared_rows.watchlist != null ? out.cleared_rows.watchlist : '?';
-                alert(`已清空收筹池（删除 ${n} 条）。请先运行 pool 再点「刷新」。`);
+                alert(`已重置吸筹池（删除 ${n} 条）。请先运行 pool 再点「更新」。`);
                 await loadAccumulationOiRadar({ forceRefresh: false });
             } catch (e) {
                 console.error(e);
-                alert(e && e.message ? String(e.message) : '清理失败');
+                alert(e && e.message ? String(e.message) : '重置失败');
             } finally {
                 if (btn) btn.disabled = false;
                 if (refreshBtn) refreshBtn.disabled = false;
@@ -1344,16 +1344,16 @@
                 if (forceRefresh) {
                     tsEl.textContent = '…';
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在刷新收筹快照…</div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在更新吸筹快照…</div>';
                     }
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
                 tsEl.textContent = '…';
-                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">加载快照…</div>';
+                body.innerHTML = '<div class="text-text-muted text-sm animate-pulse py-2">载入快照…</div>';
                 if (hl) {
-                    hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">加载值得关注…</div>';
+                    hl.innerHTML = '<div class="rounded-sm border border-border bg-surface p-4 text-text-muted text-sm animate-pulse">正在载入精选推荐…</div>';
                 }
                 const data = await API.accumulationOiRadar();
 
@@ -1366,33 +1366,33 @@
                 if (data.error === 'no_snapshot') {
                     body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || '尚无快照')}</div><p class="text-text-muted text-xs mt-2">正在启动后台扫描并自动轮询（约 1–2 分钟）…</p>`;
                     if (hl) {
-                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「值得关注」将出现在本区域</span></div>';
+                        hl.innerHTML = '<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">尚无快照，正在后台拉取…<br/><span class="text-xs text-text-muted/90 mt-2 block">完成后「精选推荐」将出现在本区域</span></div>';
                     }
                     void hydrateWorthHighlightBoards(null);
                     await runOiRadarBackgroundPoll(body, tsEl);
                     return;
                 }
 
-                body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                body.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-3 text-sm text-warn">${escHtml(data.message || data.error || '暂无可用数据')}</div>`;
                 if (hl) {
-                    hl.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无数据')}</div>`;
+                    hl.innerHTML = `<div class="rounded-sm border border-warn/25 bg-warn/10 p-4 text-sm text-warn">${escHtml(data.message || data.error || '暂无可用数据')}</div>`;
                 }
                 void hydrateWorthHighlightBoards(data);
             } catch (e) {
                 console.error('OI radar:', e);
                 tsEl.textContent = '';
-                const msg = e && e.message ? String(e.message) : '加载失败';
+                const msg = e && e.message ? String(e.message) : '载入失败';
                 const isNet = /fail(ed)? to fetch|networkerror|load failed/i.test(msg);
                 const hint = isNet
-                    ? '<p class="text-text-muted text-xs mt-2">请确认 API 可访问（如需切换 API base，可在 localStorage 设置 <code class="text-accent font-mono text-[11px]">NEXT_K_API_BASE</code>）。</p>'
+                    ? '<p class="text-text-muted text-xs mt-2">请确认接口可访问（如需切换 API base，可在 localStorage 设置 <code class="text-accent font-mono text-[11px]">NEXT_K_API_BASE</code>）。</p>'
                     : '';
                 body.innerHTML = `<div class="text-neon-red text-sm">${escHtml(msg)}</div>${hint}`;
                 if (hl) {
                     hl.innerHTML = `<div class="text-neon-red text-sm p-4">${escHtml(msg)}</div>`;
                 }
                 void hydrateWorthHighlightBoards({});
-                // 仅当用户主动点刷新时才弹 toast，避免初始化失败重复打扰
-                if (forceRefresh) showToast('OI 雷达刷新失败：' + msg, false);
+                // 仅当用户主动点更新时才弹 toast，避免初始化失败重复打扰
+                if (forceRefresh) showToast('持仓量雷达更新失败：' + msg, false);
             } finally {
                 if (btn) btn.disabled = false;
                 _oiRadarLoading = false;
@@ -1449,7 +1449,7 @@
 
             async function runClear(tables) {
                 if (!msg) return;
-                msg.textContent = '请求中…';
+                msg.textContent = '提交中…';
                 try {
                     const data = await API.clearWatchTables(tables);
                     msg.innerHTML = '<span class="text-neon-green">ok · ' + escHtml(JSON.stringify(data.cleared_rows || data)) + '</span>';
@@ -1468,17 +1468,17 @@
                     }
                 } catch (e) {
                     console.error(e);
-                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                    msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '操作失败') + '</span>';
                 }
             }
 
             document.getElementById('maint-clear-both')?.addEventListener('click', async () => {
                 if (
                     !confirm(
-                        '确定「清理全部看盘表」？\n'
+                        '确定「重置全部看盘表」？\n'
                             + '将清空 watchlist、focus_watch、ambush_watch、heat_accum_watch、patrick_core_watch，'
                             + '以及 worth 全部分类表（与后端 worth_watch_all 一致），不可撤销。\n'
-                            + '清库后请再跑 pool / 刷新 OI 或点页面「刷新」。',
+                            + '重置后请再跑 pool / 更新持仓量雷达或点页面「更新」。',
                     )
                 ) {
                     return;
@@ -1504,7 +1504,7 @@
                         msg.innerHTML = '<span class="text-neon-green">' + escHtml(JSON.stringify(data)) + '</span>';
                     } catch (e) {
                         console.error(e);
-                        msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '失败') + '</span>';
+                        msg.innerHTML = '<span class="text-neon-red">' + escHtml(e && e.message ? String(e.message) : '操作失败') + '</span>';
                     }
                 });
             });
@@ -1537,13 +1537,13 @@
                     const sizeStr = formatBytes(data.total_bytes);
                     if (
                         !confirm(
-                            '一键导出 DATA_DIR\n\n'
+                            '导出 DATA_DIR\n\n'
                                 + '路径：' + dir + '\n'
                                 + '文件数：' + files + '\n'
                                 + '未压缩合计：约 ' + sizeStr + '\n\n'
                                 + '服务端将打包为 zip（可能需数分钟）。浏览器会开始下载；若长时间无响应，请查看服务端日志或代理超时。\n\n'
                                 + '下载完成后请关闭 NEXT_K_EXPORT_VOLUME_ENABLED 并重新部署。\n\n'
-                                + '确定继续？',
+                                + '确认继续？',
                         )
                     ) {
                         msg.textContent = '已取消导出';
@@ -1555,7 +1555,7 @@
                         + '<br/><span class="text-text-muted text-[10px]">'
                         + escHtml(dir) + ' · ' + escHtml(String(files)) + ' 文件 · ' + escHtml(sizeStr)
                         + '<br/>若未出现保存对话框，可<a class="text-accent underline" href="'
-                        + escHtml(url) + '" target="_blank" rel="noopener">点此直接打开下载链接</a></span>';
+                        + escHtml(url) + '" target="_blank" rel="noopener">点此打开下载链接</a></span>';
                     const a = document.createElement('a');
                     a.href = url;
                     a.target = '_blank';
@@ -1580,10 +1580,10 @@
             const pick = (id, aria) =>
                 document.getElementById(id) || main.querySelector('section[aria-label="' + aria + '"]');
             [
-                main.querySelector('section[aria-label="优先信号"]'),
-                pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('strategy-signals-section', '策略信号'),
-                pick('worth-history-section', '值得关注与重点关注归档'),
+                main.querySelector('section[aria-label="精选推荐"]'),
+                pick('oi-lane-section', '吸筹池 · 持仓量雷达'),
+                pick('strategy-signals-section', '实盘策略动向'),
+                pick('worth-history-section', '精选推荐与核心关注归档'),
             ].forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
             });
@@ -1624,10 +1624,10 @@
 
             try {
                 await API.health();
-                setStatusPill(conn, 'ok', 'API 已连接');
+                setStatusPill(conn, 'ok', '接口已连接');
             } catch (e) {
                 const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
-                setStatusPill(conn, 'err', 'API 连接失败' + escHtml(detail));
+                setStatusPill(conn, 'err', '接口连接失败' + escHtml(detail));
             }
         }
 
