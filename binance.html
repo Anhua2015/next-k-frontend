@@ -110,6 +110,13 @@
             transition: all 0.15s;
         }
         .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+        .bn-lane-scroll { max-height: 28rem; overflow: auto; }
+        #bn-tab-bar button { font-size: 0.6875rem; letter-spacing: 0.03em; }
+        #bn-tab-bar button[aria-selected="true"] {
+            color: var(--gold);
+            border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
+            background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
+        }
         @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -169,44 +176,35 @@
         </div>
     </section>
 
-    <!-- Binance live: positions + trade history -->
-    <section class="grid grid-cols-1 gap-5 items-start">
-
-    <!-- Open positions -->
-    <div class="bg-surface rounded-xl border border-border card overflow-hidden min-w-0">
-        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
-            <div class="flex items-center gap-2 min-w-0">
-                <h2 class="text-text-primary font-semibold text-sm">当前仓位</h2>
-                <span class="badge badge-manual">U本位</span>
+    <!-- Binance live -->
+    <section>
+        <div class="bg-surface rounded-xl border border-border card overflow-hidden min-w-0">
+            <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                    <div class="panel-kicker">Binance Futures</div>
+                    <h2 class="panel-title mt-0.5">U 本位永续</h2>
+                </div>
+                <span id="bn-lane-status" class="text-text-muted text-xs shrink-0">—</span>
             </div>
-            <span id="open-pos-count" class="text-text-muted text-xs shrink-0">—</span>
-        </div>
-        <div id="usdt-account-bar" class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.2]">
-            <div class="text-text-muted text-xs animate-pulse">加载 U 本位账户…</div>
-        </div>
-        <div class="overflow-x-auto">
-            <div id="open-positions-body" class="p-4">
-                <div class="text-text-muted text-xs animate-pulse">加载持仓…</div>
+            <div id="bn-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="币安合约数据"></div>
+            <div id="usdt-account-bar" class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.2]">
+                <div class="text-text-muted text-xs animate-pulse">加载 U 本位账户…</div>
             </div>
-        </div>
-    </div>
-
-    <!-- Trade history -->
-    <div class="bg-surface rounded-xl border border-border card overflow-hidden min-w-0">
-        <div class="px-4 py-3 border-b border-border/90 bg-surface-light/[0.35] flex items-center justify-between gap-2 flex-wrap">
-            <div class="flex items-center gap-2 min-w-0">
-                <h2 class="text-text-primary font-semibold text-sm">历史成交</h2>
-                <span class="text-text-muted text-xs">近 7 天</span>
-            </div>
-            <span id="trade-history-count" class="text-text-muted text-xs shrink-0">—</span>
-        </div>
-        <div class="overflow-x-auto">
-            <div id="trade-history-body" class="p-4">
-                <div class="text-text-muted text-xs animate-pulse">加载成交…</div>
+            <div id="bn-tab-panels" class="min-w-0">
+                <div id="bn-panel-positions" role="tabpanel" class="bn-lane-scroll overflow-x-auto p-4">
+                    <div id="open-positions-body" class="text-text-muted text-xs animate-pulse">加载持仓…</div>
+                </div>
+                <div id="bn-panel-orders" role="tabpanel" hidden class="bn-lane-scroll overflow-x-auto p-4">
+                    <div id="open-orders-body" class="text-text-muted text-xs animate-pulse">加载委托…</div>
+                </div>
+                <div id="bn-panel-trades" role="tabpanel" hidden class="bn-lane-scroll overflow-x-auto p-4">
+                    <div id="trade-history-body" class="text-text-muted text-xs animate-pulse">加载成交…</div>
+                </div>
+                <div id="bn-panel-pos-history" role="tabpanel" hidden class="bn-lane-scroll overflow-x-auto p-4">
+                    <div id="pos-history-body" class="text-text-muted text-xs animate-pulse">加载仓位历史…</div>
+                </div>
             </div>
         </div>
-    </div>
-
     </section>
 
 </main>
@@ -505,57 +503,259 @@ async function signTradFiPerps() {
     }
 }
 
-// ── Open positions ────────────────────────────────────────────────────────────
+// ── Binance tabs ──────────────────────────────────────────────────────────────
 
-async function loadOpenPositions() {
-    var body = document.getElementById('open-positions-body');
-    var countEl = document.getElementById('open-pos-count');
-    try {
-        var results = await Promise.all([
-            apiFetch('/api/binance/positions?status=open&limit=50'),
-            apiFetch('/api/binance/account/summary').catch(function() { return null; }),
-        ]);
-        var rows = results[0] || [];
-        var acct = results[1];
-        renderAccountBar(acct, rows);
-        countEl.textContent = rows.length + ' 个仓位';
+var BN_TAB_META = [
+    ['positions', '仓位'],
+    ['orders', '当前委托'],
+    ['trades', '历史成交'],
+    ['pos_history', '仓位历史记录'],
+];
+var _bnCounts = { positions: 0, orders: 0, trades: 0, pos_history: 0 };
 
-        if (!rows.length) {
-            body.innerHTML =
-                '<div class="text-text-muted text-xs">暂无 U 本位持仓（数据来自币安合约账户实时同步）</div>';
-            return;
-        }
-
-        var trs = rows.map(function(p) {
-            var upnl = Number(p.unrealized_pnl_usdt);
-            var notional = positionNotional(p);
-            return '<tr>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
-                + '<td>' + sideBadge(p.side) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.mark_price, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + (notional != null ? fmtUsd(notional, 2) : '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(2) + ' U') : '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + (p.leverage != null ? escHtml(String(p.leverage)) + 'x' : '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.liquidation_price, 4) + '</td>'
-                + '<td class="text-text-muted text-xs">' + marginTypeLabel(p.margin_type) + '</td>'
-                + '</tr>';
-        }).join('');
-
-        body.innerHTML =
-            '<table><thead><tr>'
-            + '<th>标的</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>名义(U)</th><th>浮盈(U)</th><th>杠杆</th><th>强平价</th><th>保证金</th>'
-            + '</tr></thead><tbody>' + trs + '</tbody></table>';
-    } catch(e) {
-        renderAccountBar(null, []);
-        countEl.textContent = '—';
-        body.innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">读取 U 本位持仓失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
-    }
+function bnTabBtnClass(active) {
+    var base = 'shrink-0 px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold tracking-wide rounded-t-md border-b-2 transition-all duration-200';
+    return active
+        ? base + ' border-[color-mix(in_srgb,var(--gold)_55%,var(--accent))] text-text-primary'
+        : base + ' border-transparent text-text-muted hover:text-text-secondary';
 }
 
-// ── Trade history ─────────────────────────────────────────────────────────────
+function bnPreferredTabKey() {
+    try {
+        var k = localStorage.getItem('bnLaneTabKey');
+        if (k && BN_TAB_META.some(function(pair) { return pair[0] === k; })) return k;
+    } catch (e) { /* ignore */ }
+    return 'positions';
+}
+
+function renderBnTabBar() {
+    var bar = document.getElementById('bn-tab-bar');
+    if (!bar) return;
+    var active = bnPreferredTabKey();
+    bar.innerHTML = BN_TAB_META.map(function(pair) {
+        var key = pair[0];
+        var label = pair[1];
+        var count = _bnCounts[key];
+        var suffix = count != null && Number.isFinite(count) ? ' (' + count + ')' : '';
+        var on = key === active;
+        return '<button type="button" role="tab" id="bn-tab-' + key + '" data-bn-tab-key="' + key + '"'
+            + ' class="' + bnTabBtnClass(on) + '"'
+            + ' aria-selected="' + (on ? 'true' : 'false') + '" aria-controls="bn-panel-' + key + '" tabindex="' + (on ? '0' : '-1') + '">'
+            + escHtml(label + suffix) + '</button>';
+    }).join('');
+}
+
+function switchBnTab(key) {
+    if (!BN_TAB_META.some(function(pair) { return pair[0] === key; })) return;
+    BN_TAB_META.forEach(function(pair) {
+        var id = pair[0];
+        var tab = document.getElementById('bn-tab-' + id);
+        var panel = document.getElementById('bn-panel-' + id);
+        var on = id === key;
+        if (tab) {
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+            tab.tabIndex = on ? 0 : -1;
+            tab.className = bnTabBtnClass(on);
+        }
+        if (panel) {
+            if (on) panel.removeAttribute('hidden');
+            else panel.setAttribute('hidden', '');
+        }
+    });
+    var acctBar = document.getElementById('usdt-account-bar');
+    if (acctBar) {
+        if (key === 'positions') acctBar.classList.remove('hidden');
+        else acctBar.classList.add('hidden');
+    }
+    try { localStorage.setItem('bnLaneTabKey', key); } catch (e) { /* ignore */ }
+}
+
+function initBnTabDelegationOnce() {
+    var bar = document.getElementById('bn-tab-bar');
+    if (!bar || bar.dataset.bnTabDeleg === '1') return;
+    bar.dataset.bnTabDeleg = '1';
+    bar.addEventListener('click', function(ev) {
+        var btn = ev.target && ev.target.closest && ev.target.closest('button[data-bn-tab-key]');
+        if (!btn) return;
+        var k = btn.getAttribute('data-bn-tab-key');
+        if (k) switchBnTab(k);
+    });
+}
+
+function updateBnLaneStatus() {
+    var el = document.getElementById('bn-lane-status');
+    if (!el) return;
+    var parts = [];
+    if (_bnCounts.positions != null) parts.push('仓位 ' + _bnCounts.positions);
+    if (_bnCounts.orders != null) parts.push('委托 ' + _bnCounts.orders);
+    el.textContent = parts.length ? parts.join(' · ') : '—';
+}
+
+function orderSideBadge(side) {
+    if (!side) return '—';
+    var s = String(side).toUpperCase();
+    var cls = s === 'BUY' ? 'badge-long' : 'badge-short';
+    var label = s === 'BUY' ? '买入' : s === 'SELL' ? '卖出' : s;
+    return '<span class="badge ' + cls + '">' + escHtml(label) + '</span>';
+}
+
+function renderOpenPositions(rows) {
+    var body = document.getElementById('open-positions-body');
+    if (!body) return;
+    _bnCounts.positions = (rows || []).length;
+    if (!rows.length) {
+        body.innerHTML = '<div class="text-text-muted text-xs">暂无 U 本位持仓</div>';
+        return;
+    }
+    var trs = rows.map(function(p) {
+        var upnl = Number(p.unrealized_pnl_usdt);
+        var notional = positionNotional(p);
+        return '<tr>'
+            + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(p.symbol || '—') + '</td>'
+            + '<td>' + sideBadge(p.side) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.entry_price, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.mark_price, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.quantity, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + (notional != null ? fmtUsd(notional, 2) : '—') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;' + pnlColor(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(2) + ' U') : '—') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + (p.leverage != null ? escHtml(String(p.leverage)) + 'x' : '—') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(p.liquidation_price, 4) + '</td>'
+            + '<td class="text-text-muted text-xs">' + marginTypeLabel(p.margin_type) + '</td>'
+            + '</tr>';
+    }).join('');
+    body.innerHTML = '<table><thead><tr>'
+        + '<th>标的</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>名义(U)</th><th>浮盈(U)</th><th>杠杆</th><th>强平价</th><th>保证金</th>'
+        + '</tr></thead><tbody>' + trs + '</tbody></table>';
+}
+
+function renderOpenOrders(rows) {
+    var body = document.getElementById('open-orders-body');
+    if (!body) return;
+    _bnCounts.orders = (rows || []).length;
+    if (!rows.length) {
+        body.innerHTML = '<div class="text-text-muted text-xs">暂无当前委托</div>';
+        return;
+    }
+    var trs = rows.map(function(o) {
+        var kind = o.kind === 'algo' ? '条件' : '限价';
+        return '<tr>'
+            + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(o.order_id || '—')) + '</td>'
+            + '<td class="text-text-secondary text-xs">' + fmtTimeMs(o.time_ms) + '</td>'
+            + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(o.symbol || '—') + '</td>'
+            + '<td>' + orderSideBadge(o.side) + '</td>'
+            + '<td class="text-text-muted text-xs">' + escHtml(o.order_type || '—') + ' (' + escHtml(kind) + ')</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(o.price, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(o.qty, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;color:var(--text-muted)">' + fmtNum(o.filled_qty, 4) + '</td>'
+            + '<td class="text-text-secondary text-xs">' + escHtml(o.status_label || o.status || '—') + '</td>'
+            + '<td class="text-text-muted text-xs">' + (o.reduce_only ? '是' : '—') + '</td>'
+            + '</tr>';
+    }).join('');
+    body.innerHTML = '<table><thead><tr>'
+        + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>类型</th><th>价格</th><th>数量</th><th>已成交</th><th>状态</th><th>只减仓</th>'
+        + '</tr></thead><tbody>' + trs + '</tbody></table>';
+}
+
+function renderTradeHistory(rows, days) {
+    var body = document.getElementById('trade-history-body');
+    if (!body) return;
+    _bnCounts.trades = (rows || []).length;
+    if (!rows.length) {
+        body.innerHTML = '<div class="text-text-muted text-xs">近 ' + escHtml(String(days || 7)) + ' 天暂无成交记录</div>';
+        return;
+    }
+    var trs = rows.map(function(t) {
+        var asset = baseAsset(t.symbol);
+        return '<tr>'
+            + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(t.order_id || t.id || '—')) + '</td>'
+            + '<td class="text-text-secondary text-xs">' + fmtTimeMs(t.time_ms) + '</td>'
+            + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(t.symbol || '—') + ' <span class="text-text-muted text-[10px]">永续</span></td>'
+            + '<td>' + tradeSideLabelBadge(t.side_label) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.price, 4) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.qty, 4) + (asset ? ' ' + escHtml(asset) : '') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;color:var(--text-muted)">' + fmtNum(t.commission_usdt, 4) + ' USDT</td>'
+            + '<td class="text-text-muted text-xs">' + escHtml(t.role || '—') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtPnlHtml(t.realized_pnl_usdt) + '</td>'
+            + '</tr>';
+    }).join('');
+    body.innerHTML = '<table><thead><tr>'
+        + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>成交均价</th><th>数量</th><th>手续费</th><th>角色</th><th>已实现盈亏</th>'
+        + '</tr></thead><tbody>' + trs + '</tbody></table>';
+}
+
+function renderPositionHistory(rows, days) {
+    var body = document.getElementById('pos-history-body');
+    if (!body) return;
+    _bnCounts.pos_history = (rows || []).length;
+    if (!rows.length) {
+        body.innerHTML = '<div class="text-text-muted text-xs">近 ' + escHtml(String(days || 7)) + ' 天暂无已实现盈亏记录</div>';
+        return;
+    }
+    var trs = rows.map(function(r) {
+        return '<tr>'
+            + '<td class="text-text-secondary text-xs">' + fmtTimeMs(r.time_ms) + '</td>'
+            + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(r.symbol || '—') + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums">' + fmtPnlHtml(r.pnl_usdt) + '</td>'
+            + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(r.trade_id || '—') + '</td>'
+            + '<td class="text-text-muted text-xs max-w-[12rem] truncate" title="' + escHtml(r.info || '') + '">' + escHtml(r.info || '—') + '</td>'
+            + '</tr>';
+    }).join('');
+    body.innerHTML = '<p class="text-text-muted text-[10px] mb-2">近 ' + escHtml(String(days || 7)) + ' 天 · 来源币安 REALIZED_PNL 流水</p>'
+        + '<table><thead><tr>'
+        + '<th>时间</th><th>合约</th><th>已实现盈亏</th><th>成交ID</th><th>备注</th>'
+        + '</tr></thead><tbody>' + trs + '</tbody></table>';
+}
+
+async function loadBinanceLane() {
+    try {
+        var results = await Promise.allSettled([
+            apiFetch('/api/binance/positions?status=open&limit=50'),
+            apiFetch('/api/binance/account/summary'),
+            apiFetch('/api/binance/orders/open?limit=200'),
+            apiFetch('/api/binance/trades?days=7&limit=200'),
+            apiFetch('/api/binance/position-history?days=7&limit=200'),
+        ]);
+        if (results[0].status === 'fulfilled') {
+            var rows = results[0].value || [];
+            var acct = results[1].status === 'fulfilled' ? results[1].value : null;
+            renderAccountBar(acct, rows);
+            renderOpenPositions(rows);
+        } else {
+            renderAccountBar(null, []);
+            document.getElementById('open-positions-body').innerHTML =
+                '<div style="color:var(--neon-red);font-size:0.75rem">' + escHtml(String(results[0].reason && results[0].reason.message || '加载持仓失败')) + '</div>';
+            _bnCounts.positions = 0;
+        }
+        if (results[2].status === 'fulfilled') {
+            renderOpenOrders((results[2].value.orders) || []);
+        } else {
+            document.getElementById('open-orders-body').innerHTML =
+                '<div style="color:var(--neon-red);font-size:0.75rem">' + escHtml(String(results[2].reason && results[2].reason.message || '加载委托失败')) + '</div>';
+            _bnCounts.orders = 0;
+        }
+        if (results[3].status === 'fulfilled') {
+            var trPayload = results[3].value || {};
+            renderTradeHistory(trPayload.trades || [], trPayload.days || 7);
+        } else {
+            document.getElementById('trade-history-body').innerHTML =
+                '<div style="color:var(--neon-red);font-size:0.75rem">' + escHtml(String(results[3].reason && results[3].reason.message || '加载成交失败')) + '</div>';
+            _bnCounts.trades = 0;
+        }
+        if (results[4].status === 'fulfilled') {
+            var histPayload = results[4].value || {};
+            renderPositionHistory(histPayload.records || [], histPayload.days || 7);
+        } else {
+            document.getElementById('pos-history-body').innerHTML =
+                '<div style="color:var(--neon-red);font-size:0.75rem">' + escHtml(String(results[4].reason && results[4].reason.message || '加载仓位历史失败')) + '</div>';
+            _bnCounts.pos_history = 0;
+        }
+        renderBnTabBar();
+        switchBnTab(bnPreferredTabKey());
+        updateBnLaneStatus();
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 function tradeSideLabelBadge(label) {
     if (!label) return '—';
@@ -576,47 +776,6 @@ function fmtTimeMs(ms) {
         return new Date(Number(ms)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\//g, '-');
     } catch (e) {
         return String(ms);
-    }
-}
-
-async function loadTradeHistory() {
-    var body = document.getElementById('trade-history-body');
-    var countEl = document.getElementById('trade-history-count');
-    try {
-        var payload = await apiFetch('/api/binance/trades?days=7&limit=200');
-        var rows = payload.trades || [];
-        var days = payload.days || 7;
-        countEl.textContent = rows.length + ' 笔 · ' + days + ' 天';
-
-        if (!rows.length) {
-            body.innerHTML =
-                '<div class="text-text-muted text-xs">近 ' + days + ' 天暂无成交记录</div>';
-            return;
-        }
-
-        var trs = rows.map(function(t) {
-            var asset = baseAsset(t.symbol);
-            return '<tr>'
-                + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(t.order_id || t.id || '—')) + '</td>'
-                + '<td class="text-text-secondary text-xs">' + fmtTimeMs(t.time_ms) + '</td>'
-                + '<td style="font-weight:500;color:var(--text-primary)">' + escHtml(t.symbol || '—') + ' <span class="text-text-muted text-[10px]">永续</span></td>'
-                + '<td>' + tradeSideLabelBadge(t.side_label) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.price, 4) + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtNum(t.qty, 4) + (asset ? ' ' + escHtml(asset) : '') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums;color:var(--text-muted)">' + fmtNum(t.commission_usdt, 4) + ' USDT</td>'
-                + '<td class="text-text-muted text-xs">' + escHtml(t.role || '—') + '</td>'
-                + '<td style="font-variant-numeric:tabular-nums">' + fmtPnlHtml(t.realized_pnl_usdt) + '</td>'
-                + '</tr>';
-        }).join('');
-
-        body.innerHTML =
-            '<table><thead><tr>'
-            + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>成交均价</th><th>数量</th><th>手续费</th><th>角色</th><th>已实现盈亏</th>'
-            + '</tr></thead><tbody>' + trs + '</tbody></table>';
-    } catch(e) {
-        countEl.textContent = '—';
-        body.innerHTML =
-            '<div style="color:var(--neon-red);font-size:0.75rem">读取成交失败：' + escHtml(String(e.message || 'unknown_error')) + '</div>';
     }
 }
 
@@ -668,8 +827,7 @@ async function loadSignals() {
 
 function refreshAll() {
     loadStatus();
-    loadOpenPositions();
-    loadTradeHistory();
+    loadBinanceLane();
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -692,19 +850,20 @@ function toggleTheme() {
 document.addEventListener('DOMContentLoaded', function() {
     tickHeaderClock();
     setInterval(tickHeaderClock, 30000);
+    renderBnTabBar();
+    initBnTabDelegationOnce();
+    switchBnTab(bnPreferredTabKey());
     refreshAll();
     setInterval(function() {
         if (document.visibilityState === 'visible') {
-            loadOpenPositions();
-            loadTradeHistory();
+            loadBinanceLane();
             loadStatus();
         }
     }, 30000);
 
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
-            loadOpenPositions();
-            loadTradeHistory();
+            loadBinanceLane();
             loadStatus();
         }
     });
