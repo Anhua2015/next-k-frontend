@@ -159,15 +159,6 @@
             border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
             background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
         }
-        #bn-tab-bar button[aria-selected="true"] {
-            color: var(--gold);
-            border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
-            background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
-        }
-        #bn-tab-bar button {
-            font-size: 0.6875rem;
-            letter-spacing: 0.03em;
-        }
         table tbody tr:hover {
             background-color: var(--hover-bg);
         }
@@ -192,19 +183,6 @@
         .toast-ok  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 30%, transparent); color: var(--neon-green); }
         .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
         @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bn-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.1rem 0.45rem;
-            border-radius: 9999px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-        }
-        .bn-badge-long  { background: color-mix(in srgb, var(--neon-green) 12%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 25%, transparent); }
-        .bn-badge-short { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
-        .bn-lane-scroll { max-height: 28rem; overflow: auto; }
 
     </style>
 </head>
@@ -245,7 +223,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="9" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="10" data-theme="zen-premium">
         <!-- 首屏：值得关注 -->
         <section class="mb-7" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -273,38 +251,6 @@
             </div>
         </section>
 
-        <section class="mb-7" aria-label="币安实盘" id="binance-lane-section">
-            <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
-                <div class="panel-head border-b border-border/80">
-                    <div>
-                        <div class="panel-kicker">Binance Futures</div>
-                        <h2 class="panel-title">U 本位永续</h2>
-                    </div>
-                    <div class="panel-toolbar">
-                        <span id="bn-lane-status" class="panel-ts">—</span>
-                        <button type="button" id="bn-refresh" class="btn-ghost">刷新</button>
-                    </div>
-                </div>
-                <div id="bn-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="币安合约数据"></div>
-                <div id="bn-usdt-account-bar" class="px-4 py-3 border-b border-border/60 bg-surface-light/[0.2]">
-                    <div class="state-muted animate-pulse text-xs">加载 U 本位账户…</div>
-                </div>
-                <div id="bn-tab-panels" class="min-w-0">
-                    <div id="bn-panel-positions" role="tabpanel" class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div id="bn-open-positions-body" class="state-muted animate-pulse py-4">加载持仓…</div>
-                    </div>
-                    <div id="bn-panel-orders" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div id="bn-open-orders-body" class="state-muted animate-pulse py-4">加载委托…</div>
-                    </div>
-                    <div id="bn-panel-trades" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div id="bn-trade-history-body" class="state-muted animate-pulse py-4">加载成交…</div>
-                    </div>
-                    <div id="bn-panel-pos-history" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div id="bn-pos-history-body" class="state-muted animate-pulse py-4">加载仓位历史…</div>
-                    </div>
-                </div>
-            </div>
-        </section>
 <section class="mb-7" aria-label="值得关注与重点关注归档" id="worth-history-section">
             <div class="dash-card card-hover min-w-0">
                 <div class="panel-head">
@@ -343,6 +289,7 @@
             document.querySelectorAll('button.nav-pill, a.nav-pill').forEach((el) => {
                 if ((el.textContent || '').trim() === '量化中心') el.remove();
             });
+            document.getElementById('binance-lane-section')?.remove();
             try {
                 const u = new URL(window.location.href);
                 if (u.searchParams.get('view') === 'qd') {
@@ -362,7 +309,6 @@
             const blocks = [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('binance-lane-section', '币安实盘'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
             ];
             blocks.forEach((el) => {
@@ -565,33 +511,6 @@
                 }
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
-            },
-            async binancePositions() {
-                const res = await fetch(`${API_BASE}/api/binance/positions?status=open&limit=50`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async binanceAccountSummary() {
-                const res = await fetch(`${API_BASE}/api/binance/account/summary`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async binanceTrades(days) {
-                const d = days != null ? days : 7;
-                const res = await fetch(`${API_BASE}/api/binance/trades?days=${d}&limit=200`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async binanceOpenOrders() {
-                const res = await fetch(`${API_BASE}/api/binance/orders/open?limit=200`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async binancePositionHistory(days) {
-                const d = days != null ? days : 7;
-                const res = await fetch(`${API_BASE}/api/binance/position-history?days=${d}&limit=200`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
             },
         };
 
@@ -972,385 +891,6 @@
         function fmtZctPx(v, decimals) {
             if (v == null || v === '' || Number.isNaN(Number(v))) return '—';
             return Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
-        }
-
-        function bnFmtTimeMs(ms) {
-            if (!ms) return '—';
-            try {
-                return new Date(Number(ms)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\//g, '-');
-            } catch (e) {
-                return String(ms);
-            }
-        }
-
-        function bnFmtNum(v, decimals) {
-            if (v == null || !Number.isFinite(Number(v))) return '—';
-            return Number(v).toFixed(decimals != null ? decimals : 4);
-        }
-
-        function bnFmtUsd(v, decimals) {
-            if (v == null || !Number.isFinite(Number(v))) return '—';
-            return Number(v).toFixed(decimals != null ? decimals : 2) + ' USDT';
-        }
-
-        function bnPnlStyle(v) {
-            if (v == null || !Number.isFinite(Number(v))) return '';
-            return Number(v) >= 0 ? 'color:var(--neon-green)' : 'color:var(--neon-red)';
-        }
-
-        function bnPnlHtml(v) {
-            if (v == null || !Number.isFinite(Number(v))) return '—';
-            const n = Number(v);
-            const sign = n >= 0 ? '+' : '';
-            return '<span style="' + bnPnlStyle(n) + '">' + sign + n.toFixed(4) + '</span>';
-        }
-
-        function bnBaseAsset(sym) {
-            if (!sym || typeof sym !== 'string') return '';
-            return sym.endsWith('USDT') ? sym.slice(0, -4) : sym;
-        }
-
-        function bnSideBadge(side) {
-            if (!side) return '—';
-            const s = String(side).toUpperCase();
-            const cls = s === 'LONG' ? 'bn-badge-long' : 'bn-badge-short';
-            return '<span class="bn-badge ' + cls + '">' + escHtml(side) + '</span>';
-        }
-
-        function bnTradeSideLabel(label) {
-            if (!label) return '—';
-            const t = String(label);
-            const isClose = t.indexOf('平') === 0;
-            const cls = isClose ? 'bn-badge-short' : 'bn-badge-long';
-            return '<span class="bn-badge ' + cls + '">' + escHtml(t) + '</span>';
-        }
-
-        function bnMarginTypeLabel(v) {
-            if (!v) return '—';
-            const s = String(v).toUpperCase();
-            if (s === 'ISOLATED') return '逐仓';
-            if (s === 'CROSSED' || s === 'CROSS') return '全仓';
-            return escHtml(v);
-        }
-
-        function bnPositionNotional(p) {
-            const qty = Number(p.quantity);
-            const mark = Number(p.mark_price);
-            if (!Number.isFinite(qty) || !Number.isFinite(mark)) return null;
-            return qty * mark;
-        }
-
-        function renderBnAccountBar(acct, rows) {
-            const bar = document.getElementById('bn-usdt-account-bar');
-            if (!bar) return;
-            if (!acct) {
-                bar.innerHTML = '<div class="state-muted text-xs">账户摘要暂不可用（未配置币安 Key 或接口异常）</div>';
-                return;
-            }
-            let posUpnl = 0;
-            let hasPosUpnl = false;
-            (rows || []).forEach(function(p) {
-                const u = Number(p.unrealized_pnl_usdt);
-                if (Number.isFinite(u)) {
-                    posUpnl += u;
-                    hasPosUpnl = true;
-                }
-            });
-            const items = [
-                ['钱包余额', '<span class="font-mono text-xs text-text-primary">' + bnFmtUsd(acct.wallet_balance_usdt) + '</span>'],
-                ['可用余额', '<span class="font-mono text-xs text-text-primary">' + bnFmtUsd(acct.available_balance_usdt) + '</span>'],
-                ['账户浮盈', bnPnlHtml(acct.unrealized_pnl_usdt)],
-                ['持仓浮盈', hasPosUpnl ? bnPnlHtml(posUpnl) : '<span class="text-text-muted text-xs">—</span>'],
-            ];
-            bar.innerHTML = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">' + items.map(function(item) {
-                return '<div class="flex flex-col gap-0.5">'
-                    + '<span class="text-text-muted text-[10px] uppercase tracking-wider">' + item[0] + '</span>'
-                    + '<div>' + item[1] + '</div>'
-                    + '</div>';
-            }).join('') + '</div>';
-        }
-
-        function bnOrderSideBadge(side) {
-            if (!side) return '—';
-            const s = String(side).toUpperCase();
-            const cls = s === 'BUY' ? 'bn-badge-long' : 'bn-badge-short';
-            const label = s === 'BUY' ? '买入' : s === 'SELL' ? '卖出' : s;
-            return '<span class="bn-badge ' + cls + '">' + escHtml(label) + '</span>';
-        }
-
-        const BN_TAB_META = [
-            ['positions', '仓位'],
-            ['orders', '当前委托'],
-            ['trades', '历史成交'],
-            ['pos_history', '仓位历史记录'],
-        ];
-        let _bnCounts = { positions: 0, orders: 0, trades: 0, pos_history: 0 };
-
-        function bnTabBtnClass(active) {
-            const base =
-                'shrink-0 px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold tracking-wide rounded-t-md border-b-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30';
-            return active
-                ? base + ' border-[color-mix(in_srgb,var(--gold)_55%,var(--accent))] text-text-primary bg-gradient-to-b from-[var(--gold-soft)] to-transparent'
-                : base + ' border-transparent text-text-muted hover:text-text-secondary hover:bg-surface-light/30';
-        }
-
-        function bnPreferredTabKey() {
-            try {
-                const k = localStorage.getItem('bnLaneTabKey');
-                if (k && BN_TAB_META.some(([id]) => id === k)) return k;
-            } catch (e) { /* ignore */ }
-            return 'positions';
-        }
-
-        function renderBnTabBar() {
-            const bar = document.getElementById('bn-tab-bar');
-            if (!bar) return;
-            const active = bnPreferredTabKey();
-            bar.innerHTML = BN_TAB_META.map(([key, label]) => {
-                const count = _bnCounts[key];
-                const suffix = count != null && Number.isFinite(count) ? ' (' + count + ')' : '';
-                const on = key === active;
-                return '<button type="button" role="tab" id="bn-tab-' + key + '" data-bn-tab-key="' + key + '"'
-                    + ' class="' + bnTabBtnClass(on) + '"'
-                    + ' aria-selected="' + (on ? 'true' : 'false') + '" aria-controls="bn-panel-' + key + '" tabindex="' + (on ? '0' : '-1') + '">'
-                    + escHtml(label + suffix) + '</button>';
-            }).join('');
-        }
-
-        function switchBnTab(key) {
-            if (!BN_TAB_META.some(([id]) => id === key)) return;
-            BN_TAB_META.forEach(([id]) => {
-                const tab = document.getElementById('bn-tab-' + id);
-                const panel = document.getElementById('bn-panel-' + id);
-                const on = id === key;
-                if (tab) {
-                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
-                    tab.tabIndex = on ? 0 : -1;
-                    tab.className = bnTabBtnClass(on);
-                }
-                if (panel) {
-                    if (on) panel.removeAttribute('hidden');
-                    else panel.setAttribute('hidden', '');
-                }
-            });
-            const acctBar = document.getElementById('bn-usdt-account-bar');
-            if (acctBar) {
-                if (key === 'positions') acctBar.classList.remove('hidden');
-                else acctBar.classList.add('hidden');
-            }
-            try {
-                localStorage.setItem('bnLaneTabKey', key);
-            } catch (e) { /* ignore */ }
-        }
-
-        function initBnTabDelegationOnce() {
-            const bar = document.getElementById('bn-tab-bar');
-            if (!bar || bar.dataset.bnTabDeleg === '1') return;
-            bar.dataset.bnTabDeleg = '1';
-            bar.addEventListener('click', (ev) => {
-                const btn = ev.target && ev.target.closest && ev.target.closest('button[data-bn-tab-key]');
-                if (!btn) return;
-                const k = btn.getAttribute('data-bn-tab-key');
-                if (k) switchBnTab(k);
-            });
-        }
-
-        function updateBnLaneStatus() {
-            const el = document.getElementById('bn-lane-status');
-            if (!el) return;
-            const parts = [];
-            if (_bnCounts.positions != null) parts.push('仓位 ' + _bnCounts.positions);
-            if (_bnCounts.orders != null) parts.push('委托 ' + _bnCounts.orders);
-            el.textContent = parts.length ? parts.join(' · ') : '—';
-        }
-
-        function renderBnOpenPositions(rows) {
-            const body = document.getElementById('bn-open-positions-body');
-            if (!body) return;
-            _bnCounts.positions = (rows || []).length;
-            if (!rows || !rows.length) {
-                body.innerHTML = '<div class="state-muted text-xs py-4">暂无 U 本位持仓</div>';
-                return;
-            }
-            const trs = rows.map(function(p) {
-                const upnl = Number(p.unrealized_pnl_usdt);
-                const notional = bnPositionNotional(p);
-                return '<tr>'
-                    + '<td class="font-medium text-text-primary">' + escHtml(p.symbol || '—') + '</td>'
-                    + '<td>' + bnSideBadge(p.side) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(p.entry_price, 4) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(p.mark_price, 4) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(p.quantity, 4) + '</td>'
-                    + '<td class="font-mono">' + (notional != null ? bnFmtUsd(notional, 2) : '—') + '</td>'
-                    + '<td class="font-mono" style="' + bnPnlStyle(upnl) + '">' + (Number.isFinite(upnl) ? ((upnl >= 0 ? '+' : '') + upnl.toFixed(2)) : '—') + '</td>'
-                    + '<td class="font-mono">' + (p.leverage != null ? escHtml(String(p.leverage)) + 'x' : '—') + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(p.liquidation_price, 4) + '</td>'
-                    + '<td class="text-text-muted text-xs">' + bnMarginTypeLabel(p.margin_type) + '</td>'
-                    + '</tr>';
-            }).join('');
-            body.innerHTML = '<table class="data-table"><thead><tr>'
-                + '<th>合约</th><th>方向</th><th>开仓价</th><th>标记价</th><th>数量</th><th>名义</th><th>浮盈</th><th>杠杆</th><th>强平价</th><th>保证金</th>'
-                + '</tr></thead><tbody>' + trs + '</tbody></table>';
-        }
-
-        function renderBnTradeHistory(rows, days) {
-            const body = document.getElementById('bn-trade-history-body');
-            if (!body) return;
-            const n = (rows || []).length;
-            _bnCounts.trades = n;
-            if (!rows || !rows.length) {
-                body.innerHTML = '<div class="state-muted text-xs py-4">近 ' + escHtml(String(days || 7)) + ' 天暂无成交记录</div>';
-                return;
-            }
-            const trs = rows.map(function(t) {
-                const base = bnBaseAsset(t.symbol);
-                return '<tr>'
-                    + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(t.order_id || t.id || '—')) + '</td>'
-                    + '<td class="text-text-secondary text-xs">' + bnFmtTimeMs(t.time_ms) + '</td>'
-                    + '<td class="font-medium text-text-primary">' + escHtml(t.symbol || '—') + ' <span class="text-text-muted text-[10px]">永续</span></td>'
-                    + '<td>' + bnTradeSideLabel(t.side_label) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(t.price, 4) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(t.qty, 4) + (base ? ' ' + escHtml(base) : '') + '</td>'
-                    + '<td class="font-mono text-text-muted">' + bnFmtUsd(t.commission_usdt, 4) + '</td>'
-                    + '<td class="text-text-muted text-xs">' + escHtml(t.role || '—') + '</td>'
-                    + '<td class="font-mono">' + bnPnlHtml(t.realized_pnl_usdt) + '</td>'
-                    + '</tr>';
-            }).join('');
-            body.innerHTML = '<table class="data-table"><thead><tr>'
-                + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>成交均价</th><th>数量</th><th>手续费</th><th>角色</th><th>已实现盈亏</th>'
-                + '</tr></thead><tbody>' + trs + '</tbody></table>';
-        }
-
-        function renderBnOpenOrders(rows) {
-            const body = document.getElementById('bn-open-orders-body');
-            if (!body) return;
-            _bnCounts.orders = (rows || []).length;
-            if (!rows || !rows.length) {
-                body.innerHTML = '<div class="state-muted text-xs py-4">暂无当前委托</div>';
-                return;
-            }
-            const trs = rows.map(function(o) {
-                const kind = o.kind === 'algo' ? '条件' : '限价';
-                return '<tr>'
-                    + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(o.order_id || '—')) + '</td>'
-                    + '<td class="text-text-secondary text-xs">' + bnFmtTimeMs(o.time_ms) + '</td>'
-                    + '<td class="font-medium text-text-primary">' + escHtml(o.symbol || '—') + '</td>'
-                    + '<td>' + bnOrderSideBadge(o.side) + '</td>'
-                    + '<td class="text-text-muted text-xs">' + escHtml(o.order_type || '—') + ' <span class="text-[10px]">(' + escHtml(kind) + ')</span></td>'
-                    + '<td class="font-mono">' + bnFmtNum(o.price, 4) + '</td>'
-                    + '<td class="font-mono">' + bnFmtNum(o.qty, 4) + '</td>'
-                    + '<td class="font-mono text-text-muted">' + bnFmtNum(o.filled_qty, 4) + '</td>'
-                    + '<td class="text-text-secondary text-xs">' + escHtml(o.status_label || o.status || '—') + '</td>'
-                    + '<td class="text-text-muted text-xs">' + (o.reduce_only ? '是' : '—') + '</td>'
-                    + '</tr>';
-            }).join('');
-            body.innerHTML = '<table class="data-table"><thead><tr>'
-                + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>类型</th><th>价格</th><th>数量</th><th>已成交</th><th>状态</th><th>只减仓</th>'
-                + '</tr></thead><tbody>' + trs + '</tbody></table>';
-        }
-
-        function renderBnPositionHistory(rows, days) {
-            const body = document.getElementById('bn-pos-history-body');
-            if (!body) return;
-            _bnCounts.pos_history = (rows || []).length;
-            if (!rows || !rows.length) {
-                body.innerHTML = '<div class="state-muted text-xs py-4">近 ' + escHtml(String(days || 7)) + ' 天暂无已实现盈亏记录</div>';
-                return;
-            }
-            const trs = rows.map(function(r) {
-                return '<tr>'
-                    + '<td class="text-text-secondary text-xs">' + bnFmtTimeMs(r.time_ms) + '</td>'
-                    + '<td class="font-medium text-text-primary">' + escHtml(r.symbol || '—') + '</td>'
-                    + '<td class="font-mono">' + bnPnlHtml(r.pnl_usdt) + '</td>'
-                    + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(r.trade_id || '—') + '</td>'
-                    + '<td class="text-text-muted text-xs max-w-[12rem] truncate" title="' + escHtml(r.info || '') + '">' + escHtml(r.info || '—') + '</td>'
-                    + '</tr>';
-            }).join('');
-            body.innerHTML = '<p class="text-text-muted text-[10px] mb-2 px-0.5">近 ' + escHtml(String(days || 7)) + ' 天 · 来源币安 REALIZED_PNL 流水</p>'
-                + '<table class="data-table"><thead><tr>'
-                + '<th>时间</th><th>合约</th><th>已实现盈亏</th><th>成交ID</th><th>备注</th>'
-                + '</tr></thead><tbody>' + trs + '</tbody></table>';
-        }
-
-        function initBinanceLaneOnce() {
-            if (initBinanceLaneOnce._done) return;
-            initBinanceLaneOnce._done = true;
-            renderBnTabBar();
-            initBnTabDelegationOnce();
-            switchBnTab(bnPreferredTabKey());
-            document.getElementById('bn-refresh')?.addEventListener('click', () => void hydrateBinanceLane());
-        }
-
-        async function hydrateBinanceLane() {
-            const refreshBtn = document.getElementById('bn-refresh');
-            if (!document.getElementById('bn-tab-panels')) return;
-            if (refreshBtn) {
-                refreshBtn.disabled = true;
-                refreshBtn.textContent = '刷新中…';
-            }
-            try {
-                const [posRes, acctRes, ordRes, trRes, histRes] = await Promise.allSettled([
-                    API.binancePositions(),
-                    API.binanceAccountSummary(),
-                    API.binanceOpenOrders(),
-                    API.binanceTrades(7),
-                    API.binancePositionHistory(7),
-                ]);
-                const rows = posRes.status === 'fulfilled' ? (posRes.value || []) : [];
-                const acct = acctRes.status === 'fulfilled' ? acctRes.value : null;
-                if (posRes.status === 'fulfilled') {
-                    renderBnAccountBar(acct, rows);
-                    renderBnOpenPositions(rows);
-                } else {
-                    console.error('binance positions:', posRes.reason);
-                    renderBnAccountBar(null, []);
-                    const posBody = document.getElementById('bn-open-positions-body');
-                    if (posBody) {
-                        posBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(posRes.reason?.message || '加载持仓失败') + '</div>';
-                    }
-                    _bnCounts.positions = 0;
-                }
-                if (ordRes.status === 'fulfilled') {
-                    renderBnOpenOrders(ordRes.value.orders || []);
-                } else {
-                    console.error('binance orders:', ordRes.reason);
-                    const ordBody = document.getElementById('bn-open-orders-body');
-                    if (ordBody) {
-                        ordBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(ordRes.reason?.message || '加载委托失败') + '</div>';
-                    }
-                    _bnCounts.orders = 0;
-                }
-                if (trRes.status === 'fulfilled') {
-                    const payload = trRes.value || {};
-                    renderBnTradeHistory(payload.trades || [], payload.days || 7);
-                } else {
-                    console.error('binance trades:', trRes.reason);
-                    const trBody = document.getElementById('bn-trade-history-body');
-                    if (trBody) {
-                        trBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(trRes.reason?.message || '加载成交失败') + '</div>';
-                    }
-                    _bnCounts.trades = 0;
-                }
-                if (histRes.status === 'fulfilled') {
-                    const payload = histRes.value || {};
-                    renderBnPositionHistory(payload.records || [], payload.days || 7);
-                } else {
-                    console.error('binance position history:', histRes.reason);
-                    const histBody = document.getElementById('bn-pos-history-body');
-                    if (histBody) {
-                        histBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(histRes.reason?.message || '加载仓位历史失败') + '</div>';
-                    }
-                    _bnCounts.pos_history = 0;
-                }
-                renderBnTabBar();
-                switchBnTab(bnPreferredTabKey());
-                updateBnLaneStatus();
-            } finally {
-                if (refreshBtn) {
-                    refreshBtn.disabled = false;
-                    refreshBtn.textContent = '刷新';
-                }
-            }
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
@@ -1754,7 +1294,6 @@
             [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
-                pick('binance-lane-section', '币安实盘'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
             ].forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
@@ -1849,14 +1388,6 @@
             initWorthHistoryTabDelegationOnce();
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
-            initBinanceLaneOnce();
-            void hydrateBinanceLane();
-            setInterval(() => {
-                if (document.visibilityState === 'visible') void hydrateBinanceLane();
-            }, 30000);
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') void hydrateBinanceLane();
-            });
         }
 
         document.addEventListener('DOMContentLoaded', init);
