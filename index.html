@@ -159,6 +159,30 @@
             border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
             background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
         }
+        #strategy-signal-tab-bar button {
+            font-size: 0.6875rem;
+            letter-spacing: 0.03em;
+        }
+        #strategy-signal-tab-bar button[aria-selected="true"] {
+            color: var(--gold);
+            border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
+            background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
+        }
+        .sig-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.1rem 0.45rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .sig-badge-long  { background: color-mix(in srgb, var(--neon-green) 12%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 25%, transparent); }
+        .sig-badge-short { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
+        .sig-badge-open  { background: color-mix(in srgb, var(--neon-green) 15%, transparent); color: var(--neon-green); border: 1px solid color-mix(in srgb, var(--neon-green) 28%, transparent); }
+        .sig-badge-err   { background: color-mix(in srgb, var(--neon-red) 12%, transparent); color: var(--neon-red); border: 1px solid color-mix(in srgb, var(--neon-red) 25%, transparent); }
+        .sig-badge-warn  { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 25%, transparent); }
+        .signal-lane-scroll { max-height: 24rem; overflow: auto; }
         table tbody tr:hover {
             background-color: var(--hover-bg);
         }
@@ -215,15 +239,12 @@
                     <div id="connection-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18">
                         <span class="status-dot"></span><span>API 连接中…</span>
                     </div>
-                    <div id="protocol-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18 hidden" aria-hidden="true">
-                        <span class="status-dot"></span><span>Protocol 连接中…</span>
-                    </div>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="10" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="11" data-theme="zen-premium">
         <!-- 首屏：值得关注 -->
         <section class="mb-7" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -247,6 +268,30 @@
                 </div>
                 <div id="oi-radar-body" class="panel-body overflow-x-auto pt-0">
                 <div class="state-muted animate-pulse">加载中…</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mb-7" aria-label="策略信号" id="strategy-signals-section">
+            <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
+                <div class="panel-head border-b border-border/80">
+                    <div>
+                        <div class="panel-kicker">Strategy</div>
+                        <h2 class="panel-title">策略信号</h2>
+                    </div>
+                    <div class="panel-toolbar">
+                        <span id="strategy-signals-ts" class="panel-ts">—</span>
+                        <button type="button" id="strategy-signals-refresh" class="btn-ghost">刷新</button>
+                    </div>
+                </div>
+                <div id="strategy-signal-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="策略信号来源"></div>
+                <div id="strategy-signal-panels" class="min-w-0">
+                    <div id="strategy-signal-panel-orb" role="tabpanel" class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
+                        <div id="strategy-signals-orb-body" class="state-muted animate-pulse py-4 px-1">加载 Trading ORB 信号…</div>
+                    </div>
+                    <div id="strategy-signal-panel-ict" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
+                        <div id="strategy-signals-ict-body" class="state-muted animate-pulse py-4 px-1">加载 ICT 2022 信号…</div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -290,6 +335,7 @@
                 if ((el.textContent || '').trim() === '量化中心') el.remove();
             });
             document.getElementById('binance-lane-section')?.remove();
+            document.getElementById('protocol-status')?.remove();
             try {
                 const u = new URL(window.location.href);
                 if (u.searchParams.get('view') === 'qd') {
@@ -309,6 +355,7 @@
             const blocks = [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
+                pick('strategy-signals-section', '策略信号'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
             ];
             blocks.forEach((el) => {
@@ -369,10 +416,8 @@
     </div>
 
     <script src="api-base.js"></script>
-    <script src="binance-api-base.js"></script>
     <script>
         const API_BASE = resolveApiBase();
-        const PROTOCOL_BASE = resolveProtocolApiBase();
 
         /** 避免 health / 长任务占满单 worker 时页面永远「连接中」 */
         async function fetchWithTimeout(url, options, ms) {
@@ -502,6 +547,20 @@
                     method: 'POST',
                     headers: maintenanceHeaders(),
                 });
+                const text = await res.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(text || res.statusText);
+                }
+                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
+                return data;
+            },
+            async strategySignals(lane, limit) {
+                const l = encodeURIComponent(lane || '');
+                const n = limit != null ? limit : 100;
+                const res = await fetchWithTimeout(`${API_BASE}/api/strategy/signals?lane=${l}&limit=${n}`, {}, 12000);
                 const text = await res.text();
                 let data;
                 try {
@@ -891,6 +950,233 @@
         function fmtZctPx(v, decimals) {
             if (v == null || v === '' || Number.isNaN(Number(v))) return '—';
             return Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
+        }
+
+        const STRATEGY_SIGNAL_TAB_META = [
+            ['orb', 'Trading ORB', 'trading_orb'],
+            ['ict', 'ICT 2022', 'ict_2022'],
+        ];
+        let _strategySignalCounts = { orb: 0, ict: 0 };
+        let _strategySignalsByTab = { orb: [], ict: [] };
+
+        function strategySignalTabBtnClass(active) {
+            const base =
+                'shrink-0 px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold tracking-wide rounded-t-md border-b-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30';
+            return active
+                ? base + ' border-[color-mix(in_srgb,var(--gold)_55%,var(--accent))] text-text-primary bg-gradient-to-b from-[var(--gold-soft)] to-transparent'
+                : base + ' border-transparent text-text-muted hover:text-text-secondary hover:bg-surface-light/30';
+        }
+
+        function strategySignalPreferredTabKey() {
+            try {
+                const k = localStorage.getItem('strategySignalTabKey');
+                if (k && STRATEGY_SIGNAL_TAB_META.some(([id]) => id === k)) return k;
+            } catch (e) { /* ignore */ }
+            return 'orb';
+        }
+
+        function fmtSignalTime(iso) {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }).replace(/\//g, '-');
+            } catch (e) {
+                return String(iso);
+            }
+        }
+
+        function fmtSignalNum(v, decimals) {
+            if (v == null || !Number.isFinite(Number(v))) return '—';
+            return Number(v).toFixed(decimals != null ? decimals : 4);
+        }
+
+        function signalSideBadge(side) {
+            if (!side) return '—';
+            const s = String(side).toUpperCase();
+            const cls = s === 'LONG' ? 'sig-badge-long' : 'sig-badge-short';
+            return '<span class="sig-badge ' + cls + '">' + escHtml(s) + '</span>';
+        }
+
+        function signalActionLabel(action) {
+            const a = String(action || 'open').toLowerCase();
+            if (a === 'close') return '平仓';
+            if (a === 'rolling') return '滚仓';
+            return '开仓';
+        }
+
+        function signalStatusBadge(status, action) {
+            const st = String(status || '').toLowerCase();
+            const act = String(action || 'open').toLowerCase();
+            if (st === 'filled') {
+                return '<span class="sig-badge sig-badge-open">已成交</span>';
+            }
+            if (st === 'shadow') {
+                return '<span class="sig-badge sig-badge-warn">纸面/信号</span>';
+            }
+            if (st === 'emitted') {
+                return '<span class="sig-badge sig-badge-warn">已发出</span>';
+            }
+            if (st === 'traded' && act === 'close') {
+                return '<span class="sig-badge sig-badge-warn">已平仓</span>';
+            }
+            if (st === 'traded') {
+                return '<span class="sig-badge sig-badge-open">已执行</span>';
+            }
+            if (st === 'received' || st === 'submitted') {
+                return '<span class="sig-badge sig-badge-warn">已收到</span>';
+            }
+            if (st === 'error' || st.indexOf('error') >= 0) {
+                return '<span class="sig-badge sig-badge-err">错误</span>';
+            }
+            if (st.indexOf('skipped') === 0 || st === 'duplicate') {
+                return '<span class="sig-badge sig-badge-warn">已跳过</span>';
+            }
+            return '<span class="sig-badge sig-badge-warn">' + escHtml(status || '—') + '</span>';
+        }
+
+        function signalSkipReasonLabel(reason) {
+            if (!reason) return '—';
+            if (reason === 'already_flat') return '交易所已平仓';
+            return String(reason);
+        }
+
+        function renderStrategySignalTabBar() {
+            const bar = document.getElementById('strategy-signal-tab-bar');
+            if (!bar) return;
+            const active = strategySignalPreferredTabKey();
+            bar.innerHTML = STRATEGY_SIGNAL_TAB_META.map(([key, label]) => {
+                const count = _strategySignalCounts[key];
+                const suffix = count != null && Number.isFinite(count) ? ' (' + count + ')' : '';
+                const on = key === active;
+                return '<button type="button" role="tab" id="strategy-signal-tab-' + key + '" data-strategy-signal-tab="' + key + '"'
+                    + ' class="' + strategySignalTabBtnClass(on) + '"'
+                    + ' aria-selected="' + (on ? 'true' : 'false') + '" aria-controls="strategy-signal-panel-' + key + '" tabindex="' + (on ? '0' : '-1') + '">'
+                    + escHtml(label + suffix) + '</button>';
+            }).join('');
+        }
+
+        function switchStrategySignalTab(key) {
+            if (!STRATEGY_SIGNAL_TAB_META.some(([id]) => id === key)) return;
+            STRATEGY_SIGNAL_TAB_META.forEach(([id]) => {
+                const tab = document.getElementById('strategy-signal-tab-' + id);
+                const panel = document.getElementById('strategy-signal-panel-' + id);
+                const on = id === key;
+                if (tab) {
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                    tab.className = strategySignalTabBtnClass(on);
+                }
+                if (panel) {
+                    if (on) panel.removeAttribute('hidden');
+                    else panel.setAttribute('hidden', '');
+                }
+            });
+            try {
+                localStorage.setItem('strategySignalTabKey', key);
+            } catch (e) { /* ignore */ }
+        }
+
+        function initStrategySignalTabDelegationOnce() {
+            const bar = document.getElementById('strategy-signal-tab-bar');
+            if (!bar || bar.dataset.strategySignalTabDeleg === '1') return;
+            bar.dataset.strategySignalTabDeleg = '1';
+            bar.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('button[data-strategy-signal-tab]');
+                if (!btn) return;
+                const k = btn.getAttribute('data-strategy-signal-tab');
+                if (k) switchStrategySignalTab(k);
+            });
+        }
+
+        function renderStrategySignalPanel(key, label) {
+            const body = document.getElementById('strategy-signals-' + key + '-body');
+            if (!body) return;
+            const rows = _strategySignalsByTab[key] || [];
+            _strategySignalCounts[key] = rows.length;
+            if (!rows.length) {
+                body.innerHTML = '<div class="state-muted text-xs py-4">暂无 ' + escHtml(label) + ' 信号</div>';
+                return;
+            }
+            const trs = rows.map((s) => {
+                return '<tr>'
+                    + '<td class="text-text-secondary text-xs">' + escHtml(signalActionLabel(s.action)) + '</td>'
+                    + '<td class="font-medium text-text-primary">' + escHtml(s.symbol || '—') + '</td>'
+                    + '<td>' + signalSideBadge(s.side) + '</td>'
+                    + '<td class="font-mono">' + fmtSignalNum(s.entry_price, 4) + '</td>'
+                    + '<td class="font-mono text-neon-red">' + fmtSignalNum(s.sl_price, 4) + '</td>'
+                    + '<td class="font-mono text-neon-green">' + fmtSignalNum(s.tp_price, 4) + '</td>'
+                    + '<td>' + signalStatusBadge(s.status, s.action) + '</td>'
+                    + '<td class="text-text-muted text-xs max-w-[10rem] truncate" title="' + escHtml(signalSkipReasonLabel(s.skip_reason) || '') + '">' + escHtml(signalSkipReasonLabel(s.skip_reason)) + '</td>'
+                    + '<td class="text-text-muted text-xs">' + fmtSignalTime(s.received_at) + '</td>'
+                    + '</tr>';
+            }).join('');
+            body.innerHTML = '<table class="data-table min-w-[720px]"><thead><tr>'
+                + '<th>动作</th><th>标的</th><th>方向</th><th>入场价</th><th>止损</th><th>止盈</th><th>状态</th><th>备注</th><th>收到时间</th>'
+                + '</tr></thead><tbody>' + trs + '</tbody></table>';
+        }
+
+        function renderStrategySignals() {
+            STRATEGY_SIGNAL_TAB_META.forEach(([key, label]) => {
+                renderStrategySignalPanel(key, label);
+            });
+            renderStrategySignalTabBar();
+            switchStrategySignalTab(strategySignalPreferredTabKey());
+        }
+
+        function initStrategySignalsOnce() {
+            if (initStrategySignalsOnce._done) return;
+            initStrategySignalsOnce._done = true;
+            renderStrategySignalTabBar();
+            initStrategySignalTabDelegationOnce();
+            switchStrategySignalTab(strategySignalPreferredTabKey());
+            document.getElementById('strategy-signals-refresh')?.addEventListener('click', () => void hydrateStrategySignals());
+        }
+
+        async function hydrateStrategySignals() {
+            if (!document.getElementById('strategy-signals-section')) return;
+            const refreshBtn = document.getElementById('strategy-signals-refresh');
+            const tsEl = document.getElementById('strategy-signals-ts');
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.textContent = '刷新中…';
+            }
+            try {
+                const results = await Promise.allSettled(
+                    STRATEGY_SIGNAL_TAB_META.map(([, , lane]) => API.strategySignals(lane, 100)),
+                );
+                let total = 0;
+                STRATEGY_SIGNAL_TAB_META.forEach(([key], i) => {
+                    const res = results[i];
+                    if (res.status === 'fulfilled') {
+                        _strategySignalsByTab[key] = res.value.signals || [];
+                        total += _strategySignalsByTab[key].length;
+                    } else {
+                        console.error('strategy signals ' + key + ':', res.reason);
+                        _strategySignalsByTab[key] = [];
+                    }
+                });
+                renderStrategySignals();
+                if (tsEl) {
+                    tsEl.textContent = total + ' 条';
+                }
+            } catch (e) {
+                console.error('strategy signals:', e);
+                _strategySignalsByTab = { orb: [], ict: [] };
+                _strategySignalCounts = { orb: 0, ict: 0 };
+                const msg = escHtml(e && e.message ? String(e.message) : '加载失败');
+                STRATEGY_SIGNAL_TAB_META.forEach(([key]) => {
+                    const body = document.getElementById('strategy-signals-' + key + '-body');
+                    if (body) {
+                        body.innerHTML = '<div class="text-neon-red text-xs py-4">信号加载失败：' + msg + '</div>';
+                    }
+                });
+                if (tsEl) tsEl.textContent = '—';
+                renderStrategySignalTabBar();
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.textContent = '刷新';
+                }
+            }
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
@@ -1294,6 +1580,7 @@
             [
                 main.querySelector('section[aria-label="优先信号"]'),
                 pick('oi-lane-section', '收筹池 OI 监控'),
+                pick('strategy-signals-section', '策略信号'),
                 pick('worth-history-section', '值得关注与重点关注归档'),
             ].forEach((el) => {
                 if (el && el.parentNode === main) main.appendChild(el);
@@ -1329,46 +1616,16 @@
             }
         }
 
-        async function protocolHealth() {
-            const res = await fetchWithTimeout(`${PROTOCOL_BASE}/api/binance/health`, {}, 8000);
-            if (!res.ok) throw new Error(await res.text());
-            return res.json();
-        }
-
         async function checkConnection() {
             const conn = document.getElementById('connection-status');
-            const protoEl = document.getElementById('protocol-status');
-            const protoLive = protoEl && !protoEl.classList.contains('hidden');
-            if (!conn && !protoLive) return;
+            if (!conn) return;
 
-            const [apiRes, protoRes] = await Promise.allSettled([
-                API.health(),
-                protoLive ? protocolHealth() : Promise.reject(new Error('hidden')),
-            ]);
-
-            if (conn) {
-                if (apiRes.status === 'fulfilled') {
-                    setStatusPill(conn, 'ok', 'API 已连接');
-                } else {
-                    const e = apiRes.reason;
-                    const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
-                    setStatusPill(conn, 'err', 'API 连接失败' + escHtml(detail));
-                }
-            }
-
-            if (protoEl && protoLive) {
-                if (protoRes.status === 'fulfilled') {
-                    const d = protoRes.value;
-                    if (d && d.status === 'ok') {
-                        setStatusPill(protoEl, 'ok', 'Protocol 已连接');
-                    } else {
-                        setStatusPill(protoEl, 'warn', 'Protocol 降级');
-                    }
-                } else {
-                    const e = protoRes.reason;
-                    const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
-                    setStatusPill(protoEl, 'err', 'Protocol 连接失败' + escHtml(detail));
-                }
+            try {
+                await API.health();
+                setStatusPill(conn, 'ok', 'API 已连接');
+            } catch (e) {
+                const detail = (e && e.name === 'AbortError') ? '（超时）' : '';
+                setStatusPill(conn, 'err', 'API 连接失败' + escHtml(detail));
             }
         }
 
@@ -1388,6 +1645,14 @@
             initWorthHistoryTabDelegationOnce();
             void hydrateWorthHighlightBoards({});
             loadAccumulationOiRadar();
+            initStrategySignalsOnce();
+            void hydrateStrategySignals();
+            setInterval(() => {
+                if (document.visibilityState === 'visible') void hydrateStrategySignals();
+            }, 30000);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') void hydrateStrategySignals();
+            });
         }
 
         document.addEventListener('DOMContentLoaded', init);
