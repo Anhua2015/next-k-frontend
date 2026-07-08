@@ -228,10 +228,6 @@
                             <div class="brand-subtitle hidden sm:block">Quant Terminal</div>
                         </div>
                     </div>
-                    <nav class="flex items-center gap-1.5 shrink-0" aria-label="主导航">
-                        <a href="index.html" class="nav-pill nav-pill-active" aria-current="page">策略看板</a>
-                        <a href="binance.html" class="nav-pill">实盘看板</a>
-                    </nav>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="header-et-clock" class="header-clock hidden lg:inline" title="美东时间">--:-- ET</span>
@@ -244,7 +240,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="11" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="12" data-theme="zen-premium">
         <!-- 首屏：值得关注 -->
         <section class="mb-7" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -276,7 +272,7 @@
             <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
                 <div class="panel-head border-b border-border/80">
                     <div>
-                        <div class="panel-kicker">Strategy</div>
+                        <div class="panel-kicker">Live</div>
                         <h2 class="panel-title">策略信号</h2>
                     </div>
                     <div class="panel-toolbar">
@@ -287,10 +283,10 @@
                 <div id="strategy-signal-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="策略信号来源"></div>
                 <div id="strategy-signal-panels" class="min-w-0">
                     <div id="strategy-signal-panel-orb" role="tabpanel" class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
-                        <div id="strategy-signals-orb-body" class="state-muted animate-pulse py-4 px-1">加载 Trading ORB 信号…</div>
+                        <div id="strategy-signals-orb-body" class="state-muted animate-pulse py-4 px-1">加载策略1信号…</div>
                     </div>
                     <div id="strategy-signal-panel-ict" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto signal-lane-scroll">
-                        <div id="strategy-signals-ict-body" class="state-muted animate-pulse py-4 px-1">加载 ICT 2022 信号…</div>
+                        <div id="strategy-signals-ict-body" class="state-muted animate-pulse py-4 px-1">加载策略2信号…</div>
                     </div>
                 </div>
             </div>
@@ -332,8 +328,10 @@
             document.querySelectorAll('a[href*="quantdinger"]').forEach((el) => el.remove());
             document.querySelectorAll('script[src*="qd-"]').forEach((el) => el.remove());
             document.querySelectorAll('button.nav-pill, a.nav-pill').forEach((el) => {
-                if ((el.textContent || '').trim() === '量化中心') el.remove();
+                const t = (el.textContent || '').trim();
+                if (t === '量化中心' || t === '实盘看板') el.remove();
             });
+            document.querySelectorAll('a.nav-pill[href*="binance.html"]').forEach((el) => el.remove());
             document.getElementById('binance-lane-section')?.remove();
             document.getElementById('protocol-status')?.remove();
             try {
@@ -953,8 +951,8 @@
         }
 
         const STRATEGY_SIGNAL_TAB_META = [
-            ['orb', 'Trading ORB', 'trading_orb'],
-            ['ict', 'ICT 2022', 'ict_2022'],
+            ['orb', '策略1', 'trading_orb'],
+            ['ict', '策略2', 'ict_2022'],
         ];
         let _strategySignalCounts = { orb: 0, ict: 0 };
         let _strategySignalsByTab = { orb: [], ict: [] };
