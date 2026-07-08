@@ -133,6 +133,81 @@
             color: var(--text-primary);
         }
         .hl-item:last-child { border-bottom: none; }
+        .spotlight-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+        .spot-card {
+            border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+            border-radius: var(--radius-md);
+            background: color-mix(in srgb, var(--surface-light) 38%, var(--surface));
+            padding: 0.65rem 0.75rem;
+            transition: border-color 0.18s ease, background-color 0.18s ease;
+        }
+        .spot-card:hover {
+            border-color: color-mix(in srgb, var(--gold) 28%, var(--border));
+            background: color-mix(in srgb, var(--surface-light) 52%, var(--surface));
+        }
+        .spot-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+        }
+        .spot-coin {
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+        }
+        .spot-coin:hover { color: var(--accent); }
+        .spot-badge {
+            flex-shrink: 0;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.12rem 0.45rem;
+            border-radius: 9999px;
+            border: 1px solid transparent;
+        }
+        .spot-badge-heat_accum { color: var(--neon-green); background: color-mix(in srgb, var(--neon-green) 10%, transparent); border-color: color-mix(in srgb, var(--neon-green) 22%, transparent); }
+        .spot-badge-patrick_core { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+        .spot-badge-hot_oi { color: var(--neon-blue); background: color-mix(in srgb, var(--neon-blue) 10%, transparent); border-color: color-mix(in srgb, var(--neon-blue) 22%, transparent); }
+        .spot-badge-chase_fire { color: var(--neon-red); background: color-mix(in srgb, var(--neon-red) 10%, transparent); border-color: color-mix(in srgb, var(--neon-red) 22%, transparent); }
+        .spot-badge-dual_list { color: var(--gold); background: var(--gold-soft); border-color: color-mix(in srgb, var(--gold) 35%, transparent); }
+        .spot-badge-ambush_dark { color: var(--neon-purple); background: color-mix(in srgb, var(--neon-purple) 10%, transparent); border-color: color-mix(in srgb, var(--neon-purple) 22%, transparent); }
+        .spot-badge-ambush_gem { color: var(--neon-blue); background: color-mix(in srgb, var(--neon-blue) 10%, transparent); border-color: color-mix(in srgb, var(--neon-blue) 22%, transparent); }
+        .spot-badge-default { color: var(--text-secondary); background: color-mix(in srgb, var(--surface-light) 60%, transparent); border-color: var(--border); }
+        .spot-reason {
+            font-size: 0.75rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin: 0 0 0.45rem;
+        }
+        .spot-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .spot-chip {
+            font-size: 0.625rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 0.1rem 0.4rem;
+            border-radius: 9999px;
+            color: var(--text-muted);
+            background: color-mix(in srgb, var(--surface-light) 70%, var(--surface));
+            border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
         .hl-item-mark {
             flex-shrink: 0;
             width: 0.35rem;
@@ -240,7 +315,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="14" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="15" data-theme="zen-premium">
         <!-- 首屏：精选推荐 -->
         <section class="mb-7" aria-label="精选推荐">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -1181,6 +1256,136 @@
             }
         }
 
+        const SPOTLIGHT_BADGE_ZH = {
+            heat_accum: '风口吸筹',
+            patrick_core: 'Patrick',
+            hot_oi: '风口持仓',
+            chase_fire: '空头挤压',
+            dual_list: '双榜共振',
+            ambush_dark: '静建',
+            ambush_gem: '小盘静默',
+        };
+        const SPOTLIGHT_CATEGORY_ORDER = [
+            'heat_accum', 'patrick_core', 'hot_oi', 'chase_fire', 'dual_list', 'ambush_dark', 'ambush_gem',
+        ];
+
+        function mcapShortUsd(v) {
+            const n = Number(v);
+            if (!Number.isFinite(n) || n <= 0) return '—';
+            if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+            if (n >= 1e6) return '$' + (n / 1e6).toFixed(0) + 'M';
+            if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+            return '$' + n.toFixed(0);
+        }
+
+        function buildSpotlightItem(category, coin, symbol, detail) {
+            const d = detail || {};
+            const badge = SPOTLIGHT_BADGE_ZH[category] || category;
+            const chips = [];
+            let reason = '';
+            if (category === 'heat_accum') {
+                const tags = Array.isArray(d.tags) ? d.tags : [];
+                const sw = Number(d.sw_days != null ? d.sw_days : d.sideways_days) || 0;
+                reason = '榜上有名且仍在吸筹池，持仓往往先于价格反应';
+                if (tags.length) chips.push(tags.join('·'));
+                if (sw) chips.push('吸筹' + sw + '日');
+                if (d.heat != null) chips.push('风口' + Number(d.heat).toFixed(0));
+            } else if (category === 'patrick_core') {
+                const sw = Number(d.sw_days) || 0;
+                const d6 = Number(d.d6h) || 0;
+                reason = '吸筹池标的出现持仓异动，偏中长期跟踪';
+                chips.push('吸筹' + sw + '日', '持仓' + (d6 >= 0 ? '+' : '') + d6.toFixed(0) + '%');
+            } else if (category === 'hot_oi') {
+                reason = '热搜与持仓同步走强，行情或在发酵途中';
+                chips.push('风口' + Number(d.heat || 0).toFixed(0), '持仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h || 0).toFixed(0) + '%');
+            } else if (category === 'chase_fire') {
+                reason = '资金费率快速下行，做空侧在集中堆仓';
+                chips.push('费率' + (Number(d.fr_pct) >= 0 ? '+' : '') + Number(d.fr_pct || 0).toFixed(3) + '%');
+                if (d.trend) chips.push(String(d.trend));
+                if (d.px_chg != null) chips.push('涨跌' + (Number(d.px_chg) >= 0 ? '+' : '') + Number(d.px_chg).toFixed(0) + '%');
+            } else if (category === 'dual_list') {
+                reason = '同时命中空头挤压榜与多维共振，信号叠加';
+                chips.push('共振' + Number(d.combined_total || 0).toFixed(0) + '分');
+                if (d.d6h != null) chips.push('持仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%');
+            } else if (category === 'ambush_dark') {
+                reason = '持仓在增、价格几乎不动，疑似低位接货';
+                chips.push('持仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h || 0).toFixed(0) + '%', '盘' + mcapShortUsd(d.est_mcap), '涨跌' + (Number(d.px_chg) >= 0 ? '+' : '') + Number(d.px_chg || 0).toFixed(1) + '%');
+            } else if (category === 'ambush_gem') {
+                reason = '小市值合约出现持仓堆积，适合耐心布局';
+                chips.push('盘' + mcapShortUsd(d.est_mcap), '持仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h || 0).toFixed(0) + '%');
+            } else {
+                reason = badge;
+            }
+            return {
+                category,
+                badge,
+                coin,
+                symbol,
+                reason,
+                chips: chips.slice(0, 4),
+                summary_line: coin + ' · ' + badge + ' · ' + reason,
+            };
+        }
+
+        function collectSpotlightItemsFromPayload(data) {
+            if (Array.isArray(data.spotlight_items) && data.spotlight_items.length) {
+                return data.spotlight_items;
+            }
+            const wl = data.worth_highlight_watchlist;
+            const cats = wl && wl.categories;
+            if (cats && typeof cats === 'object') {
+                const out = [];
+                SPOTLIGHT_CATEGORY_ORDER.forEach((cat) => {
+                    const sec = cats[cat];
+                    const items = sec && Array.isArray(sec.items) ? sec.items : [];
+                    items.forEach((it) => {
+                        out.push(buildSpotlightItem(
+                            cat,
+                            String(it.coin || ''),
+                            String(it.symbol || ''),
+                            it.detail || {},
+                        ));
+                    });
+                });
+                if (out.length) return out.slice(0, 14);
+            }
+            const legacy = Array.isArray(data.highlights) ? data.highlights : [];
+            return legacy.map((line) => {
+                const raw = String(line || '').trim();
+                const coin = (raw.match(/([A-Z0-9]{2,12})/) || [])[1] || '—';
+                return {
+                    category: 'legacy',
+                    badge: '信号',
+                    coin,
+                    symbol: coin.endsWith('USDT') ? coin : coin + 'USDT',
+                    reason: raw.replace(/^[\s\S]*?\s([A-Z0-9]{2,12})\s*/, '').trim() || raw,
+                    chips: [],
+                    summary_line: raw,
+                };
+            });
+        }
+
+        function renderSpotlightCards(items) {
+            if (!items || !items.length) {
+                return '<div class="state-muted py-2">暂无动态提醒</div>';
+            }
+            return '<div class="spotlight-grid">' + items.map((it) => {
+                const cat = String(it.category || 'default');
+                const badgeCls = 'spot-badge spot-badge-' + (SPOTLIGHT_BADGE_ZH[cat] ? cat : 'default');
+                const sym = it.symbol || it.coin;
+                const pair = perpSymToPairLabel(sym);
+                const coinBtn = pair
+                    ? '<button type="button" class="spot-coin oi-radar-pick" data-perp-pair="' + escHtml(pair) + '">' + escHtml(it.coin || '—') + '</button>'
+                    : '<span class="spot-coin">' + escHtml(it.coin || '—') + '</span>';
+                const chips = (it.chips || []).map((c) => '<span class="spot-chip">' + escHtml(c) + '</span>').join('');
+                return '<article class="spot-card spot-card--' + escHtml(cat) + '">'
+                    + '<div class="spot-card-head">' + coinBtn + '<span class="' + badgeCls + '">' + escHtml(it.badge || '信号') + '</span></div>'
+                    + '<p class="spot-reason">' + escHtml(it.reason || it.summary_line || '') + '</p>'
+                    + (chips ? '<div class="spot-chips">' + chips + '</div>' : '')
+                    + '</article>';
+            }).join('') + '</div>';
+        }
+
         function fillOiRadarFromPayload(data, body, tsEl) {
             if (!body) return;
             tsEl.textContent = data.generated_at_cst || '';
@@ -1220,9 +1425,8 @@
                 return oiRadarRowClickable(d.sym, line);
             }).join('') || '<div class="text-text-muted text-xs">暂无静默建仓合约</div>';
 
-            const highlights = (data.highlights || []).map(h =>
-                `<div class="hl-item"><span class="hl-item-mark" aria-hidden="true"></span><span>${escHtml(h)}</span></div>`
-            ).join('') || '<div class="state-muted py-2">暂无动态提醒</div>';
+            const spotlightItems = collectSpotlightItemsFromPayload(data);
+            const highlights = renderSpotlightCards(spotlightItems);
 
 
             const legend = `
