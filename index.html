@@ -958,6 +958,7 @@
         ];
         let _strategySignalCounts = { orb: 0, ict: 0 };
         let _strategySignalsByTab = { orb: [], ict: [] };
+        let _strategySignalErrors = { orb: null, ict: null };
 
         function strategySignalTabBtnClass(active) {
             const base =
@@ -1090,6 +1091,12 @@
         function renderStrategySignalPanel(key, label) {
             const body = document.getElementById('strategy-signals-' + key + '-body');
             if (!body) return;
+            const err = _strategySignalErrors[key];
+            if (err) {
+                _strategySignalCounts[key] = 0;
+                body.innerHTML = '<div class="text-neon-red text-xs py-4">信号加载失败：' + escHtml(err) + '</div>';
+                return;
+            }
             const rows = _strategySignalsByTab[key] || [];
             _strategySignalCounts[key] = rows.length;
             if (!rows.length) {
@@ -1147,10 +1154,13 @@
                 STRATEGY_SIGNAL_TAB_META.forEach(([key], i) => {
                     const res = results[i];
                     if (res.status === 'fulfilled') {
+                        _strategySignalErrors[key] = null;
                         _strategySignalsByTab[key] = res.value.signals || [];
                         total += _strategySignalsByTab[key].length;
                     } else {
-                        console.error('strategy signals ' + key + ':', res.reason);
+                        const reason = res.reason;
+                        console.error('strategy signals ' + key + ':', reason);
+                        _strategySignalErrors[key] = reason && reason.message ? String(reason.message) : '加载失败';
                         _strategySignalsByTab[key] = [];
                     }
                 });
@@ -1162,13 +1172,7 @@
                 console.error('strategy signals:', e);
                 _strategySignalsByTab = { orb: [], ict: [] };
                 _strategySignalCounts = { orb: 0, ict: 0 };
-                const msg = escHtml(e && e.message ? String(e.message) : '加载失败');
-                STRATEGY_SIGNAL_TAB_META.forEach(([key]) => {
-                    const body = document.getElementById('strategy-signals-' + key + '-body');
-                    if (body) {
-                        body.innerHTML = '<div class="text-neon-red text-xs py-4">信号加载失败：' + msg + '</div>';
-                    }
-                });
+                _strategySignalErrors = { orb: '加载失败', ict: '加载失败' };
                 if (tsEl) tsEl.textContent = '—';
                 renderStrategySignalTabBar();
             } finally {
