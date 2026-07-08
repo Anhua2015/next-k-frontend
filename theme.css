@@ -111,7 +111,7 @@ body > div:not(#toast-container) {
     z-index: 1;
 }
 
-h1, h2, h3, .hl-title, .panel-title, .orb-head-title {
+h1, h2, h3, .hl-title, .panel-title {
     font-family: "Noto Serif SC", Georgia, serif;
 }
 

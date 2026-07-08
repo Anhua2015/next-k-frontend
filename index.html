@@ -159,6 +159,15 @@
             border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
             background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
         }
+        #bn-tab-bar button[aria-selected="true"] {
+            color: var(--gold);
+            border-color: color-mix(in srgb, var(--gold) 55%, var(--accent));
+            background: linear-gradient(180deg, var(--gold-soft) 0%, color-mix(in srgb, var(--surface) 92%, transparent) 100%);
+        }
+        #bn-tab-bar button {
+            font-size: 0.6875rem;
+            letter-spacing: 0.03em;
+        }
         table tbody tr:hover {
             background-color: var(--hover-bg);
         }
@@ -184,188 +193,6 @@
         .toast-err { background: color-mix(in srgb, var(--neon-red) 15%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 30%, transparent); color: var(--neon-red); }
         @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ── ORB 看板 ── */
-        .orb-lane-shell {
-            background: linear-gradient(
-                165deg,
-                color-mix(in srgb, var(--gold) 4%, var(--surface)) 0%,
-                var(--surface) 38%,
-                color-mix(in srgb, var(--accent) 2%, var(--surface)) 100%
-            );
-            border: 1px solid color-mix(in srgb, var(--gold) 16%, var(--border));
-        }
-        .orb-lane-header {
-            background: linear-gradient(
-                90deg,
-                color-mix(in srgb, var(--gold) 6%, transparent) 0%,
-                transparent 52%
-            );
-        }
-        .orb-head-icon {
-            flex-shrink: 0;
-            width: 1.75rem;
-            height: 1.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent);
-            border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
-            border-radius: var(--radius-sm);
-            background: color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
-        }
-        .orb-head-icon svg {
-            width: 0.95rem;
-            height: 0.95rem;
-        }
-        .orb-head-kicker {
-            font-size: 0.58rem;
-            font-weight: 600;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            line-height: 1;
-        }
-        .orb-head-title {
-            margin-top: 0.2rem;
-            font-family: "Noto Serif SC", Georgia, serif;
-            font-size: 0.9375rem;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-        .orb-head-meta {
-            margin-top: 0.35rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.6875rem;
-            letter-spacing: 0.04em;
-            color: var(--text-muted);
-        }
-        .orb-head-tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.06rem 0.32rem;
-            font-size: 0.5625rem;
-            font-weight: 600;
-            letter-spacing: 0.12em;
-            border-radius: 2px;
-            border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-            color: color-mix(in srgb, var(--accent) 88%, var(--text-secondary));
-            background: color-mix(in srgb, var(--accent) 5%, transparent);
-        }
-        .orb-head-tag-warn {
-            border-color: color-mix(in srgb, var(--warn) 35%, transparent);
-            color: color-mix(in srgb, var(--warn) 92%, var(--text-secondary));
-            background: color-mix(in srgb, var(--warn) 8%, transparent);
-        }
-        .orb-head-tag-ok {
-            border-color: color-mix(in srgb, var(--neon-green) 35%, transparent);
-            color: color-mix(in srgb, var(--neon-green) 92%, var(--text-secondary));
-            background: color-mix(in srgb, var(--neon-green) 8%, transparent);
-        }
-        .orb-head-tag-err {
-            border-color: color-mix(in srgb, var(--neon-red) 35%, transparent);
-            color: color-mix(in srgb, var(--neon-red) 92%, var(--text-secondary));
-            background: color-mix(in srgb, var(--neon-red) 8%, transparent);
-        }
-        .orb-live-bundle-banner {
-            font-size: 0.6875rem;
-            line-height: 1.45;
-            letter-spacing: 0.02em;
-        }
-        .orb-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.25rem;
-            border-radius: var(--radius-md);
-            border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-            background: color-mix(in srgb, var(--surface-light) 55%, var(--surface));
-        }
-        .orb-stat-card {
-            position: relative;
-            overflow: hidden;
-            border-radius: var(--radius-md);
-            border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
-            background: linear-gradient(
-                180deg,
-                color-mix(in srgb, var(--surface-light) 45%, var(--surface)) 0%,
-                var(--surface) 100%
-            );
-            padding: 0.72rem 0.8rem;
-            transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
-        }
-        .orb-stat-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            border-radius: 3px 0 0 3px;
-            background: var(--orb-stat-accent, var(--accent));
-            opacity: 0.85;
-        }
-        .orb-stat-card:hover {
-            border-color: color-mix(in srgb, var(--orb-stat-accent, var(--gold)) 28%, var(--border));
-            box-shadow: 0 8px 24px -14px color-mix(in srgb, var(--shadow-color) 120%, transparent);
-            transform: translateY(-1px);
-        }
-        .orb-stat-value {
-            font-variant-numeric: tabular-nums;
-            letter-spacing: -0.02em;
-            font-size: 1.05rem;
-        }
-        .orb-bots-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-        .orb-bot-card {
-            border-radius: var(--radius-md);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-        .orb-bot-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px -16px color-mix(in srgb, var(--shadow-color) 140%, transparent);
-        }
-        .orb-alert-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.65rem;
-            border-radius: var(--radius-md);
-            padding: 0.65rem 0.85rem;
-        }
-        .orb-alert-icon {
-            flex-shrink: 0;
-            width: 1.65rem;
-            height: 1.65rem;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-        }
-        .orb-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 2rem 1rem;
-            margin-top: 0.75rem;
-            text-align: center;
-        }
-        .orb-empty-icon {
-            font-size: 1.25rem;
-            opacity: 0.45;
-        }
         .bn-badge {
             display: inline-flex;
             align-items: center;
@@ -418,7 +245,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="6" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="9" data-theme="zen-premium">
         <!-- 首屏：值得关注 -->
         <section class="mb-7" aria-label="优先信号">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -447,38 +274,33 @@
         </section>
 
         <section class="mb-7" aria-label="币安实盘" id="binance-lane-section">
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-5 items-start">
-                <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
-                    <div class="panel-head border-b border-border/80">
-                        <div>
-                            <div class="panel-kicker">Binance Futures</div>
-                            <h2 class="panel-title">当前仓位</h2>
-                        </div>
-                        <div class="panel-toolbar">
-                            <span id="bn-open-pos-count" class="panel-ts">—</span>
-                            <button type="button" id="bn-refresh" class="btn-ghost">刷新</button>
-                        </div>
+            <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
+                <div class="panel-head border-b border-border/80">
+                    <div>
+                        <div class="panel-kicker">Binance Futures</div>
+                        <h2 class="panel-title">U 本位永续</h2>
                     </div>
-                    <div id="bn-usdt-account-bar" class="px-4 py-3 border-b border-border/60 bg-surface-light/[0.2]">
-                        <div class="state-muted animate-pulse text-xs">加载 U 本位账户…</div>
-                    </div>
-                    <div id="bn-open-positions-body" class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div class="state-muted animate-pulse py-4">加载持仓…</div>
+                    <div class="panel-toolbar">
+                        <span id="bn-lane-status" class="panel-ts">—</span>
+                        <button type="button" id="bn-refresh" class="btn-ghost">刷新</button>
                     </div>
                 </div>
-                <div class="dash-card card-hover overflow-hidden min-w-0 flex flex-col">
-                    <div class="panel-head border-b border-border/80">
-                        <div>
-                            <div class="panel-kicker">Binance Futures</div>
-                            <h2 class="panel-title">历史成交</h2>
-                            <p class="text-text-muted text-[11px] mt-0.5">近 7 天 · U 本位永续</p>
-                        </div>
-                        <div class="panel-toolbar">
-                            <span id="bn-trade-history-count" class="panel-ts">—</span>
-                        </div>
+                <div id="bn-tab-bar" class="flex flex-nowrap items-end gap-0.5 overflow-x-auto px-3 sm:px-4 pt-2 border-b border-border/60 bg-surface-light/[0.15] scrollbar-thin" role="tablist" aria-label="币安合约数据"></div>
+                <div id="bn-usdt-account-bar" class="px-4 py-3 border-b border-border/60 bg-surface-light/[0.2]">
+                    <div class="state-muted animate-pulse text-xs">加载 U 本位账户…</div>
+                </div>
+                <div id="bn-tab-panels" class="min-w-0">
+                    <div id="bn-panel-positions" role="tabpanel" class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
+                        <div id="bn-open-positions-body" class="state-muted animate-pulse py-4">加载持仓…</div>
                     </div>
-                    <div id="bn-trade-history-body" class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
-                        <div class="state-muted animate-pulse py-4">加载成交…</div>
+                    <div id="bn-panel-orders" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
+                        <div id="bn-open-orders-body" class="state-muted animate-pulse py-4">加载委托…</div>
+                    </div>
+                    <div id="bn-panel-trades" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
+                        <div id="bn-trade-history-body" class="state-muted animate-pulse py-4">加载成交…</div>
+                    </div>
+                    <div id="bn-panel-pos-history" role="tabpanel" hidden class="panel-body pt-0 overflow-x-auto bn-lane-scroll">
+                        <div id="bn-pos-history-body" class="state-muted animate-pulse py-4">加载仓位历史…</div>
                     </div>
                 </div>
             </div>
@@ -504,8 +326,35 @@
         </section>
 </main>
     <script>
-        /** 强制主区板块顺序（兼容旧缓存 HTML，无 id 时用 aria-label） */
+        function removeRetiredUi() {
+            document.getElementById('orb-lane-section')?.remove();
+            document.querySelectorAll('#orb-root').forEach((root) => {
+                const sec = root.closest('section');
+                if (sec) sec.remove();
+            });
+            document.getElementById('view-qd')?.remove();
+            document.getElementById('qd-subnav')?.remove();
+            document.getElementById('qd-panel')?.remove();
+            document.getElementById('qd-root')?.remove();
+            document.getElementById('qd-status')?.remove();
+            document.querySelectorAll('[data-app-view="qd"]').forEach((el) => el.remove());
+            document.querySelectorAll('a[href*="quantdinger"]').forEach((el) => el.remove());
+            document.querySelectorAll('script[src*="qd-"]').forEach((el) => el.remove());
+            document.querySelectorAll('button.nav-pill, a.nav-pill').forEach((el) => {
+                if ((el.textContent || '').trim() === '量化中心') el.remove();
+            });
+            try {
+                const u = new URL(window.location.href);
+                if (u.searchParams.get('view') === 'qd') {
+                    u.searchParams.delete('view');
+                    window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        /** 强制主区板块顺序；移除已下线面板（兼容旧缓存 HTML） */
         (function enforceDashboardLayoutEarly() {
+            removeRetiredUi();
             const main = document.querySelector('main');
             if (!main) return;
             const pick = (id, aria) =>
@@ -543,15 +392,11 @@
                 <!-- 左栏：清理 -->
                 <div class="min-w-0 space-y-3 md:pr-2 md:border-r md:border-border/50">
                     <div class="text-warn/90 text-xs font-semibold tracking-wide">清理</div>
-                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表；纸面策略 lane 清库在下方分组。清盘后请在主界面点「刷新」。</p>
+                    <p class="text-text-muted text-[10px] leading-relaxed">收筹池与看盘表。清盘后请在主界面点「刷新」。</p>
                     <div class="text-text-secondary text-[10px] font-medium mt-1">看盘 / 收筹</div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" id="maint-clear-pool" onclick="clearAccumulationPool()" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-warn/30 text-warn text-xs font-medium hover:bg-warn/10 hover:border-warn/45" title="仅清空 watchlist 收筹池；清后须跑 pool 再刷新">清理收筹池</button>
                         <button type="button" id="maint-clear-both" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/10 border border-warn/25 text-warn text-xs font-medium hover:bg-warn/15" title="清空 watchlist、各看盘表与 worth 全部分类">清理全部看盘表</button>
-                    </div>
-                    <div class="text-text-secondary text-[10px] font-medium mt-2">纸面策略（独立 lane）</div>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" id="maint-orb-clear-db" class="btn-secondary px-3 py-1.5 rounded-sm bg-warn/[0.06] border border-accent/30 text-accent text-xs font-medium hover:bg-accent/10 hover:border-accent/45" title="POST /api/kk/maintenance/clear-db">清理 KK 库</button>
                     </div>
                 </div>
                 <!-- 右栏：手动触发 -->
@@ -563,10 +408,6 @@
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-maint-cron="pool" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">pool 收筹池</button>
                         <button type="button" data-maint-cron="oi" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-border/90 text-text-secondary text-xs hover:border-accent/45 hover:text-accent">oi 雷达</button>
-                    </div>
-                    <div class="text-text-secondary text-[10px] font-medium mt-2">King Keltner</div>
-                    <div class="flex flex-wrap gap-2">
-                        <button type="button" data-maint-cron="kk_scan" class="maint-cron-btn btn-secondary px-3 py-1.5 rounded-sm bg-surface-light/80 border border-accent/35 text-accent text-xs hover:border-accent/55 hover:bg-accent/10" title="KK 纸面扫描（KK_ENGINE=paper 时有效）">KK 扫描</button>
                     </div>
 </div>
             </div>
@@ -725,16 +566,6 @@
                 if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
                 return data;
             },
-            async kkSummary() {
-                const res = await fetch(`${API_BASE}/api/kk/summary`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
-            async kkTrades() {
-                const res = await fetch(`${API_BASE}/api/kk/trades?limit=200`);
-                if (!res.ok) throw new Error(await res.text());
-                return res.json();
-            },
             async binancePositions() {
                 const res = await fetch(`${API_BASE}/api/binance/positions?status=open&limit=50`);
                 if (!res.ok) throw new Error(await res.text());
@@ -751,16 +582,16 @@
                 if (!res.ok) throw new Error(await res.text());
                 return res.json();
             },
-            async kkClearDb() {
-                const res = await fetch(`${API_BASE}/api/kk/maintenance/clear-db`, {
-                    method: 'POST',
-                    headers: maintenanceHeaders(),
-                });
-                const text = await res.text();
-                let data;
-                try { data = JSON.parse(text); } catch (e) { throw new Error(text || res.statusText); }
-                if (!res.ok) throw new Error(apiErrorDetail(data, text, res));
-                return data;
+            async binanceOpenOrders() {
+                const res = await fetch(`${API_BASE}/api/binance/orders/open?limit=200`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
+            },
+            async binancePositionHistory(days) {
+                const d = days != null ? days : 7;
+                const res = await fetch(`${API_BASE}/api/binance/position-history?days=${d}&limit=200`);
+                if (!res.ok) throw new Error(await res.text());
+                return res.json();
             },
         };
 
@@ -1143,259 +974,6 @@
             return Number(v).toLocaleString(undefined, { maximumFractionDigits: decimals });
         }
 
-
-        const LANE_BOARD_MAX_ROWS = 20;
-
-        function laneBoardScrollHint(total) {
-            if (!total || total <= LANE_BOARD_MAX_ROWS) return '';
-            return '<p class="text-text-muted text-[10px] mt-2">共 ' + escHtml(String(total)) + ' 条，区域内可滚动查看（约 '
-                + LANE_BOARD_MAX_ROWS + ' 行视口）</p>';
-        }
-
-        function laneDisplayStatus(row) {
-            if (!row || !row.outcome) return '持仓中';
-            if (row.outcome === 'win') return '盈利';
-            if (row.outcome === 'loss') return '亏损';
-            return '持平';
-        }
-
-        function laneFilterRows(items, status, symQ) {
-            const statusVal = status || 'all';
-            const sym = (symQ || '').trim().toUpperCase();
-            return (items || []).filter((row) => {
-                const side = String(row.side || '').toUpperCase();
-                const open = !row.outcome && (side === 'LONG' || side === 'SHORT');
-                const settled = !!row.outcome;
-                if (statusVal === 'open' && !open) return false;
-                if (statusVal === 'settled' && !settled) return false;
-                if (sym && !String(row.symbol || '').toUpperCase().includes(sym)) return false;
-                return true;
-            });
-        }
-
-        function orbAlertPanelClass(severity) {
-            if (severity === 'block') return 'border-neon-red/45 bg-neon-red/10';
-            if (severity === 'warn') return 'border-warn/45 bg-warn/10';
-            return 'border-neon-blue/35 bg-neon-blue/10';
-        }
-
-        function orbAlertTitleClass(severity) {
-            if (severity === 'block') return 'text-neon-red';
-            if (severity === 'warn') return 'text-warn/90';
-            return 'text-neon-blue';
-        }
-
-        function orbStatusPill(st) {
-            const s = String(st || '');
-            if (s === '持仓中') return '<span class="text-warn font-medium">' + escHtml(s) + '</span>';
-            if (s === '盈利' || s === 'win') return '<span class="text-neon-green font-medium">' + escHtml(s) + '</span>';
-            if (s === '止损' || s === 'loss') return '<span class="text-neon-red font-medium">' + escHtml(s) + '</span>';
-            if (s === '收盘平仓' || s === 'session_close' || s === 'eod') return '<span class="text-neon-green font-medium">收盘平仓</span>';
-            return '<span class="text-text-muted">' + escHtml(s || '—') + '</span>';
-        }
-
-        function orbSidePill(side) {
-            const s = String(side || '').toUpperCase();
-            if (s === 'LONG') return '<span class="text-neon-green font-semibold">LONG</span>';
-            if (s === 'SHORT') return '<span class="text-neon-red font-semibold">SHORT</span>';
-            return '<span class="text-text-muted">—</span>';
-        }
-
-        function updateKkHeadTags(sum) {
-            const engineTag = document.getElementById('orb-ml-gate-tag');
-            const boundTag = document.getElementById('orb-bound-tag');
-            const vnpyTag = document.getElementById('orb-live-bundle-tag');
-            const banner = document.getElementById('orb-live-bundle-banner');
-            if (banner) {
-                banner.classList.add('hidden');
-                banner.innerHTML = '';
-            }
-            if (!sum || !sum.ok) {
-                if (engineTag) engineTag.textContent = '—';
-                if (boundTag) boundTag.classList.add('hidden');
-                if (vnpyTag) vnpyTag.classList.add('hidden');
-                return;
-            }
-            const engine = String(sum.engine || 'vnpy').toLowerCase();
-            if (engineTag) {
-                engineTag.textContent = engine === 'paper' ? 'Paper' : 'VnPy';
-                engineTag.className = 'orb-head-tag ' + (engine === 'vnpy' ? 'orb-head-tag-ok' : 'orb-head-tag-warn');
-                engineTag.title = engine === 'paper' ? '纸面 kk_scanner 引擎' : 'vnpy CTA 实盘/仿真引擎';
-            }
-            if (boundTag) {
-                boundTag.classList.remove('hidden');
-                const eq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '14';
-                boundTag.textContent = String(sum.robot_count || 7) + '×' + eq + 'U';
-                boundTag.title = sum.compound ? '每标复利钱包' : '固定本金';
-            }
-            if (vnpyTag) {
-                const vn = sum.vnpy || {};
-                const liveOn = !!sum.live_active;
-                const running = !!vn.running;
-                if (engine === 'vnpy') {
-                    vnpyTag.classList.remove('hidden');
-                    if (liveOn && running) {
-                        vnpyTag.textContent = 'Live';
-                        vnpyTag.className = 'orb-head-tag orb-head-tag-ok';
-                    } else if (running) {
-                        vnpyTag.textContent = 'VnPy';
-                        vnpyTag.className = 'orb-head-tag orb-head-tag-warn';
-                    } else {
-                        vnpyTag.textContent = 'VnPy off';
-                        vnpyTag.className = 'orb-head-tag orb-head-tag-warn';
-                    }
-                } else {
-                    vnpyTag.classList.add('hidden');
-                }
-            }
-        }
-
-        function renderKkSummary(sum) {
-            const el = document.getElementById('orb-summary');
-            const botsEl = document.getElementById('orb-bots');
-            const botsLabel = document.querySelector('#orb-lane-section .orb-bots-label');
-            if (!el) return;
-            if (!sum || !sum.ok) {
-                el.innerHTML = '';
-                if (botsEl) botsEl.innerHTML = '';
-                if (botsLabel) botsLabel.textContent = 'Robot 资金池';
-                updateKkHeadTags(null);
-                return;
-            }
-            updateKkHeadTags(sum);
-            const pnl = Number(sum.sum_pnl_usdt) || 0;
-            const pnlCls = pnl >= 0 ? 'text-neon-green' : 'text-neon-red';
-            const skipTag = sum.today && sum.today.skip_new_entries
-                ? ' <span class="text-neon-red text-[9px] font-medium">不新开仓</span>' : '';
-            const robotCount = sum.robot_count ?? sum.robots?.length ?? 0;
-            const robotEq = sum.robot_equity_usdt != null ? fmtZctPx(sum.robot_equity_usdt, 0) : '14';
-            const engineLabel = String(sum.engine || 'vnpy').toUpperCase();
-            const liveLabel = sum.live_active ? '已接 Protocol' : (sum.live_enabled ? 'Live 待配置' : '纸面');
-            if (botsLabel) {
-                botsLabel.innerHTML = 'Robot 资金池 · ' + escHtml(String(robotCount)) + ' 台 · 一标一绑';
-            }
-            const stat = (label, value, sub, accent, extraCls, suffixHtml) => (
-                '<div class="orb-stat-card" style="--orb-stat-accent:' + accent + '">'
-                + '<div class="text-text-muted text-[10px] uppercase tracking-wider pl-1">' + label + (suffixHtml || '') + '</div>'
-                + '<div class="orb-stat-value text-base font-semibold text-text-primary pl-1 mt-0.5 ' + (extraCls || '') + '">' + value + '</div>'
-                + (sub ? '<div class="text-[10px] text-text-muted pl-1 mt-0.5 leading-snug">' + sub + '</div>' : '')
-                + '</div>'
-            );
-            el.innerHTML = [
-                stat('Robot', escHtml(String(robotCount)), '每台 ' + escHtml(robotEq) + ' U · ' + (sum.compound ? '复利' : '固定'), 'var(--accent)', '', skipTag),
-                stat('持仓', escHtml(String(sum.open_positions ?? 0)), '上限 ' + escHtml(String(sum.max_open_positions || 7)), 'var(--warn)', '', ''),
-                stat('已平仓', escHtml(String(sum.settled_trades ?? 0)), '', 'var(--neon-blue)', '', ''),
-                stat('累计 U', fmtZctPx(pnl, 4), '', pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)', 'font-mono ' + pnlCls, ''),
-                stat('引擎', escHtml(engineLabel), escHtml(liveLabel), 'var(--gold)', '', ''),
-                stat('EOD', sum.eod_flat ? '15:55 ET' : '关闭', sum.rth_only ? '仅 RTH' : '全天', 'var(--neon-purple)', '', ''),
-            ].join('');
-            if (botsEl) {
-                const rows = Array.isArray(sum.robots) ? sum.robots : [];
-                botsEl.innerHTML = rows.length ? renderOrbRobotCards(rows, sum) : '<div class="col-span-full text-text-muted text-xs py-2">暂无 Robot 配置</div>';
-            }
-        }
-
-        function kkDisplayStatus(row) {
-            if (row && row.outcome) {
-                const o = String(row.outcome).toLowerCase();
-                if (o === 'win') return '盈利';
-                if (o === 'loss') return '止损';
-                if (o === 'eod') return '收盘平仓';
-                return o;
-            }
-            const side = String(row.side || '').toUpperCase();
-            if (!row.outcome && (side === 'LONG' || side === 'SHORT')) return '持仓中';
-            return '—';
-        }
-
-        function renderKkTable(items, totalHint) {
-            const root = document.getElementById('orb-root');
-            if (!root) return;
-            const total = (items && items.length) || 0;
-            const head = `
-                <table class="data-table min-w-[960px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 px-2 font-medium">Robot</th>
-                            <th class="py-2 px-2 font-medium">UTC</th>
-                            <th class="py-2 px-2 font-medium">标的</th>
-                            <th class="py-2 px-2 font-medium">状态</th>
-                            <th class="py-2 px-2 font-medium">方向</th>
-                            <th class="py-2 px-2 font-medium text-right">入场</th>
-                            <th class="py-2 px-2 font-medium text-right">出场</th>
-                            <th class="py-2 px-2 font-medium text-right">名义U</th>
-                            <th class="py-2 px-2 font-medium text-right">盈亏U</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-            if (!items || !items.length) {
-                root.innerHTML = head + '</tbody></table>'
-                    + '<div class="orb-empty">'
-                    + '<div class="orb-empty-icon" aria-hidden="true">—</div>'
-                    + '<p class="text-text-secondary text-sm">暂无交易记录</p>'
-                    + '<p class="text-text-muted text-xs max-w-sm">' + escHtml(totalHint || '维护面板可触发 KK 纸面扫描') + '</p>'
-                    + '</div>';
-                return;
-            }
-            const rows = items.map((row) => {
-                const st = kkDisplayStatus(row);
-                const pnl = row.pnl_usdt != null ? Number(row.pnl_usdt) : null;
-                const pnlCls = pnl != null ? pxClass(pnl) : 'text-text-muted';
-                const symShort = escHtml(orbBotBaseSymbol(row.symbol));
-                const ts = row.recorded_at_utc
-                    ? String(row.recorded_at_utc).replace('T', ' ').replace('Z', '')
-                    : (row.session_date || '—');
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
-                    <td class="py-2 px-2 font-mono text-[11px] text-text-secondary">${escHtml(String(row.robot_label || orbBotBaseSymbol(row.symbol)))}</td>
-                    <td class="py-2 px-2 font-mono text-[11px] text-text-secondary whitespace-nowrap">${escHtml(ts)}</td>
-                    <td class="py-2 px-2"><span class="font-semibold text-text-primary">${symShort}</span></td>
-                    <td class="py-2 px-2">${orbStatusPill(st)}</td>
-                    <td class="py-2 px-2">${orbSidePill(row.side)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${fmtZctPx(row.entry_price, 4)}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${row.exit_price != null ? fmtZctPx(row.exit_price, 4) : '<span class="text-text-muted">—</span>'}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums">${row.notional_usdt != null ? fmtZctPx(row.notional_usdt, 2) : '—'}</td>
-                    <td class="py-2 px-2 font-mono text-right tabular-nums font-semibold ${pnlCls}">${pnl != null ? fmtZctPx(pnl, 4) : '—'}</td>
-                </tr>`;
-            }).join('');
-            root.innerHTML = head + rows + '</tbody></table>' + laneBoardScrollHint(total);
-        }
-
-        let _kkTradesCache = [];
-
-        function applyKkTableFilters() {
-            const root = document.getElementById('orb-root');
-            if (!root) return;
-            const stEl = document.getElementById('orb-filter-status');
-            const symEl = document.getElementById('orb-filter-symbol');
-            const filtered = laneFilterRows(
-                _kkTradesCache,
-                stEl ? stEl.value : 'all',
-                symEl ? symEl.value : '',
-            );
-            renderKkTable(filtered, _kkTradesCache.length ? '共 ' + _kkTradesCache.length + ' 条' : '');
-        }
-
-        async function clearKkLaneData() {
-            const msg = document.getElementById('maint-msg');
-            const btn = document.getElementById('maint-orb-clear-db');
-            if (btn) btn.disabled = true;
-            try {
-                if (!confirm('确定清理 KK 纸面库？\n将删除 kk_trades、kk_runs、kk_symbol_state、kk_symbol_bots 等，不可撤销。')) return;
-                const out = await API.kkClearDb();
-                const del = out.deleted || {};
-                if (msg) {
-                    msg.innerHTML = '<span class="text-neon-green">KK 已清库</span> '
-                        + Object.keys(del).map((k) => escHtml(k) + '=' + escHtml(String(del[k]))).join(' ');
-                }
-                await hydrateKkBoard();
-            } catch (e) {
-                console.error(e);
-                if (msg) msg.innerHTML = '<span class="text-neon-red">' + escHtml(e.message || '失败') + '</span>';
-            } finally {
-                if (btn) btn.disabled = false;
-            }
-        }
-
         function bnFmtTimeMs(ms) {
             if (!ms) return '—';
             try {
@@ -1492,11 +1070,104 @@
             }).join('') + '</div>';
         }
 
+        function bnOrderSideBadge(side) {
+            if (!side) return '—';
+            const s = String(side).toUpperCase();
+            const cls = s === 'BUY' ? 'bn-badge-long' : 'bn-badge-short';
+            const label = s === 'BUY' ? '买入' : s === 'SELL' ? '卖出' : s;
+            return '<span class="bn-badge ' + cls + '">' + escHtml(label) + '</span>';
+        }
+
+        const BN_TAB_META = [
+            ['positions', '仓位'],
+            ['orders', '当前委托'],
+            ['trades', '历史成交'],
+            ['pos_history', '仓位历史记录'],
+        ];
+        let _bnCounts = { positions: 0, orders: 0, trades: 0, pos_history: 0 };
+
+        function bnTabBtnClass(active) {
+            const base =
+                'shrink-0 px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold tracking-wide rounded-t-md border-b-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/30';
+            return active
+                ? base + ' border-[color-mix(in_srgb,var(--gold)_55%,var(--accent))] text-text-primary bg-gradient-to-b from-[var(--gold-soft)] to-transparent'
+                : base + ' border-transparent text-text-muted hover:text-text-secondary hover:bg-surface-light/30';
+        }
+
+        function bnPreferredTabKey() {
+            try {
+                const k = localStorage.getItem('bnLaneTabKey');
+                if (k && BN_TAB_META.some(([id]) => id === k)) return k;
+            } catch (e) { /* ignore */ }
+            return 'positions';
+        }
+
+        function renderBnTabBar() {
+            const bar = document.getElementById('bn-tab-bar');
+            if (!bar) return;
+            const active = bnPreferredTabKey();
+            bar.innerHTML = BN_TAB_META.map(([key, label]) => {
+                const count = _bnCounts[key];
+                const suffix = count != null && Number.isFinite(count) ? ' (' + count + ')' : '';
+                const on = key === active;
+                return '<button type="button" role="tab" id="bn-tab-' + key + '" data-bn-tab-key="' + key + '"'
+                    + ' class="' + bnTabBtnClass(on) + '"'
+                    + ' aria-selected="' + (on ? 'true' : 'false') + '" aria-controls="bn-panel-' + key + '" tabindex="' + (on ? '0' : '-1') + '">'
+                    + escHtml(label + suffix) + '</button>';
+            }).join('');
+        }
+
+        function switchBnTab(key) {
+            if (!BN_TAB_META.some(([id]) => id === key)) return;
+            BN_TAB_META.forEach(([id]) => {
+                const tab = document.getElementById('bn-tab-' + id);
+                const panel = document.getElementById('bn-panel-' + id);
+                const on = id === key;
+                if (tab) {
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                    tab.className = bnTabBtnClass(on);
+                }
+                if (panel) {
+                    if (on) panel.removeAttribute('hidden');
+                    else panel.setAttribute('hidden', '');
+                }
+            });
+            const acctBar = document.getElementById('bn-usdt-account-bar');
+            if (acctBar) {
+                if (key === 'positions') acctBar.classList.remove('hidden');
+                else acctBar.classList.add('hidden');
+            }
+            try {
+                localStorage.setItem('bnLaneTabKey', key);
+            } catch (e) { /* ignore */ }
+        }
+
+        function initBnTabDelegationOnce() {
+            const bar = document.getElementById('bn-tab-bar');
+            if (!bar || bar.dataset.bnTabDeleg === '1') return;
+            bar.dataset.bnTabDeleg = '1';
+            bar.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest && ev.target.closest('button[data-bn-tab-key]');
+                if (!btn) return;
+                const k = btn.getAttribute('data-bn-tab-key');
+                if (k) switchBnTab(k);
+            });
+        }
+
+        function updateBnLaneStatus() {
+            const el = document.getElementById('bn-lane-status');
+            if (!el) return;
+            const parts = [];
+            if (_bnCounts.positions != null) parts.push('仓位 ' + _bnCounts.positions);
+            if (_bnCounts.orders != null) parts.push('委托 ' + _bnCounts.orders);
+            el.textContent = parts.length ? parts.join(' · ') : '—';
+        }
+
         function renderBnOpenPositions(rows) {
             const body = document.getElementById('bn-open-positions-body');
-            const countEl = document.getElementById('bn-open-pos-count');
             if (!body) return;
-            if (countEl) countEl.textContent = (rows || []).length + ' 个仓位';
+            _bnCounts.positions = (rows || []).length;
             if (!rows || !rows.length) {
                 body.innerHTML = '<div class="state-muted text-xs py-4">暂无 U 本位持仓</div>';
                 return;
@@ -1524,10 +1195,9 @@
 
         function renderBnTradeHistory(rows, days) {
             const body = document.getElementById('bn-trade-history-body');
-            const countEl = document.getElementById('bn-trade-history-count');
             if (!body) return;
             const n = (rows || []).length;
-            if (countEl) countEl.textContent = n + ' 笔 · ' + (days || 7) + ' 天';
+            _bnCounts.trades = n;
             if (!rows || !rows.length) {
                 body.innerHTML = '<div class="state-muted text-xs py-4">近 ' + escHtml(String(days || 7)) + ' 天暂无成交记录</div>';
                 return;
@@ -1551,26 +1221,80 @@
                 + '</tr></thead><tbody>' + trs + '</tbody></table>';
         }
 
+        function renderBnOpenOrders(rows) {
+            const body = document.getElementById('bn-open-orders-body');
+            if (!body) return;
+            _bnCounts.orders = (rows || []).length;
+            if (!rows || !rows.length) {
+                body.innerHTML = '<div class="state-muted text-xs py-4">暂无当前委托</div>';
+                return;
+            }
+            const trs = rows.map(function(o) {
+                const kind = o.kind === 'algo' ? '条件' : '限价';
+                return '<tr>'
+                    + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(String(o.order_id || '—')) + '</td>'
+                    + '<td class="text-text-secondary text-xs">' + bnFmtTimeMs(o.time_ms) + '</td>'
+                    + '<td class="font-medium text-text-primary">' + escHtml(o.symbol || '—') + '</td>'
+                    + '<td>' + bnOrderSideBadge(o.side) + '</td>'
+                    + '<td class="text-text-muted text-xs">' + escHtml(o.order_type || '—') + ' <span class="text-[10px]">(' + escHtml(kind) + ')</span></td>'
+                    + '<td class="font-mono">' + bnFmtNum(o.price, 4) + '</td>'
+                    + '<td class="font-mono">' + bnFmtNum(o.qty, 4) + '</td>'
+                    + '<td class="font-mono text-text-muted">' + bnFmtNum(o.filled_qty, 4) + '</td>'
+                    + '<td class="text-text-secondary text-xs">' + escHtml(o.status_label || o.status || '—') + '</td>'
+                    + '<td class="text-text-muted text-xs">' + (o.reduce_only ? '是' : '—') + '</td>'
+                    + '</tr>';
+            }).join('');
+            body.innerHTML = '<table class="data-table"><thead><tr>'
+                + '<th>订单号</th><th>时间</th><th>合约</th><th>方向</th><th>类型</th><th>价格</th><th>数量</th><th>已成交</th><th>状态</th><th>只减仓</th>'
+                + '</tr></thead><tbody>' + trs + '</tbody></table>';
+        }
+
+        function renderBnPositionHistory(rows, days) {
+            const body = document.getElementById('bn-pos-history-body');
+            if (!body) return;
+            _bnCounts.pos_history = (rows || []).length;
+            if (!rows || !rows.length) {
+                body.innerHTML = '<div class="state-muted text-xs py-4">近 ' + escHtml(String(days || 7)) + ' 天暂无已实现盈亏记录</div>';
+                return;
+            }
+            const trs = rows.map(function(r) {
+                return '<tr>'
+                    + '<td class="text-text-secondary text-xs">' + bnFmtTimeMs(r.time_ms) + '</td>'
+                    + '<td class="font-medium text-text-primary">' + escHtml(r.symbol || '—') + '</td>'
+                    + '<td class="font-mono">' + bnPnlHtml(r.pnl_usdt) + '</td>'
+                    + '<td class="font-mono text-text-muted text-[11px]">' + escHtml(r.trade_id || '—') + '</td>'
+                    + '<td class="text-text-muted text-xs max-w-[12rem] truncate" title="' + escHtml(r.info || '') + '">' + escHtml(r.info || '—') + '</td>'
+                    + '</tr>';
+            }).join('');
+            body.innerHTML = '<p class="text-text-muted text-[10px] mb-2 px-0.5">近 ' + escHtml(String(days || 7)) + ' 天 · 来源币安 REALIZED_PNL 流水</p>'
+                + '<table class="data-table"><thead><tr>'
+                + '<th>时间</th><th>合约</th><th>已实现盈亏</th><th>成交ID</th><th>备注</th>'
+                + '</tr></thead><tbody>' + trs + '</tbody></table>';
+        }
+
         function initBinanceLaneOnce() {
             if (initBinanceLaneOnce._done) return;
             initBinanceLaneOnce._done = true;
+            renderBnTabBar();
+            initBnTabDelegationOnce();
+            switchBnTab(bnPreferredTabKey());
             document.getElementById('bn-refresh')?.addEventListener('click', () => void hydrateBinanceLane());
         }
 
         async function hydrateBinanceLane() {
-            const posBody = document.getElementById('bn-open-positions-body');
-            const trBody = document.getElementById('bn-trade-history-body');
             const refreshBtn = document.getElementById('bn-refresh');
-            if (!posBody && !trBody) return;
+            if (!document.getElementById('bn-tab-panels')) return;
             if (refreshBtn) {
                 refreshBtn.disabled = true;
                 refreshBtn.textContent = '刷新中…';
             }
             try {
-                const [posRes, acctRes, trRes] = await Promise.allSettled([
+                const [posRes, acctRes, ordRes, trRes, histRes] = await Promise.allSettled([
                     API.binancePositions(),
                     API.binanceAccountSummary(),
+                    API.binanceOpenOrders(),
                     API.binanceTrades(7),
+                    API.binancePositionHistory(7),
                 ]);
                 const rows = posRes.status === 'fulfilled' ? (posRes.value || []) : [];
                 const acct = acctRes.status === 'fulfilled' ? acctRes.value : null;
@@ -1580,173 +1304,53 @@
                 } else {
                     console.error('binance positions:', posRes.reason);
                     renderBnAccountBar(null, []);
+                    const posBody = document.getElementById('bn-open-positions-body');
                     if (posBody) {
                         posBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(posRes.reason?.message || '加载持仓失败') + '</div>';
                     }
+                    _bnCounts.positions = 0;
+                }
+                if (ordRes.status === 'fulfilled') {
+                    renderBnOpenOrders(ordRes.value.orders || []);
+                } else {
+                    console.error('binance orders:', ordRes.reason);
+                    const ordBody = document.getElementById('bn-open-orders-body');
+                    if (ordBody) {
+                        ordBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(ordRes.reason?.message || '加载委托失败') + '</div>';
+                    }
+                    _bnCounts.orders = 0;
                 }
                 if (trRes.status === 'fulfilled') {
                     const payload = trRes.value || {};
                     renderBnTradeHistory(payload.trades || [], payload.days || 7);
                 } else {
                     console.error('binance trades:', trRes.reason);
+                    const trBody = document.getElementById('bn-trade-history-body');
                     if (trBody) {
                         trBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(trRes.reason?.message || '加载成交失败') + '</div>';
                     }
+                    _bnCounts.trades = 0;
                 }
-            } finally {
-                if (refreshBtn) {
-                    refreshBtn.disabled = false;
-                    refreshBtn.textContent = '刷新';
-                }
-            }
-        }
-
-        async function hydrateKkBoard() {
-            const root = document.getElementById('orb-root');
-            const tsEl = document.getElementById('orb-ts');
-            const refreshBtn = document.getElementById('orb-refresh');
-            if (!root) return;
-            const hasContent = !!(root.querySelector('table') || root.querySelector('.orb-empty'));
-            if (!hasContent) {
-                root.innerHTML = '<div class="text-text-muted text-sm animate-pulse">加载 KK…</div>';
-            }
-            if (refreshBtn) {
-                refreshBtn.disabled = true;
-                refreshBtn.textContent = '刷新中…';
-            }
-            try {
-                const [sumRes, trRes] = await Promise.allSettled([
-                    API.kkSummary(),
-                    API.kkTrades(),
-                ]);
-                if (sumRes.status === 'fulfilled') {
-                    renderOrbTodayAlerts(sumRes.value.today);
-                    renderKkSummary(sumRes.value);
+                if (histRes.status === 'fulfilled') {
+                    const payload = histRes.value || {};
+                    renderBnPositionHistory(payload.records || [], payload.days || 7);
                 } else {
-                    console.error('kk summary:', sumRes.reason);
-                    renderOrbTodayAlerts(null);
-                    renderKkSummary(null);
-                }
-                if (trRes.status === 'fulfilled') {
-                    _kkTradesCache = trRes.value.trades || [];
-                    applyKkTableFilters();
-                    if (tsEl) tsEl.textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-                } else {
-                    console.error('kk trades:', trRes.reason);
-                    if (!hasContent) {
-                        _kkTradesCache = [];
-                        const e = trRes.reason;
-                        root.innerHTML = '<div class="text-neon-red text-sm">' + escHtml(e && e.message ? String(e.message) : '加载失败') + '</div>';
-                        if (tsEl) tsEl.textContent = '--';
+                    console.error('binance position history:', histRes.reason);
+                    const histBody = document.getElementById('bn-pos-history-body');
+                    if (histBody) {
+                        histBody.innerHTML = '<div class="text-neon-red text-xs py-4">' + escHtml(histRes.reason?.message || '加载仓位历史失败') + '</div>';
                     }
+                    _bnCounts.pos_history = 0;
                 }
+                renderBnTabBar();
+                switchBnTab(bnPreferredTabKey());
+                updateBnLaneStatus();
             } finally {
                 if (refreshBtn) {
                     refreshBtn.disabled = false;
                     refreshBtn.textContent = '刷新';
                 }
             }
-        }
-
-        function renderOrbTodayAlerts(today) {
-            const el = document.getElementById('orb-today-alerts');
-            const meta = document.getElementById('orb-session-meta');
-            if (!el) return;
-            if (!today || !today.ok) {
-                el.innerHTML = '<div class="orb-alert-banner border border-border/60 bg-surface-light/40 text-xs text-text-muted">'
-                    + '<span class="orb-alert-icon bg-surface-light border border-border/70">?</span>'
-                    + '<span>无法加载当日提示</span></div>';
-                if (meta) meta.textContent = '—';
-                return;
-            }
-            const wd = today.weekday ? ' · ' + today.weekday : '';
-            const close = today.session_close_time ? ' · Close ' + today.session_close_time + ' ET' : '';
-            if (meta) meta.textContent = (today.session_date || '—') + wd + close;
-            const alerts = today.alerts || [];
-            if (!alerts.length) {
-                el.innerHTML = '<div class="orb-alert-banner border border-neon-green/35 bg-neon-green/[0.07] text-xs leading-relaxed">'
-                    + '<span class="orb-alert-icon bg-neon-green/15 border border-neon-green/30 text-neon-green">✓</span>'
-                    + '<div><b class="text-neon-green font-semibold block mb-0.5">今日可交易</b>'
-                    + '<span class="text-text-secondary">非休市日，无 FOMC / CPI 宏观事件</span></div></div>';
-                return;
-            }
-            el.innerHTML = '<div class="flex flex-col gap-2">' + alerts.map((a) => {
-                const panel = orbAlertPanelClass(a.severity);
-                const titleCls = orbAlertTitleClass(a.severity);
-                const icon = a.severity === 'block' ? '⛔' : (a.severity === 'warn' ? '⚠' : 'ℹ');
-                return '<div class="orb-alert-banner border text-xs leading-relaxed ' + panel + '">'
-                    + '<span class="orb-alert-icon bg-surface/60 border border-border/50 ' + titleCls + '">' + icon + '</span>'
-                    + '<div><b class="block font-semibold mb-0.5 ' + titleCls + '">' + escHtml(a.title || a.kind || '提示') + '</b>'
-                    + '<span class="text-text-secondary">' + escHtml(a.message || '') + '</span></div></div>';
-            }).join('') + '</div>';
-        }
-
-        function orbBotBaseSymbol(symbol) {
-            const s = String(symbol || '').toUpperCase();
-            return s.endsWith('USDT') ? s.slice(0, -4) : s;
-        }
-
-        function renderOrbRobotCards(rows, sum) {
-            const boundMode = sum?.robot_bound !== false;
-            return rows.map((b) => {
-                const ridLabel = String(b.label || ('R' + (b.robot_id || '')));
-                const boundRaw = String(b.bound_symbol || b.symbol || '');
-                const symShort = boundRaw ? escHtml(orbBotBaseSymbol(boundRaw)) : '—';
-                const label = boundMode && boundRaw
-                    ? escHtml(ridLabel + ' · ' + symShort)
-                    : escHtml(ridLabel);
-                const symRaw = boundRaw;
-                const sym = symShort;
-                const wallet = Number(b.wallet_balance_usdt) || 0;
-                const rp = Number(b.realized_pnl_usdt) || 0;
-                const side = String(b.open_side || '').toUpperCase();
-                const hasOpen = side === 'LONG' || side === 'SHORT';
-                const rpSign = rp > 0 ? '+' : '';
-                const rpCls = rp > 0 ? 'text-neon-green' : (rp < 0 ? 'text-neon-red' : 'text-text-secondary');
-                let cardTint = hasOpen
-                    ? 'border-accent/45 bg-accent/[0.06] shadow-[0_0_0_1px_color-mix(in_srgb,var(--accent)_12%,transparent)]'
-                    : (rp > 0
-                        ? 'border-neon-green/30 bg-neon-green/[0.05]'
-                        : (rp < 0 ? 'border-neon-red/25 bg-neon-red/[0.04]' : 'border-border/70 bg-surface-light/30'));
-                let posHtml;
-                if (side === 'LONG') {
-                    posHtml = '<span class="text-neon-green text-[10px] font-semibold">LONG</span>';
-                } else if (side === 'SHORT') {
-                    posHtml = '<span class="text-neon-red text-[10px] font-semibold">SHORT</span>';
-                } else {
-                    posHtml = '<span class="text-text-muted text-[10px]">空闲</span>';
-                }
-                const off = b.enabled === false ? ' opacity-45 grayscale-[0.2]' : '';
-                const symTitle = symRaw ? ' title="' + escHtml(symRaw) + '"' : '';
-                const symLine = boundMode
-                    ? '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>专属 ' + sym + '</div>'
-                    : (hasOpen && symRaw
-                        ? '<div class="text-[10px] text-text-muted truncate"' + symTitle + '>持仓 ' + sym + '</div>'
-                        : '<div class="text-[10px] text-text-muted truncate">共享池</div>');
-                return '<article class="orb-bot-card border px-3 py-2.5 flex flex-col gap-2 min-w-0 ' + cardTint + off + '">'
-                    + '<div class="flex items-start justify-between gap-2 min-w-0">'
-                    + '<div class="font-semibold text-sm text-text-primary tracking-tight truncate">' + label + '</div>'
-                    + '<div class="flex flex-col items-end gap-1 shrink-0">' + posHtml + '</div>'
-                    + '</div>'
-                    + symLine
-                    + '<div class="flex items-end justify-between gap-2">'
-                    + '<div class="min-w-0">'
-                    + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">钱包</div>'
-                    + '<div class="font-mono text-sm text-text-primary leading-none">' + fmtZctPx(wallet, 0) + '<span class="text-[10px] text-text-muted ml-0.5">U</span></div>'
-                    + '</div>'
-                    + '<div class="text-right shrink-0">'
-                    + '<div class="text-[9px] uppercase tracking-wider text-text-muted mb-0.5">盈亏</div>'
-                    + '<div class="font-mono text-sm font-semibold leading-none ' + rpCls + '">' + rpSign + fmtZctPx(rp, 2) + '</div>'
-                    + '</div>'
-                    + '</div>'
-                    + '</article>';
-            }).join('');
-        }
-
-        function zctSideClass(side) {
-            if (side === 'LONG') return 'text-neon-green font-medium';
-            if (side === 'SHORT') return 'text-neon-red font-medium';
-            return 'text-text-muted';
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
@@ -2061,15 +1665,11 @@
                 ]);
             });
 
-            const MAINT_CRON_LABELS = {
-                kk_scan: 'KK 纸面扫描',
-            };
-
             document.querySelectorAll('.maint-cron-btn').forEach((btn) => {
                 btn.addEventListener('click', async () => {
                     const task = btn.getAttribute('data-maint-cron');
                     if (!task || !msg) return;
-                    const label = MAINT_CRON_LABELS[task] || task;
+                    const label = task;
                     msg.textContent = `已提交 ${label}，服务端后台执行中（可能需数分钟）…`;
                     try {
                         const data = await API.triggerCron(task);
@@ -2146,6 +1746,7 @@
         }
 
         function enforceDashboardLayout() {
+            removeRetiredUi();
             const main = document.querySelector('main');
             if (!main) return;
             const pick = (id, aria) =>
