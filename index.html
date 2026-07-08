@@ -208,6 +208,71 @@
             border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
+        .spot-meta {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+            margin-top: 0.35rem;
+        }
+        .radar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            min-height: 6.5rem;
+        }
+        .radar-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.45rem;
+            padding: 0.42rem 0.5rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+            background: color-mix(in srgb, var(--surface) 88%, var(--surface-light));
+            font-size: 0.75rem;
+            line-height: 1.35;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .radar-row:hover {
+            border-color: color-mix(in srgb, var(--gold) 24%, var(--border));
+            background: color-mix(in srgb, var(--surface-light) 55%, var(--surface));
+        }
+        .radar-row-coin {
+            flex-shrink: 0;
+            min-width: 3.25rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+        }
+        .radar-row-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.28rem;
+            min-width: 0;
+        }
+        .radar-chip {
+            font-size: 0.58rem;
+            font-weight: 600;
+            padding: 0.06rem 0.35rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+        .radar-chip-muted { color: var(--text-muted); background: color-mix(in srgb, var(--surface-light) 65%, transparent); border: 1px solid color-mix(in srgb, var(--border) 75%, transparent); }
+        .radar-chip-up { color: var(--neon-green); background: color-mix(in srgb, var(--neon-green) 10%, transparent); border: 1px solid color-mix(in srgb, var(--neon-green) 22%, transparent); }
+        .radar-chip-down { color: var(--neon-red); background: color-mix(in srgb, var(--neon-red) 10%, transparent); border: 1px solid color-mix(in srgb, var(--neon-red) 22%, transparent); }
+        .radar-chip-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 22%, transparent); }
+        .radar-chip-accent { color: var(--neon-blue); background: color-mix(in srgb, var(--neon-blue) 10%, transparent); border: 1px solid color-mix(in srgb, var(--neon-blue) 22%, transparent); }
+        .timeline-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .dash-mini-card .dash-mini-card-label {
+            margin-bottom: 0.65rem;
+        }
         .hl-item-mark {
             flex-shrink: 0;
             width: 0.35rem;
@@ -315,7 +380,7 @@
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="15" data-theme="zen-premium">
+    <main class="max-w-7xl mx-auto px-4 py-8" data-layout-rev="16" data-theme="zen-premium">
         <!-- 首屏：精选推荐 -->
         <section class="mb-7" aria-label="精选推荐">
             <div id="oi-radar-highlights-slot" class="min-h-0 min-w-0 flex flex-col">
@@ -698,19 +763,6 @@
             return (n >= 0 ? '+' : '') + n.toFixed(d) + '%';
         }
 
-        function oiRadarHotTags(d) {
-            const t = [];
-            if (d.in_cg) t.push('<span class="text-neon-blue">🔍榜</span>');
-            if (d.vol_surge) t.push('<span class="text-warn/95">⬆脉冲</span>');
-            if (Math.abs(Number(d.d6h) || 0) >= 3) {
-                const v = Number(d.d6h);
-                t.push('<span class="text-neon-purple">📊仓' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</span>');
-            }
-            if (d.in_pool) t.push('<span class="text-text-secondary">⏳蓄' + (Number(d.sw_days) || 0) + '日</span>');
-            if (Number(d.fr_pct) < -0.03) t.push('<span class="text-neon-blue">🔻' + Number(d.fr_pct).toFixed(2) + '%</span>');
-            return t.join(' ');
-        }
-
         function oiRadarCard(title, _emoji, innerHtml) {
             return `
                 <div class="dash-mini-card">
@@ -767,16 +819,16 @@
 
         /** 与后端 WORTH_HIGHLIGHT_CATEGORY_ORDER 顺序一致 */
         const WORTH_WATCH_META = [
-            ['heat_accum', '🌡⏳ 风口+吸筹'],
-            ['patrick_core', '🧭 Patrick 精选'],
-            ['hot_oi', '🌡📊 风口+持仓'],
-            ['chase_fire', '🚀 做多·费率急升'],
-            ['dual_list', '✦ 做多+多维双榜'],
-            ['ambush_dark', '🌊 静默·静建'],
-            ['ambush_gem', '🪙 静默·小盘+持仓'],
+            ['heat_accum', '风口吸筹'],
+            ['patrick_core', 'Patrick'],
+            ['hot_oi', '风口持仓'],
+            ['chase_fire', '费率急升'],
+            ['dual_list', '双榜共振'],
+            ['ambush_dark', '静默静建'],
+            ['ambush_gem', '小盘静默'],
         ];
         /** 顶部 Tab：核心关注 + 七类 worth（与后端归档一致） */
-        const WORTH_HISTORY_TAB_META = [['focus_watch', '👑 核心关注'], ...WORTH_WATCH_META];
+        const WORTH_HISTORY_TAB_META = [['focus_watch', '核心关注'], ...WORTH_WATCH_META];
         /** 每处历史表约 10 行可视高度，超出在容器内纵向/横向滚动（八类均以 Tab 切换） */
         const HISTORY_TABLE_SCROLL_WRAP =
             'max-h-[min(26rem,40vh)] overflow-y-auto overflow-x-auto';
@@ -858,43 +910,14 @@
             });
         }
 
-        /** 重点关注面板 HTML（供 Tab 内嵌）。 */
+        /** 核心关注面板（卡片列表）。 */
         function buildFocusWatchPanelInnerHtml(fw) {
             const items = fw && Array.isArray(fw.items) ? fw.items : [];
             if (!items.length) {
                 const hint = fw && fw.message ? String(fw.message) : '暂无命中。需先跑 pool 写入吸筹池，且满足轧空/天量/静建条件；整点 :30 持仓扫描或点下方「更新」后入库。';
                 return `<div class="text-text-muted text-sm leading-relaxed">${escHtml(hint)}</div>`;
             }
-            const thead = `
-                <table class="data-table min-w-[560px]">
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">合约</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap">来源</th>
-                            <th class="py-2 pr-3 font-medium">概述</th>
-                            <th class="py-2 pr-3 font-medium">操作建议</th>
-                        </tr>
-                    </thead><tbody>`;
-            const rows = items.map((row) => {
-                const sym = row.symbol || '';
-                const ch = escHtml(row.channel_label_zh || row.channel || '--');
-                const sum = row.summary_line ? oiRadarRowClickable(sym, escHtml(row.summary_line)) : oiRadarRowClickable(sym, escHtml(row.coin || sym));
-                const st = row.strategy_tip ? `<span class="text-text-secondary">${escHtml(row.strategy_tip)}</span>` : '--';
-                const coinLine = '<span class="font-semibold text-warn/95">' + escHtml(row.coin || '') + '</span>';
-                const coinCell = oiRadarRowClickable(sym, coinLine);
-                return `<tr class="border-b border-border/60 hover:bg-surface-light/30 align-top">
-                    <td class="py-2 pr-3 whitespace-nowrap">${coinCell}</td>
-                    <td class="py-2 pr-3 whitespace-nowrap">${ch}</td>
-                    <td class="py-2 pr-3">${sum}</td>
-                    <td class="py-2 pr-3 text-[11px] max-w-[220px]">${st}</td>
-                </tr>`;
-            }).join('');
-            return (
-                `<div class="${HISTORY_TABLE_SCROLL_WRAP} -mx-0.5 px-0.5">` +
-                thead +
-                rows +
-                '</tbody></table></div>'
-            );
+            return renderFocusWatchCards(items);
         }
 
         function renderWorthSevenBoards(wl, fw) {
@@ -902,21 +925,6 @@
             if (!shell) return;
             const { root, tabBar, panelsRoot, footEl } = shell;
             const cats = (wl && wl.categories) || {};
-            const colgroup = `<colgroup>
-                        <col style="width:14%" />
-                        <col style="width:22%" />
-                        <col />
-                    </colgroup>`;
-            const thead = `
-                <table class="data-table table-fixed min-w-[560px]">
-                    ${colgroup}
-                    <thead>
-                        <tr class="text-text-muted border-b border-border">
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">合约</th>
-                            <th class="py-2 pr-3 font-medium whitespace-nowrap align-top">产出日期</th>
-                            <th class="py-2 pr-3 font-medium align-top">概述</th>
-                        </tr>
-                    </thead><tbody>`;
             const pref = worthHistoryPreferredTabKey();
             const tabHtml = WORTH_HISTORY_TAB_META.map(([key, label]) => {
                 const active = key === pref;
@@ -935,25 +943,13 @@
                     if (!items.length) {
                         inner = '<div class="text-text-muted text-sm py-2">本类暂无往期记录。</div>';
                     } else {
-                        const rows = items.map((row) => {
-                            const gd = escHtml(row.generated_date || '--');
-                            const sym = row.symbol || '';
-                            const sum = escHtml(row.summary_line || '');
-                            const coinLine = '<span class="font-semibold text-accent">' + escHtml(row.coin || '') + '</span>';
-                            const summaryCell = oiRadarRowClickable(sym, sum);
-                            return `<tr class="border-b border-border/60 hover:bg-surface-light/30">
-                            <td class="py-2 pr-3 align-top whitespace-nowrap">${oiRadarRowClickable(sym, coinLine)}</td>
-                            <td class="py-2 pr-3 align-top text-text-secondary whitespace-nowrap font-mono tabular-nums">${gd}</td>
-                            <td class="py-2 pr-3 align-top break-words">${summaryCell}</td>
-                        </tr>`;
-                        }).join('');
-                        inner = thead + rows + '</tbody></table>';
+                        inner = renderWorthCategoryCards(key, items);
                     }
                 }
                 const hiddenAttr = active ? '' : ' hidden';
                 return `<div role="tabpanel" id="worth-panel-${key}" aria-labelledby="worth-tab-${key}"${hiddenAttr}
                     class="rounded-sm border border-border/70 bg-surface-light/[0.15] overflow-hidden">
-                    <div class="p-3 min-w-0${key !== 'focus_watch' ? ' ' + HISTORY_TABLE_SCROLL_WRAP : ''}">${inner}</div>
+                    <div class="p-3 min-w-0${HISTORY_TABLE_SCROLL_WRAP ? ' ' + HISTORY_TABLE_SCROLL_WRAP : ''}">${inner}</div>
                 </div>`;
             }).join('');
             const footHtml = '';
@@ -1365,11 +1361,13 @@
             });
         }
 
-        function renderSpotlightCards(items) {
+        function renderSpotlightCards(items, opts) {
+            opts = opts || {};
+            const wrapCls = opts.compact ? 'timeline-grid' : 'spotlight-grid';
             if (!items || !items.length) {
-                return '<div class="state-muted py-2">暂无动态提醒</div>';
+                return '<div class="state-muted py-2">暂无' + (opts.emptyLabel || '动态提醒') + '</div>';
             }
-            return '<div class="spotlight-grid">' + items.map((it) => {
+            return '<div class="' + wrapCls + '">' + items.map((it) => {
                 const cat = String(it.category || 'default');
                 const badgeCls = 'spot-badge spot-badge-' + (SPOTLIGHT_BADGE_ZH[cat] ? cat : 'default');
                 const sym = it.symbol || it.coin;
@@ -1378,64 +1376,167 @@
                     ? '<button type="button" class="spot-coin oi-radar-pick" data-perp-pair="' + escHtml(pair) + '">' + escHtml(it.coin || '—') + '</button>'
                     : '<span class="spot-coin">' + escHtml(it.coin || '—') + '</span>';
                 const chips = (it.chips || []).map((c) => '<span class="spot-chip">' + escHtml(c) + '</span>').join('');
+                const meta = it.meta || it.generated_date || it.last_seen_cst || '';
+                const metaHtml = meta ? '<div class="spot-meta">' + escHtml(meta) + '</div>' : '';
+                const tip = it.tip ? '<div class="spot-meta text-text-secondary/90">' + escHtml(it.tip) + '</div>' : '';
                 return '<article class="spot-card spot-card--' + escHtml(cat) + '">'
                     + '<div class="spot-card-head">' + coinBtn + '<span class="' + badgeCls + '">' + escHtml(it.badge || '信号') + '</span></div>'
                     + '<p class="spot-reason">' + escHtml(it.reason || it.summary_line || '') + '</p>'
                     + (chips ? '<div class="spot-chips">' + chips + '</div>' : '')
+                    + metaHtml + tip
                     + '</article>';
             }).join('') + '</div>';
+        }
+
+        function radarChip(text, tone) {
+            return '<span class="radar-chip radar-chip-' + (tone || 'muted') + '">' + escHtml(text) + '</span>';
+        }
+
+        function radarRowHtml(sym, coin, chipsHtml) {
+            const pair = perpSymToPairLabel(sym);
+            if (pair) {
+                const safe = pair.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+                return '<div role="button" tabindex="0" class="radar-row oi-radar-pick" data-perp-pair="' + safe + '">'
+                    + '<span class="radar-row-coin">' + escHtml(coin) + '</span>'
+                    + '<div class="radar-row-chips">' + chipsHtml + '</div></div>';
+            }
+            return '<div class="radar-row"><span class="radar-row-coin">' + escHtml(coin) + '</span>'
+                + '<div class="radar-row-chips">' + chipsHtml + '</div></div>';
+        }
+
+        function renderRadarHotRows(list) {
+            if (!list.length) return '<div class="text-text-muted text-xs py-2">暂无风口合约</div>';
+            return '<div class="radar-stack">' + list.map((d) => {
+                const px = Number(d.px_chg);
+                const chips = [
+                    radarChip(formatMcapUsd(d.est_mcap), 'muted'),
+                    radarChip((px >= 0 ? '+' : '') + px.toFixed(0) + '%', px >= 0 ? 'up' : 'down'),
+                ];
+                if (d.in_cg) chips.push(radarChip('榜热', 'accent'));
+                if (d.vol_surge) chips.push(radarChip('脉冲', 'warn'));
+                if (Math.abs(Number(d.d6h) || 0) >= 3) {
+                    const v = Number(d.d6h);
+                    chips.push(radarChip('仓' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%', v >= 0 ? 'up' : 'down'));
+                }
+                if (d.in_pool) chips.push(radarChip('蓄' + (Number(d.sw_days) || 0) + '日', 'muted'));
+                return radarRowHtml(d.sym, d.coin, chips.join(''));
+            }).join('') + '</div>';
+        }
+
+        function renderRadarChaseRows(list) {
+            if (!list.length) return '<div class="text-text-muted text-xs py-2">暂无空头挤压合约</div>';
+            return '<div class="radar-stack">' + list.map((d) => {
+                const px = Number(d.px_chg);
+                const chips = [
+                    radarChip(Number(d.fr_pct).toFixed(3) + '%', 'down'),
+                ];
+                if (d.trend) chips.push(radarChip(String(d.trend), 'warn'));
+                chips.push(radarChip((px >= 0 ? '+' : '') + px.toFixed(0) + '%', px >= 0 ? 'up' : 'down'));
+                chips.push(radarChip(formatMcapUsd(d.est_mcap), 'muted'));
+                return radarRowHtml(d.sym, d.coin, chips.join(''));
+            }).join('') + '</div>';
+        }
+
+        function renderRadarCombinedRows(list) {
+            if (!list.length) return '<div class="text-text-muted text-xs py-2">暂无多维共振合约</div>';
+            return '<div class="radar-stack">' + list.map((d) => {
+                const chips = [radarChip(Number(d.total).toFixed(0) + '分', 'up')];
+                if (d.f_sc >= 10) chips.push(radarChip(Number(d.fr_pct).toFixed(2) + '%', 'down'));
+                if (d.m_sc >= 12) chips.push(radarChip(formatMcapUsd(d.est_mcap), 'warn'));
+                if (d.s_sc >= 10) chips.push(radarChip('蓄' + (Number(d.sw_days) || 0) + '日', 'muted'));
+                if (d.o_sc >= 10) {
+                    const v = Number(d.d6h);
+                    chips.push(radarChip('仓' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%', v >= 0 ? 'up' : 'down'));
+                }
+                return radarRowHtml(d.sym, d.coin, chips.join(''));
+            }).join('') + '</div>';
+        }
+
+        function renderRadarAmbushRows(list) {
+            if (!list.length) return '<div class="text-text-muted text-xs py-2">暂无静默建仓合约</div>';
+            return '<div class="radar-stack">' + list.map((d) => {
+                const dark = Number(d.d6h) > 2 && Math.abs(Number(d.px_chg)) < 5;
+                const v = Number(d.d6h);
+                const chips = [
+                    radarChip(Number(d.total).toFixed(0) + '分', 'up'),
+                    radarChip(formatMcapUsd(d.est_mcap), 'muted'),
+                    radarChip('仓' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%', v >= 0 ? 'up' : 'down'),
+                ];
+                if (dark) chips.push(radarChip('静建', 'warn'));
+                if (Number(d.sw_days) >= 45) chips.push(radarChip('盘整' + Number(d.sw_days).toFixed(0) + '日', 'muted'));
+                if (Number(d.fr_pct) < -0.01) chips.push(radarChip('费率' + Number(d.fr_pct).toFixed(2) + '%', 'accent'));
+                return radarRowHtml(d.sym, d.coin, chips.join(''));
+            }).join('') + '</div>';
+        }
+
+        function worthItemToSpotlightCard(category, row) {
+            const item = buildSpotlightItem(
+                category,
+                String(row.coin || ''),
+                String(row.symbol || ''),
+                row.detail || {},
+            );
+            item.generated_date = row.generated_date || row.last_seen_cst || '';
+            item.meta = item.generated_date;
+            return item;
+        }
+
+        function renderWorthCategoryCards(category, items) {
+            const cards = items.map((row) => worthItemToSpotlightCard(category, row));
+            return renderSpotlightCards(cards, { compact: true, emptyLabel: '往期记录' });
+        }
+
+        function renderFocusWatchCards(items) {
+            if (!items.length) return '';
+            const FOCUS_REASON = {
+                squeeze: '极端负费率叠加持仓上行，存在轧空风险',
+                volume_ignite: '天量点火配合风口，突破后需防追高风险',
+                dark_flow: '持仓增而价格平，疑似隐蔽建仓',
+            };
+            const FOCUS_BADGE = { squeeze: '极端轧空', volume_ignite: '天量点火', dark_flow: '隐蔽建仓' };
+            const cards = items.map((row) => {
+                const ch = String(row.channel || '');
+                const det = row.detail || {};
+                const chips = [];
+                if (det.fr_pct != null) chips.push('费率' + Number(det.fr_pct).toFixed(2) + '%');
+                if (det.d6h != null) chips.push('持仓' + (Number(det.d6h) >= 0 ? '+' : '') + Number(det.d6h).toFixed(0) + '%');
+                if (det.px_chg != null) chips.push('涨跌' + (Number(det.px_chg) >= 0 ? '+' : '') + Number(det.px_chg).toFixed(1) + '%');
+                if (det.sw_days != null) chips.push('吸筹' + Number(det.sw_days) + '日');
+                return {
+                    category: 'chase_fire',
+                    badge: FOCUS_BADGE[ch] || row.channel_label_zh || '核心关注',
+                    coin: row.coin || '',
+                    symbol: row.symbol || '',
+                    reason: FOCUS_REASON[ch] || '满足核心关注通道条件',
+                    chips: chips.slice(0, 4),
+                    tip: row.strategy_tip || '',
+                    meta: row.generated_date || row.last_seen_cst || '',
+                };
+            });
+            return renderSpotlightCards(cards, { compact: true, emptyLabel: '核心关注' });
         }
 
         function fillOiRadarFromPayload(data, body, tsEl) {
             if (!body) return;
             tsEl.textContent = data.generated_at_cst || '';
 
-            const hot = (data.hot_coins || []).slice(0, 8).map(d => {
-                const px = Number(d.px_chg);
-                const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> ${oiRadarHotTags(d)}`;
-                return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无风口合约</div>';
-
-            const chase = (data.chase || []).slice(0, 8).map(d => {
-                const px = Number(d.px_chg);
-                const line = `<span class="font-semibold text-text-primary w-16 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-blue font-mono">${Number(d.fr_pct).toFixed(3)}%</span> <span class="text-text-muted">${escHtml(d.trend || '')}</span> <span class="text-text-muted">|</span> <span class="${pxClass(px)}">${px >= 0 ? '+' : ''}${px.toFixed(0)}%</span> <span class="text-text-muted">|</span> <span class="text-text-muted">${formatMcapUsd(d.est_mcap)}</span>`;
-                return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无空头挤压合约</div>';
-
-            const combined = (data.combined || []).slice(0, 8).map(d => {
-                const dims = [];
-                if (d.f_sc >= 10) dims.push('<span class="text-neon-blue">🔻' + Number(d.fr_pct).toFixed(2) + '%</span>');
-                if (d.m_sc >= 12) dims.push('<span class="text-warn/95">🪙' + formatMcapUsd(d.est_mcap) + '</span>');
-                if (d.s_sc >= 10) dims.push('<span class="text-text-secondary">⏳' + (Number(d.sw_days) || 0) + '日</span>');
-                if (d.o_sc >= 10) dims.push('<span class="text-neon-purple">📊仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>');
-                const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${dims.join(' ')}`;
-                return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无多维共振合约</div>';
-
-            const ambush = (data.ambush || []).slice(0, 8).map(d => {
-                const dark = Number(d.d6h) > 2 && Math.abs(Number(d.px_chg)) < 5;
-                const parts = [
-                    '<span class="text-text-muted">' + formatMcapUsd(d.est_mcap) + '</span>',
-                    '<span class="text-neon-purple">仓' + (Number(d.d6h) >= 0 ? '+' : '') + Number(d.d6h).toFixed(0) + '%</span>'
-                ];
-                if (dark) parts.push('<span class="text-warn/95">🌊静建</span>');
-                if (Number(d.sw_days) >= 45) parts.push('<span class="text-text-secondary">盘整' + Number(d.sw_days).toFixed(0) + '日</span>');
-                if (Number(d.fr_pct) < -0.01) parts.push('<span class="text-neon-blue">费率' + Number(d.fr_pct).toFixed(2) + '%</span>');
-                const line = `<span class="font-semibold text-text-primary w-14 inline-block">${escHtml(d.coin)}</span> <span class="text-neon-green font-mono">${Number(d.total).toFixed(0)}分</span> <span class="text-text-muted">|</span> ${parts.join(' ')}`;
-                return oiRadarRowClickable(d.sym, line);
-            }).join('') || '<div class="text-text-muted text-xs">暂无静默建仓合约</div>';
+            const hot = renderRadarHotRows((data.hot_coins || []).slice(0, 8));
+            const chase = renderRadarChaseRows((data.chase || []).slice(0, 8));
+            const combined = renderRadarCombinedRows((data.combined || []).slice(0, 8));
+            const ambush = renderRadarAmbushRows((data.ambush || []).slice(0, 8));
 
             const spotlightItems = collectSpotlightItemsFromPayload(data);
             const highlights = renderSpotlightCards(spotlightItems);
 
 
             const legend = `
-                <div class="mt-4 pt-3 border-t border-border text-text-muted text-[11px] leading-relaxed space-y-0.5">
-                    <div class="font-medium text-text-secondary mb-1">📖 符号说明</div>
-                    <div>🌡 风口 = 榜热 + 成交脉冲（持仓领先指标）</div>
-                    <div>🔻 负费率 = 空头燃料 · 🪙 盘小 · ⏳ 盘整（吸筹阶段）</div>
-                    <div>🌡⏳ 风口+吸筹 = 最强预判 · 🌡📊 风口+持仓 = 正在发生</div>
-                    <div class="mt-2 text-accent/85">点击合约可在新标签页打开币安永续</div>
+                <div class="mt-4 pt-3 border-t border-border text-text-muted text-[11px] leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                    <div class="font-medium text-text-secondary mb-1 sm:col-span-2">符号说明</div>
+                    <div><span class="radar-chip radar-chip-accent inline-block mr-1">榜热</span>热搜上榜</div>
+                    <div><span class="radar-chip radar-chip-warn inline-block mr-1">脉冲</span>成交急增</div>
+                    <div><span class="radar-chip radar-chip-up inline-block mr-1">仓+</span>持仓上升</div>
+                    <div><span class="radar-chip radar-chip-down inline-block mr-1">费率</span>空头燃料</div>
+                    <div class="sm:col-span-2 mt-1 text-accent/85">点击行可在新标签页打开币安永续</div>
                 </div>`;
 
             const highlightsHtml = `
