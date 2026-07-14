@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Next K · 网格总控台</title>
+  <script src="api-base.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; background: #0d1117; color: #e6edf3;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .bar { display:flex; align-items:center; gap:12px; padding:8px 14px;
+      border-bottom:1px solid #30363d; background:#161b22; font-size:13px; }
+    .bar a { color:#8b949e; text-decoration:none; }
+    .bar .hint { margin-left:auto; color:#8b949e; font-size:11px; }
+    iframe { width:100%; height:calc(100% - 41px); border:0; display:block; background:#0d1117; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <a href="index.html">← 策略看板</a>
+    <strong>网格交易总控制台</strong>
+    <span class="hint" id="hint">加载 3xx-wangge（Protocol 原样代理）…</span>
+    <a id="openRaw" href="#" target="_blank" rel="noopener">新窗口打开</a>
+  </div>
+  <iframe id="frame" title="wangge" src="about:blank"></iframe>
+  <script>
+    const base = (typeof resolveProtocolBase === 'function'
+      ? resolveProtocolBase() : 'http://127.0.0.1:8001').replace(/\/$/, '');
+    const url = base + '/';
+    document.getElementById('hint').textContent = base;
+    document.getElementById('openRaw').href = url;
+    document.getElementById('frame').src = url;
+  </script>
+</body>
+</html>
