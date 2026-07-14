@@ -380,7 +380,7 @@
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <span id="header-et-clock" class="header-clock hidden lg:inline" title="纽约时间">--:-- ET</span>
-                    <button type="button" onclick="toggleTheme()" class="theme-toggle" title="明暗切换" id="theme-btn">☽</button>
+                    <button type="button" onclick="toggleTheme()" class="theme-toggle" title="切换亮色" id="theme-btn">☀</button>
                     <div id="connection-status" class="status-pill status-pill-err bg-neon-red/[0.07] text-neon-red border-neon-red/18">
                         <span class="status-dot"></span><span>接口连接中…</span>
                     </div>
@@ -1975,18 +1975,33 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 <script>
-function toggleTheme() {
-    var isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+function syncThemeBtn() {
     var btn = document.getElementById('theme-btn');
-    if (btn) btn.textContent = isDark ? '☀' : '☽';
+    if (!btn) return;
+    var light = document.documentElement.classList.contains('light');
+    btn.textContent = light ? '☽' : '☀';
+    btn.title = light ? '切换暗色' : '切换亮色';
+}
+function toggleTheme() {
+    var root = document.documentElement;
+    var light = root.classList.toggle('light');
+    root.classList.toggle('dark', !light);
+    localStorage.setItem('theme', light ? 'light' : 'dark');
+    syncThemeBtn();
 }
 (function initTheme() {
-    if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.classList.add('dark');
-        var btn = document.getElementById('theme-btn');
-        if (btn) btn.textContent = '☀';
+    var pref = localStorage.getItem('theme');
+    var root = document.documentElement;
+    // 默认暗色（与总控台一致）；仅显式 light 走亮色
+    if (pref === 'light') {
+        root.classList.add('light');
+        root.classList.remove('dark');
+    } else {
+        root.classList.remove('light');
+        root.classList.add('dark');
+        if (pref !== 'dark') localStorage.setItem('theme', 'dark');
     }
+    syncThemeBtn();
 })();
 </script>
 </body>

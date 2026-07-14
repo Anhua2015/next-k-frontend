@@ -1,50 +1,7 @@
-/* Next K — Premium dashboard theme (shared) */
+/* Next K — Premium dashboard theme (shared)
+   Default = dark（与网格总控台同一套）；.light = 亮色备选 */
 
-:root {
-    --bg: #F7F5F2;
-    --surface: #FDFCFB;
-    --surface-light: #F0EBE3;
-    --border: #E2DDD4;
-    --accent: #7A4544;
-    --gold: #B8956B;
-    --gold-soft: rgba(184, 149, 107, 0.14);
-    --neon-green: #6B8F71;
-    --neon-red: #A65D56;
-    --neon-purple: #B8956B;
-    --neon-blue: #6B7F8F;
-    --neon-yellow: #C4A05A;
-    --warn: #C4A05A;
-    --text-primary: #2C2826;
-    --text-secondary: #5C5650;
-    --text-muted: #8A837A;
-    --scrollbar-track: #EDE8E0;
-    --scrollbar-thumb: #C9C0B4;
-    --scrollbar-thumb-hover: #B0A69A;
-    --shadow-color: rgba(44, 40, 38, 0.07);
-    --hover-bg: color-mix(in srgb, var(--surface-light) 70%, transparent);
-    --card-glow: rgba(184, 149, 107, 0.1);
-    --btn-hover-bg: #FAF8F5;
-    --oi-hover: #F0EBE3;
-    --code-bg: #F0EBE3;
-    --hero-bg-start: #FDFCFA;
-    --hero-bg-mid: #F3EDE4;
-    --hero-bg-end: #EAE3D8;
-    --hero-shadow: rgba(44, 40, 38, 0.08);
-    --hero-inner-glow: rgba(255, 255, 255, 0.92);
-    --glass: rgba(253, 252, 251, 0.78);
-    --glass-border: rgba(226, 221, 212, 0.65);
-    --radius-sm: 0.125rem;
-    --radius-md: 0.1875rem;
-    --radius-lg: 0.25rem;
-    --radius-xl: 0.3125rem;
-    --card-shadow:
-        0 1px 2px color-mix(in srgb, var(--shadow-color) 80%, transparent),
-        0 12px 40px -18px var(--shadow-color);
-    --card-shadow-hover:
-        0 2px 4px color-mix(in srgb, var(--shadow-color) 70%, transparent),
-        0 20px 48px -20px color-mix(in srgb, var(--shadow-color) 140%, transparent);
-}
-
+:root,
 .dark {
     --bg: #0E0E10;
     --surface: #161618;
@@ -78,6 +35,51 @@
     --hero-inner-glow: rgba(255, 255, 255, 0.04);
     --glass: rgba(22, 22, 24, 0.82);
     --glass-border: rgba(46, 46, 52, 0.75);
+    --radius-sm: 0.125rem;
+    --radius-md: 0.1875rem;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.3125rem;
+    --card-shadow:
+        0 1px 2px color-mix(in srgb, var(--shadow-color) 80%, transparent),
+        0 12px 40px -18px var(--shadow-color);
+    --card-shadow-hover:
+        0 2px 4px color-mix(in srgb, var(--shadow-color) 70%, transparent),
+        0 20px 48px -20px color-mix(in srgb, var(--shadow-color) 140%, transparent);
+}
+
+.light {
+    --bg: #F7F5F2;
+    --surface: #FDFCFB;
+    --surface-light: #F0EBE3;
+    --border: #E2DDD4;
+    --accent: #7A4544;
+    --gold: #B8956B;
+    --gold-soft: rgba(184, 149, 107, 0.14);
+    --neon-green: #6B8F71;
+    --neon-red: #A65D56;
+    --neon-purple: #B8956B;
+    --neon-blue: #6B7F8F;
+    --neon-yellow: #C4A05A;
+    --warn: #C4A05A;
+    --text-primary: #2C2826;
+    --text-secondary: #5C5650;
+    --text-muted: #8A837A;
+    --scrollbar-track: #EDE8E0;
+    --scrollbar-thumb: #C9C0B4;
+    --scrollbar-thumb-hover: #B0A69A;
+    --shadow-color: rgba(44, 40, 38, 0.07);
+    --hover-bg: color-mix(in srgb, var(--surface-light) 70%, transparent);
+    --card-glow: rgba(184, 149, 107, 0.1);
+    --btn-hover-bg: #FAF8F5;
+    --oi-hover: #F0EBE3;
+    --code-bg: #F0EBE3;
+    --hero-bg-start: #FDFCFA;
+    --hero-bg-mid: #F3EDE4;
+    --hero-bg-end: #EAE3D8;
+    --hero-shadow: rgba(44, 40, 38, 0.08);
+    --hero-inner-glow: rgba(255, 255, 255, 0.92);
+    --glass: rgba(253, 252, 251, 0.78);
+    --glass-border: rgba(226, 221, 212, 0.65);
 }
 
 body {
@@ -144,18 +146,18 @@ h1, h2, h3, .hl-title, .panel-title {
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
-    border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
     background: linear-gradient(
         145deg,
-        color-mix(in srgb, var(--accent) 92%, #3d2423) 0%,
-        color-mix(in srgb, var(--accent) 68%, #2a1817) 100%
+        color-mix(in srgb, var(--gold) 55%, var(--surface-light)) 0%,
+        color-mix(in srgb, var(--accent) 75%, var(--surface)) 100%
     );
     box-shadow:
-        0 4px 14px -6px color-mix(in srgb, var(--accent) 50%, transparent),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        0 4px 14px -6px color-mix(in srgb, var(--gold) 35%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--text-primary) 12%, transparent);
 }
 
-.brand-mark svg { width: 1rem; height: 1rem; color: #fff; }
+.brand-mark svg { width: 1rem; height: 1rem; color: var(--bg); }
 
 .brand-title {
     font-family: "Noto Serif SC", Georgia, serif;
