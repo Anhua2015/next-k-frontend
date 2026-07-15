@@ -15,7 +15,7 @@ function resolveApiBase() {
     return 'https://next-k-api-production.up.railway.app';
 }
 
-/** 3xx-wangge 总控台（绝对对齐源码），跑在 Next-k-protocol */
+/** Next K 网格总控台（Bitget），跑在 Next-k-protocol */
 function resolveProtocolBase() {
     try {
         const ls = localStorage.getItem('NEXT_K_PROTOCOL_BASE');
