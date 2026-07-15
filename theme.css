@@ -1,5 +1,5 @@
 /* Next K — Premium dashboard theme (shared)
-   Default = dark（与网格总控台同一套）；.light = 亮色备选 */
+   仅暗色（与网格总控台一致）；无亮色切换 */
 
 :root,
 .dark {
@@ -45,41 +45,6 @@
     --card-shadow-hover:
         0 2px 4px color-mix(in srgb, var(--shadow-color) 70%, transparent),
         0 20px 48px -20px color-mix(in srgb, var(--shadow-color) 140%, transparent);
-}
-
-.light {
-    --bg: #F7F5F2;
-    --surface: #FDFCFB;
-    --surface-light: #F0EBE3;
-    --border: #E2DDD4;
-    --accent: #7A4544;
-    --gold: #B8956B;
-    --gold-soft: rgba(184, 149, 107, 0.14);
-    --neon-green: #6B8F71;
-    --neon-red: #A65D56;
-    --neon-purple: #B8956B;
-    --neon-blue: #6B7F8F;
-    --neon-yellow: #C4A05A;
-    --warn: #C4A05A;
-    --text-primary: #2C2826;
-    --text-secondary: #5C5650;
-    --text-muted: #8A837A;
-    --scrollbar-track: #EDE8E0;
-    --scrollbar-thumb: #C9C0B4;
-    --scrollbar-thumb-hover: #B0A69A;
-    --shadow-color: rgba(44, 40, 38, 0.07);
-    --hover-bg: color-mix(in srgb, var(--surface-light) 70%, transparent);
-    --card-glow: rgba(184, 149, 107, 0.1);
-    --btn-hover-bg: #FAF8F5;
-    --oi-hover: #F0EBE3;
-    --code-bg: #F0EBE3;
-    --hero-bg-start: #FDFCFA;
-    --hero-bg-mid: #F3EDE4;
-    --hero-bg-end: #EAE3D8;
-    --hero-shadow: rgba(44, 40, 38, 0.08);
-    --hero-inner-glow: rgba(255, 255, 255, 0.92);
-    --glass: rgba(253, 252, 251, 0.78);
-    --glass-border: rgba(226, 221, 212, 0.65);
 }
 
 body {
@@ -360,27 +325,6 @@ h1, h2, h3, .hl-title, .panel-title {
 }
 
 .btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-sm);
-    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-    background: color-mix(in srgb, var(--surface-light) 45%, var(--surface));
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: border-color 0.18s, color 0.18s, background 0.18s, box-shadow 0.18s;
-}
-
-.theme-toggle:hover {
-    border-color: color-mix(in srgb, var(--gold) 40%, var(--border));
-    color: var(--gold);
-    box-shadow: 0 2px 10px -4px var(--shadow-color);
-}
 
 /* ── Tables ── */
 .data-table {
